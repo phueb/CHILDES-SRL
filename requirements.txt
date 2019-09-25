@@ -1,0 +1,6 @@
+torch>=1.2.0
+numpy
+pandas
+spacy>=2.1.0,<2.2
+scipy
+matplotlib>=2.2.3
