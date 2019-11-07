@@ -48,18 +48,20 @@ def main(param2val):
 
     # data + vocab + batcher
     data = Data(params, train_data_path, dev_data_path)
-    bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-
     vocab = Vocabulary.from_instances(data.train_instances + data.dev_instances)
-    bucket_batcher.index_with(vocab)  # TODO this must be an allennlp vocab instance
+    bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
+    bucket_batcher.index_with(vocab)  # this must be an Allen Vocabulary instance
     print(f'Allen Vocab size={vocab.get_vocab_size("tokens")}')
 
     bert_vocab = data.bert_tokenizer.vocab
     vocab_size = len(bert_vocab)
     print(f'Bert Vocab size={vocab_size:,}')
 
+    # TODO test
+    print(vocab.print_statistics())
+
     # model + optimizer
-    model = make_bertsrl(params, vocab)  # TODO this must be an Allen Vocabulary instance
+    model = make_bertsrl(params, vocab)  # this must be an Allen Vocabulary instance
     optimizer = BertAdam(params=model.parameters(),
                          lr=5e-5,
                          max_grad_norm=1.0,

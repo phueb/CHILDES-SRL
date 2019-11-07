@@ -126,8 +126,16 @@ class Data:
 
         # In order to override the indexing mechanism, we need to set the `text_id`
         # attribute directly. This causes the indexing to use this id.
-        text_field = TextField([Token(t, text_id=self.bert_tokenizer.vocab[t]) for t in word_pieces],
-                                 token_indexers=self.token_indexers)
+        # new_tokens = [Token(t, text_id=self.bert_tokenizer.vocab[t]) for t in word_pieces]
+        new_tokens = [Token(t) for t in word_pieces]
+
+        # TODO setting text_id causes tokens not to be found by Allen Vocabulary
+
+        # TODO tokens are not found by vocab
+        # allen nlp bert test case doesn't use token fields, but instead uses:
+        # TODO tokens = fields["metadata"]["words"]
+
+        text_field = TextField(new_tokens, self.token_indexers)
         verb_indicator = SequenceLabelField(new_verbs, text_field)
         fields = {'tokens': text_field,
                   'verb_indicator': verb_indicator}
@@ -149,6 +157,7 @@ class Data:
         if tags:
             new_tags = convert_tags_to_wordpiece_tags(tags, offsets)
             fields['tags'] = SequenceLabelField(new_tags, text_field)
+            metadata_dict["gold_tags"] = new_tags
 
         fields["metadata"] = MetadataField(metadata_dict)
 

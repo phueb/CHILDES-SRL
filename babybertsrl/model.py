@@ -213,10 +213,6 @@ def make_bertsrl(params,
     # parameters of original implementation are specified here:
     # https://github.com/allenai/allennlp/blob/master/training_config/bert_base_srl.jsonnet
 
-    # TODO test
-    print(vocab.print_statistics())
-    print(vocab._retained_counter)
-    raise SystemExit('Debugging')
     vocab_size = vocab.get_vocab_size("tokens")
 
     config = modeling.BertConfig(vocab_size_or_config_json_file=vocab_size,  # was 32K
