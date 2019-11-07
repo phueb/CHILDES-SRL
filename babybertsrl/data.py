@@ -1,77 +1,63 @@
-from collections import OrderedDict
 import numpy as np
-import pandas as pd
+from typing import Iterator, List, Dict, Any
+from pathlib import Path
+
+from pytorch_pretrained_bert.tokenization import BertTokenizer
+
+from allennlp.data.token_indexers import SingleIdTokenIndexer
+from allennlp.data.tokenizers import Token
+from allennlp.data import Instance
+from allennlp.data.fields import TextField, SequenceLabelField, MetadataField
+
 from babybertsrl import config
+from babybertsrl.word_pieces import wordpiece_tokenize_input
+from babybertsrl.word_pieces import convert_verb_indices_to_wordpiece_indices
+from babybertsrl.word_pieces import convert_tags_to_wordpiece_tags
 
 
 class Data:
 
-    def __init__(self, params):
+    def __init__(self,
+                 params,
+                 train_data_path: Path,
+                 dev_data_path: Path,
+                 ):
+        """
+        loads propositions from file and puts them in Allen NLP toolkit instances format
+        for training with BERT.
+        designed to use with conll-05 data
+        """
+
         self.params = params
 
-        # ----------------------------------------------------------- words & labels
+        # TODO the tokenizer loads word-pieces from the uncased model;
+        # TODO this is potentially problematic, because i am not using the uncased model
+        # TODO instead, i am using a custom vocabulary
+        # TODO should i make a custom vocab file to build a custom bert_tokenizer?
 
-        self._word_set = set()  # holds words from both train and dev
-        self._label_set = set()  # holds labels from both train and dev
+        self.bert_tokenizer = BertTokenizer.from_pretrained(config.Data.bert_name)
+        self.lowercase = 'uncased' in config.Data.bert_name
 
-        self.train_propositions = self.get_propositions_from_file(config.Data.train_data_path)
-        self.dev_propositions = self.get_propositions_from_file(config.Data.dev_data_path)
+        # load propositions
+        self.train_propositions = self.get_propositions_from_file(train_data_path)
+        self.dev_propositions = self.get_propositions_from_file(dev_data_path)
 
-        self.sorted_words = sorted(self._word_set)
-        self.sorted_labels = sorted(self._label_set)
-
-        self.sorted_words = [config.Data.pad_word, config.Data.unk_word] + self.sorted_words  # pad must have id=0
-        self.sorted_labels = [config.Data.pad_label] + self.sorted_labels
-
-        self.w2id = OrderedDict()  # word -> ID
-        for n, w in enumerate(self.sorted_words):
-            if w in self.w2id:
-                raise SystemError('Trying to add word to w2id, but word is already in w2id')
-            self.w2id[w] = n
-
-        self.l2id = OrderedDict()  # label -> ID
-        for n, l in enumerate(self.sorted_labels):
-            if l in self.l2id:
-                print('"{}" is already in l2id. Skipping'.format(l))
-                continue  # the letter "O" should be assigned id=0 instead of last id
-                # (this prevents overwriting existing entry with one pointing to the last id)
-            self.l2id[l] = n
-            if config.Data.verbose:
-                print('"{:<12}" -> {:<4}'.format(l, n))
-
-        assert len(self.w2id) == self.num_words
-
-        # -------------------------------------------------------- console
-
-        print('/////////////////////////////')
+        # print info
         print('Found {:,} training propositions ...'.format(self.num_train_propositions))
         print('Found {:,} dev propositions ...'.format(self.num_dev_propositions))
-        print("Extracted {:,} train+dev words and {:,} labels".format(self.num_words, self.num_labels))
-
+        print()
         for name, propositions in zip(['train', 'dev'],
                                       [self.train_propositions, self.dev_propositions]):
             lengths = [len(p[0]) for p in propositions]
             print("Max {} sentence length: {}".format(name, np.max(lengths)))
             print("Mean {} sentence length: {}".format(name, np.mean(lengths)))
             print("Median {} sentence length: {}".format(name, np.median(lengths)))
-        print('/////////////////////////////')
+            print()
 
-        # -------------------------------------------------------- embeddings
-
-        self.embeddings = self.make_embeddings()
-
-        # -------------------------------------------------------- prepare data structures for training
-
-        self.train = self.to_ids(self.train_propositions)
-        self.dev = self.to_ids(self.dev_propositions)
-
-    @property
-    def num_labels(self):
-        return len(self.sorted_labels)
-
-    @property
-    def num_words(self):
-        return len(self.sorted_words)
+        # training with Allen NLP toolkit
+        self.token_indexers = {'tokens': SingleIdTokenIndexer()}
+        self.train_instances = self.make_instances(self.train_propositions)
+        self.dev_instances = self.make_instances(self.dev_propositions)
 
     @property
     def num_train_propositions(self):
@@ -97,14 +83,11 @@ class Data:
                 left_input = inputs[0].strip().split()
                 right_input = inputs[1].strip().split()
 
-                if config.Data.lowercase:
+                if self.lowercase:
                     left_input = [w.lower() for w in left_input]
 
-                if not config.Data.bio_tags:
-                    right_input = [l.lstrip('-B').lstrip('-I') for l in right_input]
-
                 # predicate
-                predicate = int(left_input[0])
+                predicate_pos = int(left_input[0])
 
                 # words + labels
                 words = left_input[1:]
@@ -113,74 +96,80 @@ class Data:
                 if len(words) > self.params.max_sentence_length:
                     continue
 
-                self._word_set.update(words)
-                self._label_set.update(labels)
-
-                propositions.append((words, predicate, labels))
+                propositions.append((words, predicate_pos, labels))
 
         return propositions
 
-    # ---------------------------------------------------------- embeddings
+    # --------------------------------------------------------- interface with Allen NLP toolkit
 
-    def make_embeddings(self):
-
-        assert len(self._word_set) > 0
-
-        glove_p = config.RemoteDirs.root / (config.Data.glove_path_local or config.Data.glove_path)
-        print('Loading word embeddings at:')
-        print(glove_p)
-
-        df = pd.read_csv(glove_p, sep=" ", quoting=3, header=None, index_col=0)
-        w2embed = {key: val.values for key, val in df.T.items()}
-
-        embedding_size = next(iter(w2embed.items()))[1].shape[0]
-        print('Glove embedding size={}'.format(embedding_size))
-        print('Num embeddings in GloVe file: {}'.format(len(w2embed)))
-
-        # get embeddings for words in vocabulary
-        res = np.zeros((self.num_words, embedding_size), dtype=np.float32)
-        num_found = 0
-        for w, row_id in self.w2id.items():
-            try:
-                word_embedding = w2embed[w]
-            except KeyError:
-                res[row_id] = np.random.standard_normal(embedding_size)
-            else:
-                res[row_id] = word_embedding
-                num_found += 1
-
-        print('Found {}/{} GloVe embeddings'.format(num_found, self.num_words))
-        # if this number is extremely low, then it is likely that Glove txt file was only
-        # partially copied to shared drive (copying should be performed in CL, not via nautilus)
-
-        return res
-
-    # --------------------------------------------------------- data structures for training a model
-
-    def make_predicate_ids(self, proposition):
+    @staticmethod
+    def make_predicate_one_hot(proposition):
         """
-
+        return a one-hot list where hot value marks verb
         :param proposition: a tuple with structure (words, predicate, labels)
         :return: one-hot list, [sentence length]
         """
-        offset = int(0)  # use + 1 if using sentence-beginning marker
         num_w_in_proposition = len(proposition[0])
-        res = [int(i == proposition[1] + offset) for i in range(num_w_in_proposition)]
+        res = [int(i == proposition[1]) for i in range(num_w_in_proposition)]
         return res
 
-    def to_ids(self, propositions):
-        """
+    def _text_to_instance(self,
+                          tokens: List[Token],
+                          verb_label: List[int],
+                          tags: List[str] = None) -> Instance:
 
-        :param propositions: a tuple with structure (words, predicate, labels)
-        :return: 3 lists, each of the same length, containing lists of integers
-        """
+        # to word-pieces
+        word_pieces, offsets, start_offsets = wordpiece_tokenize_input([t.text for t in tokens],
+                                                                       self.bert_tokenizer,
+                                                                       self.lowercase)
+        new_verbs = convert_verb_indices_to_wordpiece_indices(verb_label, offsets)
 
-        word_ids = []
-        predicate_ids = []
-        label_ids = []
+        # In order to override the indexing mechanism, we need to set the `text_id`
+        # attribute directly. This causes the indexing to use this id.
+        text_field = TextField([Token(t, text_id=self.bert_tokenizer.vocab[t]) for t in word_pieces],
+                                 token_indexers=self.token_indexers)
+        verb_indicator = SequenceLabelField(new_verbs, text_field)
+        fields = {'tokens': text_field,
+                  'verb_indicator': verb_indicator}
+
+        # metadata
+        metadata_dict: Dict[str, Any] = {}
+
+        if all([x == 0 for x in verb_label]):
+            raise ValueError('Verb indicator contains zeros only. ')
+        else:
+            verb_index = verb_label.index(1)
+            verb = tokens[verb_index].text
+
+        metadata_dict["offsets"] = start_offsets
+        metadata_dict["words"] = [x.text for x in tokens]
+        metadata_dict["verb"] = verb
+        metadata_dict["verb_index"] = verb_index
+
+        if tags:
+            new_tags = convert_tags_to_wordpiece_tags(tags, offsets)
+            fields['tags'] = SequenceLabelField(new_tags, text_field)
+
+        fields["metadata"] = MetadataField(metadata_dict)
+
+        return Instance(fields)
+
+    def make_instances(self, propositions) -> Iterator[Instance]:
+        """
+        because lazy is by default False, return a list rather than a generator.
+        When lazy=False, the generator would be converted to a list anyway.
+
+        roughly equivalent to Allen NLP toolkit dataset.read()
+
+        """
+        res = []
         for proposition in propositions:
-            word_ids.append([self.w2id[w] for w in proposition[0]])
-            predicate_ids.append(self.make_predicate_ids(proposition))
-            label_ids.append([self.l2id[l] for l in proposition[2]])
-
-        return word_ids, predicate_ids, label_ids
+            words = proposition[0]
+            predicate_one_hot = self.make_predicate_one_hot(proposition)
+            tags = proposition[2]
+            # to instance
+            instance = self._text_to_instance([Token(word) for word in words],
+                                              predicate_one_hot,
+                                              tags)
+            res.append(instance)
+        return res

@@ -1,38 +1,42 @@
+
 from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
-from babybertsrl import config
 
 
-def f1_official_conll05(batch_bio_predicted_tags,   # List[List[str]]
-                        batch_bio_gold_tags,        # List[List[str]]
-                        batch_verb_indices,         # List[Optional[int]]
-                        batch_sentences,            # List[List[str]]
-                        ):
+def evaluate_model_on_f1(model, params, srl_eval_path, bucket_batcher, instances):
 
-    batch_conll_predicted_tags = [convert_bio_tags_to_conll_format(tags) for
-                                  tags in batch_bio_predicted_tags]
-    batch_conll_gold_tags = [convert_bio_tags_to_conll_format(tags) for
-                             tags in batch_bio_gold_tags]
+    span_metric = SrlEvalScorer(srl_eval_path,
+                                ignore_classes=["V"])
 
-    # SrlEvalScorer is available from AllenAI NLP toolkit
-    # ignore_classes does not affect perl script, but affects f1 computed by Allen AI NLP toolkit
-    # sometimes the padding label does not show up in output of perl script -
-    # that is because it was not predicted by the model
-    span_metric = SrlEvalScorer(ignore_classes=["V",
-                                                config.Data.pad_label.lstrip('B-').lstrip('I-')])
-    span_metric(batch_verb_indices,             # List[Optional[int]]
-                batch_sentences,                # List[List[str]]
-                batch_conll_predicted_tags,     # List[List[str]]
-                batch_conll_gold_tags)          # List[List[str]]
+    model.eval()
+    instances_generator = bucket_batcher(instances, num_epochs=1)
+    for step, batch in enumerate(instances_generator):
 
-    all_metrics = span_metric.get_metric()  # f1 is computed by Allen AI NLP toolkit given tp, fp, fn by perl script
+        if len(batch['tags']) != params.batch_size:
+            print('WARNING: Batch size is {}. Skipping'.format(len(batch['tags'])))
+            continue
 
-    return all_metrics["f1-measure-overall"]
+        # get predictions
+        output_dict = model(**batch)  # input is dict[str, tensor]
 
+        # metadata
+        metadata = batch['metadata'] or output_dict['metadata']
+        batch_verb_indices = [example_metadata["verb_index"] for example_metadata in metadata]
+        batch_sentences = [example_metadata["words"] for example_metadata in metadata]
 
-def print_f1(epoch, method, f1):
-    print('epoch {:>3} method={} | f1={:.2f}'.format(epoch, method, f1))
+        # Get the BIO tags from decode()
+        batch_bio_predicted_tags = model.decode(output_dict).pop("tags")
+        batch_conll_predicted_tags = [convert_bio_tags_to_conll_format(tags) for
+                                      tags in batch_bio_predicted_tags]
+        batch_bio_gold_tags = [example_metadata["gold_tags"] for example_metadata in metadata]
+        batch_conll_gold_tags = [convert_bio_tags_to_conll_format(tags) for
+                                 tags in batch_bio_gold_tags]
 
+        # update signal detection metrics
+        span_metric(batch_verb_indices,
+                    batch_sentences,
+                    batch_conll_predicted_tags,
+                    batch_conll_gold_tags)
 
-
-
-
+    # compute f1 on accumulated signal detection metrics and reset
+    metric_dict = span_metric.get_metric(reset=True)
+    return {x: y for x, y in metric_dict.items() if "overall" in x}

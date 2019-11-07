@@ -2,12 +2,13 @@
 Code obtained from Allen AI NLP toolkit in September 2019
 """
 
-
+from typing import Optional, List, Dict
 import os
 import shutil
 import subprocess
 import tempfile
 from collections import defaultdict
+from pathlib import Path
 
 from babybertsrl import config
 
@@ -25,9 +26,12 @@ class SrlEvalScorer:
     ignore_classes : ``List[str]``, optional (default=``None``).
         A list of classes to ignore.
     """
-    def __init__(self, ignore_classes=None):
+    def __init__(self,
+                 srl_eval_path: Path,
+                 ignore_classes: Optional[List[str]] = None,
+                 ):
 
-        self._srl_eval_path = str(config.Eval.srl_eval_path)  # The path to the srl-eval.pl script.
+        self._srl_eval_path = str(srl_eval_path)  # The path to the srl-eval.pl script.
         self._ignore_classes = set(ignore_classes)
 
         # These will hold per label span counts.
@@ -103,7 +107,8 @@ class SrlEvalScorer:
                 self._false_negatives[tag] += num_missed
         shutil.rmtree(tempdir)
 
-    def get_metric(self, reset: bool = False):
+    def get_metric(self, reset: bool = False,
+                   ) -> Dict[str, float]:
         """
         Returns
         -------
