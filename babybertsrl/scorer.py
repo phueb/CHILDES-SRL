@@ -43,7 +43,9 @@ class SrlEvalScorer:
                  batch_verb_indices,  # : List[Optional[int]]
                  batch_sentences,  # : List[List[str]]
                  batch_conll_formatted_predicted_tags,  # : List[List[str]]
-                 batch_conll_formatted_gold_tags) -> None:  # : List[List[str]]
+                 batch_conll_formatted_gold_tags,
+                 verbose: bool = False,
+                 ) -> None:  # : List[List[str]]
         # pylint: disable=signature-differs
         """
         Parameters
@@ -77,6 +79,7 @@ class SrlEvalScorer:
                     batch_sentences,
                     batch_conll_formatted_predicted_tags,
                     batch_conll_formatted_gold_tags):
+
                 write_conll_formatted_tags_to_file(predicted_file,
                                                    gold_file,
                                                    verb_index,
@@ -87,7 +90,7 @@ class SrlEvalScorer:
         completed_process = subprocess.run(perl_script_command, stdout=subprocess.PIPE,
                                            universal_newlines=True, check=True)
 
-        if config.Eval.verbose:
+        if verbose:
             print(completed_process.stdout)
 
         for line in completed_process.stdout.split("\n"):

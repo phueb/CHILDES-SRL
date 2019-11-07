@@ -16,7 +16,6 @@ class Data:
 
 class Eval:
     loss_interval = 100
-    verbose = True  # print output of perl evaluation script
 
 
 

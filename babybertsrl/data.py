@@ -157,7 +157,7 @@ class Data:
         if tags:
             new_tags = convert_tags_to_wordpiece_tags(tags, offsets)
             fields['tags'] = SequenceLabelField(new_tags, text_field)
-            metadata_dict["gold_tags"] = new_tags
+            metadata_dict["gold_tags"] = tags  # non word-piece tags
 
         fields["metadata"] = MetadataField(metadata_dict)
 

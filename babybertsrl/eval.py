@@ -19,7 +19,7 @@ def evaluate_model_on_f1(model, params, srl_eval_path, bucket_batcher, instances
         output_dict = model(**batch)  # input is dict[str, tensor]
 
         # metadata
-        metadata = batch['metadata'] or output_dict['metadata']
+        metadata = batch['metadata']
         batch_verb_indices = [example_metadata["verb_index"] for example_metadata in metadata]
         batch_sentences = [example_metadata["words"] for example_metadata in metadata]
 

@@ -102,11 +102,6 @@ class SrlBert(Model):
                                              token_type_ids=verb_indicator,
                                              attention_mask=mask,
                                              output_all_encoded_layers=False)
-
-        # TODO test
-        print(bert_embeddings.shape)
-
-
         embedded_text_input = self.embedding_dropout(bert_embeddings)
         batch_size, sequence_length, _ = embedded_text_input.size()
 
