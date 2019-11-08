@@ -39,4 +39,4 @@ def evaluate_model_on_f1(model, params, srl_eval_path, bucket_batcher, instances
 
     # compute f1 on accumulated signal detection metrics and reset
     metric_dict = span_metric.get_metric(reset=True)
-    return {x: y for x, y in metric_dict.items() if "overall" in x}
+    return metric_dict['f1-measure-overall']

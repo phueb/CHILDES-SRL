@@ -99,7 +99,7 @@ class SrlEvalScorer:
                 tag = stripped[0]
                 # Overall metrics are calculated in get_metric, skip them here.
                 if tag == "Overall" or tag in self._ignore_classes:
-                    print('Skipping collection of tp, fp, and fn for tag={}'.format(tag))
+                    # print('Skipping collection of tp, fp, and fn for tag={}'.format(tag))
                     continue
                 # This line contains results for a span
                 num_correct = int(stripped[1])

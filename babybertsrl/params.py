@@ -2,6 +2,7 @@
 
 param2requests = {
     "batch_size": [32],
+    "num_attention_heads": [2, 4, 8, 12],
 }
 
 param2debug = {
