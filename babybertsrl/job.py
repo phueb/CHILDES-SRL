@@ -46,18 +46,16 @@ def main(param2val):
 
     # data + vocab + batcher
     data = Data(params, train_data_path, dev_data_path)
-
-    # TODO transcripts need to be split up into sentences
-
     vocab = Vocabulary.from_instances(data.train_instances + data.dev_instances)
     vocab.print_statistics()
     bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher.index_with(vocab)  # this must be an Allen Vocabulary instance
-    print(f'Allen Vocab size={vocab.get_vocab_size("tokens")}')
 
-    bert_vocab = data.bert_tokenizer.vocab
-    vocab_size = len(bert_vocab)
-    print(f'Bert Vocab size={vocab_size:,}')
+    # note:
+    # the Vocab object has word-piece tokenized tokens, ready to be fed directly to bert.
+    # the Vocab object uses a pre-made 30k bert vocabulary with which to build the vocabulary.
+    # this means that words in the data not in the pre-made vocabulary are excluded
+    print(f'Vocab size={vocab.get_vocab_size("tokens")}')
 
     # model + optimizer
     bert_lm = make_bert_lm(params, vocab)

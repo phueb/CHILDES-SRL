@@ -6,7 +6,7 @@ from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
 def evaluate_model_on_pp(model, params, bucket_batcher, instances):
     model.eval()
     instances_generator = bucket_batcher(instances, num_epochs=1)
-    loss_sum = 0
+    pp_sum = 0
     num_steps = 0
     for step, batch in enumerate(instances_generator):
 
@@ -18,10 +18,13 @@ def evaluate_model_on_pp(model, params, bucket_batcher, instances):
         with torch.no_grad():
             output_dict = model(**batch)  # input is dict[str, tensor]
 
-        loss_sum += torch.exp(output_dict['loss'])
+        pp = torch.exp(output_dict['loss'])
+        print(pp, flush=True)
+
+        pp_sum += pp
         num_steps += 1
 
-    return loss_sum / num_steps
+    return pp_sum / num_steps
 
 
 def evaluate_model_on_f1(model, params, srl_eval_path, bucket_batcher, instances):
