@@ -73,7 +73,7 @@ class Data:
         """
         Read tokenized sentences from file.
           Return:
-            A list with elements of structure [[words], [lm_tags]]
+            A list with elements of structure [words, lm_mask, lm_tags]
         """
         sentences = []
         punctuation = {'.', '?', '!'}
@@ -100,29 +100,19 @@ class Data:
                         continue
 
                     masked_words = random.sample(words, k=num_masked_per_sentence)
-                    lm_tags = [w if w in masked_words else 'O' for w in words]  # TODO maybe don't use 'O' ?
+                    lm_mask = [1 if w in masked_words else 0 for w in words]
+                    lm_tags = words
 
                     if len(words) > self.params.max_sentence_length:
                         continue
 
-                    sentences.append((words, lm_tags))
+                    sentences.append((words, lm_mask, lm_tags))
 
         print(f'WARNING: Skipped {num_skipped} sentences which are shorter than number of words to mask.')
 
         return sentences
 
     # --------------------------------------------------------- interface with Allen NLP toolkit
-
-    @staticmethod
-    def make_lm_mask(sentence):
-        """
-        return a one-hot list where hot value marks masked word to be predicted
-        :param sentence: a tuple with structure (words, labels)
-        :return: list of ones and zeros where ones mark word to be masked and predicted
-        """
-        lm_tags = sentence[1]
-        res = [0 if lm_tag == 'O' else 1 for lm_tag in lm_tags]  # TODO test
-        return res
 
     def _text_to_instance(self,
                           tokens: List[Token],
@@ -182,9 +172,7 @@ class Data:
         """
         res = []
         for sentence in sentences:
-            words = sentence[0]
-            lm_mask = self.make_lm_mask(sentence)  # 1s and 0s depending on whether word is to be predicted
-            lm_tags = sentence[1]
+            words, lm_mask, lm_tags = sentence
             # to instance
             instance = self._text_to_instance([Token(word) for word in words],
                                               lm_mask,
