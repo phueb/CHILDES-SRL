@@ -9,10 +9,10 @@ from allennlp.data.iterators import BucketIterator
 
 from pytorch_pretrained_bert import BertAdam
 
+from babybertsrl.data_srl import Data
+from babybertsrl.model_srl import make_bert_srl
 from babybertsrl import config
-from babybertsrl.data_lm import Data
-from babybertsrl.eval import evaluate_model_on_pp
-from babybertsrl.model_lm import make_bert_lm
+from babybertsrl.eval import evaluate_model_on_f1
 
 
 @attr.s
@@ -41,14 +41,13 @@ def main(param2val):
 
     #  paths
     project_path = Path(param2val['project_path'])
-    train_data_path = project_path / 'data' / 'CHILDES' / 'childes-20180319_train.txt'
-    dev_data_path = project_path / 'data' / 'CHILDES' / 'childes-20180319_dev.txt'
+    srl_eval_path = project_path / 'perl' / 'srl-eval.pl'
+    train_data_path = project_path / 'data' / 'CONLL05' / 'conll05.train.txt'
+    dev_data_path = project_path / 'data' / 'CONLL05' / 'conll05.dev.txt'
+    test_data_path = project_path / 'data' / 'CONLL05' / 'conll05.test.wsj.txt'
 
     # data + vocab + batcher
     data = Data(params, train_data_path, dev_data_path)
-
-    # TODO transcripts need to be split up into sentences
-
     vocab = Vocabulary.from_instances(data.train_instances + data.dev_instances)
     vocab.print_statistics()
     bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
@@ -60,42 +59,43 @@ def main(param2val):
     print(f'Bert Vocab size={vocab_size:,}')
 
     # model + optimizer
-    bert_lm = make_bert_lm(params, vocab)
-    optimizer = BertAdam(params=bert_lm.parameters(),
+    bert_srl = make_bert_srl(params, vocab)  # this must be an Allen Vocabulary instance
+    optimizer = BertAdam(params=bert_srl.parameters(),
                          lr=5e-5,
                          max_grad_norm=1.0,
                          t_total=-1,
                          weight_decay=0.01)
 
     # train + eval loop
-    dev_pps = []
-    train_pps = []
+    dev_f1s = []
+    train_f1s = []
     train_start = time.time()
     for epoch in range(params.num_epochs):
         print(f'\nEpoch: {epoch}')
 
-        # evaluate perplexity
-        dev_pp = evaluate_model_on_pp(bert_lm, params, bucket_batcher, data.dev_instances)
-        train_pp = evaluate_model_on_pp(bert_lm, params, bucket_batcher, data.train_instances)
-        dev_pps.append(dev_pp)
-        train_pps.append(train_pp)
-        print(f'train-pp={train_pp}')
-        print(f'dev-pp={dev_pp}')
+        # evaluate f1
+        dev_f1 = evaluate_model_on_f1(bert_srl, params, srl_eval_path, bucket_batcher, data.dev_instances)
+        # train_f1 = evaluate_model_on_f1(bert_srl, params, srl_eval_path, bucket_batcher, data.train_instances)
+        train_f1 = None  # TODO takes long
+        dev_f1s.append(dev_f1)
+        train_f1s.append(train_f1)
+        print(f'train-f1={train_f1}')
+        print(f'dev-f1={dev_f1}')
 
         # train
-        bert_lm.train()
+        bert_srl.train()
         train_generator = bucket_batcher(data.train_instances, num_epochs=1)
         for step, batch in enumerate(train_generator):
-            loss = bert_lm.train_on_batch(batch, optimizer)
+            loss = bert_srl.train_on_batch(batch, optimizer)
             # print
             if step % config.Eval.loss_interval == 0:
                 print('step {:<6}: loss={:2.2f} total minutes elapsed={:<3}'.format(
                     step, loss, (time.time() - train_start) // 60))
 
     # to pandas
-    s1 = pd.Series(train_pps, index=np.arange(params.num_epochs))
-    s1.name = 'train_pp'
-    s2 = pd.Series(dev_pps, index=np.arange(params.num_epochs))
-    s2.name = 'dev_pp'
+    s1 = pd.Series(train_f1s, index=np.arange(params.num_epochs))
+    s1.name = 'train_f1'
+    s2 = pd.Series(dev_f1s, index=np.arange(params.num_epochs))
+    s2.name = 'dev_f1'
 
     return [s1, s2]

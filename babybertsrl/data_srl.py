@@ -129,11 +129,10 @@ class Data:
         # new_tokens = [Token(t, text_id=self.bert_tokenizer.vocab[t]) for t in word_pieces]
         new_tokens = [Token(t) for t in word_pieces]
 
-        # TODO setting text_id causes tokens not to be found by Allen Vocabulary
-
-        # TODO tokens are not found by vocab
+        # WARNING:
+        # setting text_id causes tokens not to be found by Allen Vocabulary.
         # allen nlp bert test case doesn't use token fields, but instead uses:
-        # TODO tokens = fields["metadata"]["words"]
+        # tokens = fields["metadata"]["words"]
 
         text_field = TextField(new_tokens, self.token_indexers)
         verb_indicator = SequenceLabelField(new_verbs, text_field)

@@ -91,6 +91,35 @@ def convert_verb_indices_to_wordpiece_indices(verb_indices: List[int],
     return [0] + new_verb_indices + [0]
 
 
+def convert_lm_mask_to_wordpiece_lm_mask(lm_mask: List[int],
+                                         offsets: List[int],
+                                         ) -> List[int]:
+    """
+    written by ph
+
+    Parameters
+    ----------
+    lm_mask : `List[int]`
+        List of ones and zeros indicating indices of words to be masked
+    offsets : `List[int]`
+        The wordpiece offsets.
+
+    Returns
+    -------
+    The new LM mask
+    """
+    j = 0
+    new_lm_mask = []
+    for i, offset in enumerate(offsets):
+        indicator = lm_mask[i]
+        while j < offset:
+            new_lm_mask.append(indicator)
+            j += 1
+
+    # Add 0 indicators for cls and sep tokens.
+    return [0] + new_lm_mask + [0]
+
+
 def convert_tags_to_wordpiece_tags(tags: List[str],
                                    offsets: List[int],
                                    ) -> List[str]:
@@ -130,6 +159,41 @@ def convert_tags_to_wordpiece_tags(tags: List[str],
             elif tag.startswith("B"):
                 _, label = tag.split("-", 1)
                 new_tags.append("I-" + label)
+            j += 1
+
+    # Add O tags for cls and sep tokens.
+    return ["O"] + new_tags + ["O"]
+
+
+def convert_lm_tags_to_wordpiece_lm_tags(lm_tags: List[str],
+                                         offsets: List[int],
+                                         ) -> List[str]:
+    """
+    written by ph
+
+    Parameters
+    ----------
+    lm_tags : `List[str]`
+        A list of either "O" or word, depending on whether word is masked, and therefore to be predicted
+    offsets : `List[int]`
+        The wordpiece offsets.
+
+    Returns
+    -------
+    The new tags.
+    """
+    new_tags = []
+    j = 0
+    for i, offset in enumerate(offsets):
+        lm_tag = lm_tags[i]
+        is_o = lm_tag == "O"
+        while j < offset:
+            if is_o:
+                new_tags.append("O")
+
+            else:
+                new_tags.append(lm_tag)
+
             j += 1
 
     # Add O tags for cls and sep tokens.

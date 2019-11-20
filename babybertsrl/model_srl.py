@@ -1,8 +1,8 @@
 from typing import Dict, List, Optional, Any, Union
 import torch
 from torch.nn import Linear, Dropout, functional as F
-from pytorch_pretrained_bert.modeling import BertModel
-from pytorch_pretrained_bert import modeling
+from pytorch_pretrained_bert.modeling import BertModel, BertConfig
+from overrides import overrides
 
 from allennlp.data import Vocabulary
 from allennlp.models import Model
@@ -13,7 +13,6 @@ from allennlp.nn.util import get_lengths_from_binary_sequence_mask
 from allennlp.nn.util import viterbi_decode
 from allennlp.training.util import rescale_gradients
 from allennlp.common import Params as AllenParams
-from overrides import overrides
 
 
 class SrlBert(Model):
@@ -200,9 +199,9 @@ class SrlBert(Model):
         return list(words), list(verbs), list(offsets)
 
 
-def make_bertsrl(params,
-                 vocab,  # must be Allen Vocabulary instance
-                 ):
+def make_bert_srl(params,
+                  vocab,  # must be Allen Vocabulary instance
+                  ):
 
     print('Preparing BERT model...')
     # parameters of original implementation are specified here:
@@ -210,12 +209,12 @@ def make_bertsrl(params,
 
     vocab_size = vocab.get_vocab_size("tokens")
 
-    config = modeling.BertConfig(vocab_size_or_config_json_file=vocab_size,  # was 32K
-                                 hidden_size=params.hidden_size,  # was 768
-                                 num_hidden_layers=params.num_layers,  # was 12
-                                 num_attention_heads=params.num_attention_heads,  # was 12
-                                 intermediate_size=params.intermediate_size)  # was 3072
-    bert_model = modeling.BertModel(config=config)
+    config = BertConfig(vocab_size_or_config_json_file=vocab_size,  # was 32K
+                        hidden_size=params.hidden_size,  # was 768
+                        num_hidden_layers=params.num_layers,  # was 12
+                        num_attention_heads=params.num_attention_heads,  # was 12
+                        intermediate_size=params.intermediate_size)  # was 3072
+    bert_model = BertModel(config=config)
 
     # TODO bert also needs
     #  * learning rate scheduler - "slanted_triangular"

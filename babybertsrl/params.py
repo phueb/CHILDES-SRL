@@ -20,6 +20,3 @@ param2default = {
     'max_sentence_length': 128,
     'num_epochs': 50,  # 15 fine-tuning epochs is original implementation
 }
-
-
-# TODO check here that hidden_size is a multiple of num_attention_heads
