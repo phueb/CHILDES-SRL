@@ -31,8 +31,8 @@ class Data:
         """
 
         self.params = params
-        self.bert_tokenizer = BertTokenizer(vocab_path_name)
-        self.lowercase = self.bert_tokenizer.basic_tokenizer.do_lower_case
+        self.bert_tokenizer = BertTokenizer(vocab_path_name, do_basic_tokenize=False)
+        self.lowercase = 'uncased' in config.Data.bert_name
 
         # load sentences
         self.train_sentences = self.get_sentences_from_file(train_data_path)
@@ -94,8 +94,8 @@ class Data:
                         num_skipped += 1
                         continue
 
-                    masked_words = random.sample(words, k=num_masked_per_sentence)
-                    lm_mask = [1 if w in masked_words else 0 for w in words]
+                    masked_ids = random.sample(range(len(words)), k=num_masked_per_sentence)
+                    lm_mask = [1 if i in masked_ids else 0 for i in range(len(words))]
 
                     lm_tags = words
 
@@ -141,13 +141,10 @@ class Data:
 
         if all([x == 0 for x in lm_mask]):
             raise ValueError('Mask indicator contains zeros only. ')
-        else:
-            masked_words = [t.text for m, t in zip(lm_mask, tokens) if m]
 
         # meta data only has whole words
         metadata_dict["offsets"] = start_offsets
         metadata_dict["words"] = [x.text for x in tokens]
-        metadata_dict["masked_words"] = masked_words
         metadata_dict["masked_indices"] = lm_mask  # mask is list containing zeros and ones
 
         if lm_tags:

@@ -3,6 +3,7 @@ import torch
 from torch.nn import Linear, Dropout, functional as F
 from pytorch_pretrained_bert.modeling import BertModel, BertConfig
 from overrides import overrides
+from itertools import zip_longest
 
 from pytorch_pretrained_bert.modeling import BertOnlyMLMHead
 
@@ -117,15 +118,16 @@ class LMBert(Model):
         output_dict = {"logits": logits, "class_probabilities": class_probabilities, "mask": mask}
 
         # We add in the offsets here so we can compute the un-wordpieced lm_tags.
-        words, offsets = zip(*[(x["words"],  x["offsets"]) for x in metadata])
+        words, masked_indices, offsets = zip(*[(x["words"], x['masked_indices'], x["offsets"]) for x in metadata])
         output_dict["words"] = list(words)
+        output_dict["masked_indices"] = list(masked_indices)
         output_dict["wordpiece_offsets"] = list(offsets)
 
         # TODO the correct way to do language modeling would be to use
         #  standard cross entropy rather than sequence cross entropy because only one masked word is predicted,
         #  not a sequence of tags
 
-        # TODO use the mask to mask all words which shoul not be predicted?
+        # TODO use the mask to mask all words which should not be predicted?
 
         if lm_tags is not None:
             loss = sequence_cross_entropy_with_logits(logits,
@@ -197,16 +199,17 @@ class LMBert(Model):
         rescale_gradients(self, grad_norm=1.0)
         optimizer.step()
 
-        # TODO the predictions are offset one position to the right
-        gold_lm_tags = output_dict['words']
-        predicted_lm_tags = self.decode(output_dict).pop("wordpiece_lm_tags")
+        gold_lm_tags = output_dict['words']  # whole words
+        masked_indices = output_dict['masked_indices']  # whole words
+        predicted_lm_tags = self.decode(output_dict).pop("lm_tags")  # whole words
+        assert len(gold_lm_tags) == len(predicted_lm_tags)
 
-        print(len(gold_lm_tags), len(predicted_lm_tags))
+        for g, p, m in zip(gold_lm_tags, predicted_lm_tags, masked_indices):
 
-        for g, p in zip(gold_lm_tags, predicted_lm_tags):
-            print(len(g), len(p))
-            for gi, pi in zip(g, p):
-                print(f'{gi:>20} {pi:>20}')
+            print(len(g), len(p), len(m))
+
+            for gi, pi, mi in zip_longest(g, p, m, fillvalue=''):
+                print(f'{gi:>20} {pi:>20} {"masked" if mi else ""}')
         print()
 
         return loss

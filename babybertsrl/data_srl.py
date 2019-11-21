@@ -31,7 +31,7 @@ class Data:
 
         self.params = params
         if vocab_path_name:
-            self.bert_tokenizer = BertTokenizer(vocab_path_name)
+            self.bert_tokenizer = BertTokenizer(vocab_path_name, do_basic_tokenize=False)
             self.lowercase = self.bert_tokenizer.basic_tokenizer.do_lower_case
         else:
             self.bert_tokenizer = BertTokenizer.from_pretrained(config.Data.bert_name)
