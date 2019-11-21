@@ -11,7 +11,6 @@ class Global:
 
 
 class Data:
-    bert_name = 'bert-base-uncased'  # if 'uncased', input is lowercased
     min_utterance_length = 3  # used during language modeling task
 
 

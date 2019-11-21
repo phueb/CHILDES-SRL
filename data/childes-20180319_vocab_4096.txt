@@ -3,6 +3,11 @@
 [SEP]
 [MASK]
 [PAD]
+##s
+##ing
+##ion
+##ed
+##y
 .
 ?
 you

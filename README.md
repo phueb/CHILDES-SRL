@@ -31,4 +31,4 @@ a decoding function is called which converts the word pieces back into whole wor
 
 ## Compatibility
 
-Tested on Ubuntu 16.04, Python 3.6 and pytorch
+Tested on Ubuntu 16.04, Python 3.6, and torch==1.2.0

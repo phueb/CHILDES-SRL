@@ -28,7 +28,9 @@ class Params(object):
     max_sentence_length = attr.ib(validator=attr.validators.instance_of(int))
     num_epochs = attr.ib(validator=attr.validators.instance_of(int))
 
-    num_masked = attr.ib(validator=attr.validators.instance_of(int))  # TODO test
+    # TODO rename params whether they are for fine tuning or pre-training
+
+    num_masked = attr.ib(validator=attr.validators.instance_of(int))
 
     @classmethod
     def from_param2val(cls, param2val):
@@ -66,6 +68,8 @@ def main(param2val):
                          max_grad_norm=1.0,
                          t_total=-1,
                          weight_decay=0.01)
+
+    predict_masked_sentences(bert_lm, data)
 
     # train + eval loop
     dev_pps = []

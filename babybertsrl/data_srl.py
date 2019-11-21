@@ -10,7 +10,7 @@ from allennlp.data import Instance
 from allennlp.data.fields import TextField, SequenceLabelField, MetadataField
 
 from babybertsrl import config
-from babybertsrl.word_pieces import wordpiece_tokenize_input
+from babybertsrl.word_pieces import wordpiece_tokenize
 from babybertsrl.word_pieces import convert_verb_indices_to_wordpiece_indices
 from babybertsrl.word_pieces import convert_tags_to_wordpiece_tags
 
@@ -118,14 +118,11 @@ class Data:
                           tags: List[str] = None) -> Instance:
 
         # to word-pieces
-        word_pieces, offsets, start_offsets = wordpiece_tokenize_input([t.text for t in tokens],
-                                                                       self.bert_tokenizer,
-                                                                       self.lowercase)
+        word_pieces, offsets, start_offsets = wordpiece_tokenize([t.text for t in tokens],
+                                                                 self.bert_tokenizer,
+                                                                 self.lowercase)
         new_verbs = convert_verb_indices_to_wordpiece_indices(verb_label, offsets)
 
-        # In order to override the indexing mechanism, we need to set the `text_id`
-        # attribute directly. This causes the indexing to use this id.
-        # new_tokens = [Token(t, text_id=self.bert_tokenizer.vocab[t]) for t in word_pieces]
         new_tokens = [Token(t) for t in word_pieces]
 
         # WARNING:

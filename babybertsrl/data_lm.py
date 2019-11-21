@@ -12,7 +12,7 @@ from allennlp.data import Instance
 from allennlp.data.fields import TextField, SequenceLabelField, MetadataField
 
 from babybertsrl import config
-from babybertsrl.word_pieces import wordpiece_tokenize_input
+from babybertsrl.word_pieces import wordpiece_tokenize
 from babybertsrl.word_pieces import convert_lm_mask_to_wordpiece_lm_mask
 
 
@@ -45,8 +45,10 @@ class Data:
         """
 
         self.params = params
-        self.bert_tokenizer = BertTokenizer(vocab_path_name, do_basic_tokenize=False)
-        self.lowercase = 'uncased' in config.Data.bert_name
+        self.lowercase = False  # set to false because [MASK] must be uppercase?
+        self.bert_tokenizer = BertTokenizer(vocab_path_name,
+                                            do_basic_tokenize=False,
+                                            do_lower_case=self.lowercase)
 
         # load sentences
         self.train_utterances = self.get_utterances_from_file(train_data_path)
@@ -127,15 +129,17 @@ class Data:
 
     def _text_to_instance(self,
                           lm_in: List[str],
-                          lm_mask: List[int],  # masked language modeling
-                          lm_tags: List[str] = None) -> Instance:
+                          lm_mask: List[int],
+                          lm_tags: List[str],
+                          ) -> Instance:
 
         # to word-pieces
-        word_pieces, offsets, start_offsets = wordpiece_tokenize_input(lm_in,
+        lm_in_word_pieces, offsets, start_offsets = wordpiece_tokenize(lm_in,
                                                                        self.bert_tokenizer,
                                                                        self.lowercase)
-        new_tokens = [Token(t) for t in word_pieces]
-        new_mask = convert_lm_mask_to_wordpiece_lm_mask(lm_mask, offsets)
+        lm_tags_word_pieces, offsets, start_offsets = wordpiece_tokenize(lm_tags,
+                                                                         self.bert_tokenizer,
+                                                                         self.lowercase)
 
         # meta data only has whole words
         metadata_dict = dict()
@@ -144,10 +148,13 @@ class Data:
         metadata_dict['masked_indices'] = lm_mask  # mask is list containing zeros and ones
         metadata_dict['gold_lm_tags'] = lm_tags  # is just a copy of the input without the mask
 
-        text_field = TextField(new_tokens, self.token_indexers)
+        # fields
+        tokens = [Token(t) for t in lm_in_word_pieces]
+        text_field = TextField(tokens, self.token_indexers)
+        new_mask = convert_lm_mask_to_wordpiece_lm_mask(lm_mask, offsets)
         fields = {'tokens': text_field,
                   'mask_indicator': SequenceLabelField(new_mask, text_field),
-                  'lm_tags': SequenceLabelField(word_pieces, text_field),
+                  'lm_tags': SequenceLabelField(lm_tags_word_pieces, text_field),
                   'metadata': MetadataField(metadata_dict)}
 
         return Instance(fields)
