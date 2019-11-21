@@ -1,6 +1,36 @@
 import torch
+from allennlp.data.iterators import BucketIterator
 
 from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
+
+
+def predict_masked_sentences(model, data, vocab):
+    model.eval()
+
+    # make test batch
+    utterances = [['say', 'thank', 'you'],
+                  ['what', "'s", 'that', '?'],
+                  ['what', 'are', 'they', 'doing', '?']]
+    instances = data.make_instances(utterances)
+    num_instances = len(instances)
+    bucket_batcher = BucketIterator(batch_size=num_instances, sorting_keys=[('tokens', "num_tokens")])
+    bucket_batcher.index_with(vocab)  # this mus
+    batch = next(bucket_batcher(instances, num_epochs=1))
+
+    # get predictions
+    with torch.no_grad():
+        output_dict = model(**batch)  # input is dict[str, tensor]
+
+    gold_lm_tags = output_dict['words']  # whole words
+    masked_indices = output_dict['masked_indices']  # whole words
+    predicted_lm_tags = model.decode(output_dict).pop("lm_tags")  # whole words
+    assert len(gold_lm_tags) == len(predicted_lm_tags)
+
+    for g, p, m in zip(gold_lm_tags, predicted_lm_tags, masked_indices):
+        print(len(g), len(p), len(m))
+        for gi, pi, mi in zip(g, p, m):
+            print(f'{gi:>20} {pi:>20} {"masked" if mi else ""}')  # TODO save to file
+    print()
 
 
 def evaluate_model_on_pp(model, params, bucket_batcher, instances):

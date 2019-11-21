@@ -163,33 +163,3 @@ def convert_tags_to_wordpiece_tags(tags: List[str],
 
     # Add O tags for cls and sep tokens.
     return ["O"] + new_tags + ["O"]
-
-
-def convert_lm_tags_to_wordpiece_lm_tags(lm_tags: List[str],
-                                         offsets: List[int],
-                                         ) -> List[str]:
-    """
-    written by ph
-
-    Parameters
-    ----------
-    lm_tags : `List[str]`
-        A list of whole words
-    offsets : `List[int]`
-        The wordpiece offsets.
-
-    Returns
-    -------
-    The new tags.
-    """
-    new_tags = []
-    j = 0
-    for i, offset in enumerate(offsets):
-        lm_tag = lm_tags[i]
-        while j < offset:
-            new_tags.append(lm_tag)
-
-            j += 1
-
-    # Add O tags for cls and sep tokens.
-    return ["O"] + new_tags + ["O"]

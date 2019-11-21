@@ -78,7 +78,7 @@ class LMBert(Model):
             A torch tensor representing the sequence of integer gold class labels
             of shape ``(batch_size, num_tokens)``
         metadata : ``List[Dict[str, Any]]``, optional, (default = None)
-            metadata containg the original words in the sentence, the language modeling mask,
+            metadata contains the original words in the sentence, the language modeling mask,
              and start offsets for converting wordpieces back to a sequence of words,
             under 'words', 'lm_mask' and 'offsets' keys, respectively.
         Returns
@@ -198,19 +198,6 @@ class LMBert(Model):
         loss.backward()
         rescale_gradients(self, grad_norm=1.0)
         optimizer.step()
-
-        gold_lm_tags = output_dict['words']  # whole words
-        masked_indices = output_dict['masked_indices']  # whole words
-        predicted_lm_tags = self.decode(output_dict).pop("lm_tags")  # whole words
-        assert len(gold_lm_tags) == len(predicted_lm_tags)
-
-        for g, p, m in zip(gold_lm_tags, predicted_lm_tags, masked_indices):
-
-            print(len(g), len(p), len(m))
-
-            for gi, pi, mi in zip_longest(g, p, m, fillvalue=''):
-                print(f'{gi:>20} {pi:>20} {"masked" if mi else ""}')
-        print()
 
         return loss
 

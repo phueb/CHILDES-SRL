@@ -12,6 +12,7 @@ from pytorch_pretrained_bert import BertAdam
 from babybertsrl import config
 from babybertsrl.data_lm import Data
 from babybertsrl.eval import evaluate_model_on_pp
+from babybertsrl.eval import predict_masked_sentences
 from babybertsrl.model_lm import make_bert_lm
 
 
@@ -25,6 +26,8 @@ class Params(object):
 
     max_sentence_length = attr.ib(validator=attr.validators.instance_of(int))
     num_epochs = attr.ib(validator=attr.validators.instance_of(int))
+
+    num_masked = attr.ib(validator=attr.validators.instance_of(int))  # TODO test
 
     @classmethod
     def from_param2val(cls, param2val):
@@ -73,13 +76,10 @@ def main(param2val):
     for epoch in range(params.num_epochs):
         print(f'\nEpoch: {epoch}', flush=True)
 
-        # evaluate perplexity
-        dev_pp = evaluate_model_on_pp(bert_lm, params, bucket_batcher, data.dev_instances)
+        # evaluate train perplexity
         train_pp = None
-        dev_pps.append(dev_pp)
         train_pps.append(train_pp)
         print(f'train-pp={train_pp}', flush=True)
-        print(f'dev-pp={dev_pp}', flush=True)
 
         # train
         bert_lm.train()
@@ -88,6 +88,14 @@ def main(param2val):
             loss = bert_lm.train_on_batch(batch, optimizer)
             # print
             if step % config.Eval.loss_interval == 0:
+
+                # evaluate perplexity
+                dev_pp = evaluate_model_on_pp(bert_lm, params, bucket_batcher, data.dev_instances)
+                dev_pps.append(dev_pp)
+                print(f'dev-pp={dev_pp}', flush=True)
+
+                predict_masked_sentences(bert_lm, data, vocab)  # TODO save results to file
+
                 min_elapsed = (time.time() - train_start) // 60
                 print(f'step {step:<6}: loss={loss:2.2f} total minutes elapsed={min_elapsed:<3}', flush=True)
 
