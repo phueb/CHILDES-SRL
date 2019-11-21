@@ -43,9 +43,10 @@ def main(param2val):
     project_path = Path(param2val['project_path'])
     train_data_path = project_path / 'data' / 'CHILDES' / 'childes-20180319_train.txt'
     dev_data_path = project_path / 'data' / 'CHILDES' / 'childes-20180319_dev.txt'
+    vocab_path = project_path / 'data' / 'childes-20180319_vocab_4096.txt'  # TODO put in params
 
     # data + vocab + batcher
-    data = Data(params, train_data_path, dev_data_path)
+    data = Data(params, train_data_path, dev_data_path, str(vocab_path))
     vocab = Vocabulary.from_instances(data.train_instances + data.dev_instances)
     vocab.print_statistics()
     bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
@@ -70,15 +71,15 @@ def main(param2val):
     train_pps = []
     train_start = time.time()
     for epoch in range(params.num_epochs):
-        print(f'\nEpoch: {epoch}')
+        print(f'\nEpoch: {epoch}', flush=True)
 
         # evaluate perplexity
         dev_pp = evaluate_model_on_pp(bert_lm, params, bucket_batcher, data.dev_instances)
-        train_pp = evaluate_model_on_pp(bert_lm, params, bucket_batcher, data.train_instances)
+        train_pp = None
         dev_pps.append(dev_pp)
         train_pps.append(train_pp)
-        print(f'train-pp={train_pp}')
-        print(f'dev-pp={dev_pp}')
+        print(f'train-pp={train_pp}', flush=True)
+        print(f'dev-pp={dev_pp}', flush=True)
 
         # train
         bert_lm.train()
@@ -87,8 +88,8 @@ def main(param2val):
             loss = bert_lm.train_on_batch(batch, optimizer)
             # print
             if step % config.Eval.loss_interval == 0:
-                print('step {:<6}: loss={:2.2f} total minutes elapsed={:<3}'.format(
-                    step, loss, (time.time() - train_start) // 60))
+                min_elapsed = (time.time() - train_start) // 60
+                print(f'step {step:<6}: loss={loss:2.2f} total minutes elapsed={min_elapsed:<3}', flush=True)
 
     # to pandas
     s1 = pd.Series(train_pps, index=np.arange(params.num_epochs))

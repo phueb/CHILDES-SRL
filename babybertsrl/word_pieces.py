@@ -174,7 +174,7 @@ def convert_lm_tags_to_wordpiece_lm_tags(lm_tags: List[str],
     Parameters
     ----------
     lm_tags : `List[str]`
-        A list of either "O" or word, depending on whether word is masked, and therefore to be predicted
+        A list of whole words
     offsets : `List[int]`
         The wordpiece offsets.
 
@@ -186,13 +186,8 @@ def convert_lm_tags_to_wordpiece_lm_tags(lm_tags: List[str],
     j = 0
     for i, offset in enumerate(offsets):
         lm_tag = lm_tags[i]
-        is_o = lm_tag == "O"
         while j < offset:
-            if is_o:
-                new_tags.append("O")
-
-            else:
-                new_tags.append(lm_tag)
+            new_tags.append(lm_tag)
 
             j += 1
 

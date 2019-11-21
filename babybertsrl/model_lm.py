@@ -44,11 +44,13 @@ class LMBert(Model):
         else:
             self.bert_model = bert_model
 
-        self.num_out = self.bert_model.embeddings.word_embeddings.weight.size(0)  # TODO test
+        self.num_out = self.vocab.get_vocab_size('labels')                    # 4099
+        self.projection_layer = Linear(self.bert_model.config.hidden_size, self.num_out)
 
-        # self.tag_projection_layer = Linear(self.bert_model.config.hidden_size, self.num_classes)
-        self.projection_layer = BertOnlyMLMHead(self.bert_model.config,
-                                                self.bert_model.embeddings.word_embeddings.weight)  # TODO test
+        # NOTE: the BertOnlyMLMHead does not work because the output size must be 2 elements larger because
+        # output size is size of allen vocab object and not number of bert word embeddings
+        # self.projection_layer = BertOnlyMLMHead(self.bert_model.config,
+        #                                         self.bert_model.embeddings.word_embeddings.weight)
 
         self.embedding_dropout = Dropout(p=embedding_dropout)
         initializer(self)
@@ -123,6 +125,8 @@ class LMBert(Model):
         #  standard cross entropy rather than sequence cross entropy because only one masked word is predicted,
         #  not a sequence of tags
 
+        # TODO use the mask to mask all words which shoul not be predicted?
+
         if lm_tags is not None:
             loss = sequence_cross_entropy_with_logits(logits,
                                                       lm_tags,
@@ -131,7 +135,7 @@ class LMBert(Model):
         return output_dict
 
     @overrides
-    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    def decode(self, output_dict: Dict[str, Any]) -> Dict[str, Any]:
         """
         ph: Do NOT perform Viterbi decoding - we are interested in learning dynamics, not best performance.
 
@@ -148,6 +152,8 @@ class LMBert(Model):
         # ph: transition matrices contain only ones (and no -inf, which would signal illegal transition)
         wordpiece_tags = []
         word_tags = []
+
+        # labels namespace is 2 elements shorter than tokens because it does not have PADDING and UNKNOWN
         all_labels = self.vocab.get_index_to_token_vocabulary("labels")
         num_labels = len(all_labels)
         transition_matrix = torch.zeros([num_labels, num_labels])
@@ -157,14 +163,16 @@ class LMBert(Model):
         for predictions, length, offsets in zip(predictions_list,
                                                 sequence_lengths,
                                                 output_dict["wordpiece_offsets"]):
-            max_likelihood_sequence, _ = viterbi_decode(predictions[:length], transition_matrix,
+            tag_sequence = predictions[:length]
+            max_likelihood_sequence, _ = viterbi_decode(tag_sequence,
+                                                        transition_matrix,
                                                         allowed_start_transitions=start_transitions)
             tags = [self.vocab.get_token_from_index(x, namespace="labels")
                     for x in max_likelihood_sequence]
 
             wordpiece_tags.append(tags)
             word_tags.append([tags[i] for i in offsets])
-        output_dict['wordpiece_tags'] = wordpiece_tags
+        output_dict['wordpiece_lm_tags'] = wordpiece_tags
         output_dict['lm_tags'] = word_tags
         return output_dict
 
@@ -188,6 +196,18 @@ class LMBert(Model):
         loss.backward()
         rescale_gradients(self, grad_norm=1.0)
         optimizer.step()
+
+        # TODO the predictions are offset one position to the right
+        gold_lm_tags = output_dict['words']
+        predicted_lm_tags = self.decode(output_dict).pop("wordpiece_lm_tags")
+
+        print(len(gold_lm_tags), len(predicted_lm_tags))
+
+        for g, p in zip(gold_lm_tags, predicted_lm_tags):
+            print(len(g), len(p))
+            for gi, pi in zip(g, p):
+                print(f'{gi:>20} {pi:>20}')
+        print()
 
         return loss
 

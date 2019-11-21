@@ -22,6 +22,7 @@ class Data:
                  params,
                  train_data_path: Path,
                  dev_data_path: Path,
+                 vocab_path_name: str,
                  ):
         """
         loads text from file and puts them in Allen NLP toolkit instances format
@@ -30,14 +31,8 @@ class Data:
         """
 
         self.params = params
-
-        # TODO the tokenizer loads word-pieces from the uncased model;
-        # TODO this is potentially problematic, because i am not using the uncased model
-        # TODO instead, i am using a custom vocabulary
-        # TODO should i make a custom vocab file to build a custom bert_tokenizer?
-
-        self.bert_tokenizer = BertTokenizer.from_pretrained(config.Data.bert_name)
-        self.lowercase = 'uncased' in config.Data.bert_name
+        self.bert_tokenizer = BertTokenizer(vocab_path_name)
+        self.lowercase = self.bert_tokenizer.basic_tokenizer.do_lower_case
 
         # load sentences
         self.train_sentences = self.get_sentences_from_file(train_data_path)
@@ -101,6 +96,7 @@ class Data:
 
                     masked_words = random.sample(words, k=num_masked_per_sentence)
                     lm_mask = [1 if w in masked_words else 0 for w in words]
+
                     lm_tags = words
 
                     if len(words) > self.params.max_sentence_length:
@@ -148,6 +144,7 @@ class Data:
         else:
             masked_words = [t.text for m, t in zip(lm_mask, tokens) if m]
 
+        # meta data only has whole words
         metadata_dict["offsets"] = start_offsets
         metadata_dict["words"] = [x.text for x in tokens]
         metadata_dict["masked_words"] = masked_words
@@ -155,7 +152,9 @@ class Data:
 
         if lm_tags:
             new_lm_tags = convert_lm_tags_to_wordpiece_lm_tags(lm_tags, offsets)
-            fields['lm_tags'] = SequenceLabelField(new_lm_tags, text_field)
+            # don't use lm_tags - they are not wordpieces - use word_pieces isnstead
+            fields['lm_tags'] = SequenceLabelField(word_pieces, text_field)
+
             metadata_dict["gold_lm_tags"] = lm_tags  # non word-piece tags
 
         fields["metadata"] = MetadataField(metadata_dict)

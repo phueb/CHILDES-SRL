@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Iterator, List, Dict, Any
+from typing import Iterator, List, Dict, Any, Optional
 from pathlib import Path
 
 from pytorch_pretrained_bert.tokenization import BertTokenizer
@@ -21,6 +21,7 @@ class Data:
                  params,
                  train_data_path: Path,
                  dev_data_path: Path,
+                 vocab_path_name: Optional[str] = None,
                  ):
         """
         loads propositions from file and puts them in Allen NLP toolkit instances format
@@ -29,14 +30,12 @@ class Data:
         """
 
         self.params = params
-
-        # TODO the tokenizer loads word-pieces from the uncased model;
-        # TODO this is potentially problematic, because i am not using the uncased model
-        # TODO instead, i am using a custom vocabulary
-        # TODO should i make a custom vocab file to build a custom bert_tokenizer?
-
-        self.bert_tokenizer = BertTokenizer.from_pretrained(config.Data.bert_name)
-        self.lowercase = 'uncased' in config.Data.bert_name
+        if vocab_path_name:
+            self.bert_tokenizer = BertTokenizer(vocab_path_name)
+            self.lowercase = self.bert_tokenizer.basic_tokenizer.do_lower_case
+        else:
+            self.bert_tokenizer = BertTokenizer.from_pretrained(config.Data.bert_name)
+            self.lowercase = 'uncased' in config.Data.bert_name
 
         # load propositions
         self.train_propositions = self.get_propositions_from_file(train_data_path)
