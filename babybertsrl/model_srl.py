@@ -97,7 +97,7 @@ class SrlBert(Model):
             tags = tags.cuda()
 
         mask = get_text_field_mask(tokens)
-        bert_embeddings, _ = self.bert_model(input_ids=tokens["tokens"],
+        bert_embeddings, _ = self.bert_model(input_ids=tokens['tokens'],
                                              token_type_ids=verb_indicator,
                                              attention_mask=mask,
                                              output_all_encoded_layers=False)
@@ -114,17 +114,17 @@ class SrlBert(Model):
         output_dict = {"logits": logits, "class_probabilities": class_probabilities, "mask": mask}
 
         # We add in the offsets here so we can compute the un-wordpieced tags.
-        words, verbs, offsets = zip(*[(x["words"], x["verb"], x["offsets"]) for x in metadata])
-        output_dict["words"] = list(words)
-        output_dict["verb"] = list(verbs)
-        output_dict["wordpiece_offsets"] = list(offsets)
+        words, verbs, offsets = zip(*[(x['words'], x['verb'], x['offsets']) for x in metadata])
+        output_dict['words'] = list(words)
+        output_dict['verb'] = list(verbs)
+        output_dict['wordpiece_offsets'] = list(offsets)
 
         if tags is not None:
             loss = sequence_cross_entropy_with_logits(logits,
                                                       tags,
                                                       mask,
                                                       label_smoothing=self._label_smoothing)
-            output_dict["loss"] = loss
+            output_dict['loss'] = loss
         return output_dict
 
     @overrides
@@ -135,7 +135,7 @@ class SrlBert(Model):
         Note: decoding is performed on word-pieces, and word-pieces are then converted to whole words
         """
         all_predictions = output_dict['class_probabilities']
-        sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict["mask"]).data.tolist()
+        sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict['mask']).data.tolist()
 
         if all_predictions.dim() == 3:
             predictions_list = [all_predictions[i].detach().cpu() for i in range(all_predictions.size(0))]
@@ -153,7 +153,7 @@ class SrlBert(Model):
         # We add in the offsets here so we can compute the un-wordpieced tags.
         for predictions, length, offsets in zip(predictions_list,
                                                 sequence_lengths,
-                                                output_dict["wordpiece_offsets"]):
+                                                output_dict['wordpiece_offsets']):
             max_likelihood_sequence, _ = viterbi_decode(predictions[:length], transition_matrix,
                                                         allowed_start_transitions=start_transitions)
             tags = [self.vocab.get_token_from_index(x, namespace="labels")
@@ -177,7 +177,7 @@ class SrlBert(Model):
         # forward + loss
         optimizer.zero_grad()
         output_dict = self(**batch)  # input is dict[str, tensor]
-        loss = output_dict["loss"] + self.get_regularization_penalty()
+        loss = output_dict['loss'] + self.get_regularization_penalty()
         if torch.isnan(loss):
             raise ValueError("nan loss encountered")
 
@@ -195,7 +195,7 @@ class SrlBert(Model):
         moved below code from self.forward() here because it was not used there
         """
         # We add in the offsets here so we can compute the un-wordpieced tags.
-        words, verbs, offsets = zip(*[(x["words"], x["verb"], x["offsets"]) for x in metadata])
+        words, verbs, offsets = zip(*[(x['words'], x['verb'], x['offsets']) for x in metadata])
         return list(words), list(verbs), list(offsets)
 
 

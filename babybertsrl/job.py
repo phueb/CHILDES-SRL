@@ -97,7 +97,7 @@ def main(param2val):
                 predict_masked_sentences(bert_lm, data, vocab)  # TODO save results to file
 
                 min_elapsed = (time.time() - train_start) // 60
-                print(f'step {step:<6}: loss={loss:2.2f} total minutes elapsed={min_elapsed:<3}', flush=True)
+                print(f'step {step:<6}: x-ent-loss={loss:2.2f} total minutes elapsed={min_elapsed:<3}', flush=True)
 
     # to pandas
     s1 = pd.Series(train_pps, index=np.arange(params.num_epochs))

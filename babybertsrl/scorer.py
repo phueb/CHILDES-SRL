@@ -86,7 +86,7 @@ class SrlEvalScorer:
                                                    sentence,
                                                    predicted_tag_sequence,
                                                    gold_tag_sequence)
-        perl_script_command = ["perl", self._srl_eval_path, gold_path, predicted_path]
+        perl_script_command = ['perl', self._srl_eval_path, gold_path, predicted_path]
         completed_process = subprocess.run(perl_script_command, stdout=subprocess.PIPE,
                                            universal_newlines=True, check=True)
 
@@ -145,9 +145,9 @@ class SrlEvalScorer:
         precision, recall, f1_measure = self._compute_metrics(sum(self._true_positives.values()),
                                                               sum(self._false_positives.values()),
                                                               sum(self._false_negatives.values()))
-        all_metrics["precision-overall"] = precision
-        all_metrics["recall-overall"] = recall
-        all_metrics["f1-measure-overall"] = f1_measure
+        all_metrics['precision-overall'] = precision
+        all_metrics['recall-overall'] = recall
+        all_metrics['f1-measure-overall'] = f1_measure
         if reset:
             self.reset()
         return all_metrics
@@ -175,7 +175,7 @@ def convert_bio_tags_to_conll_format(labels):  # List[str]
     length 1 spans, (e.g "(ARG-0*)").
     A full example of the conversion performed:
     [B-ARG-1, I-ARG-1, I-ARG-1, I-ARG-1, I-ARG-1, O]
-    [ "(ARG-1*", "*", "*", "*", "*)", "*"]
+    [ "(ARG-1*", "*", "*", "*", "*)", "*']
     Parameters
     ----------
     labels : List[str], required.
@@ -233,7 +233,7 @@ def write_conll_formatted_tags_to_file(prediction_file,  # : TextIO
     conll_formatted_gold_labels : List[str], required.
         The gold CoNLL-formatted labels.
     """
-    verb_only_sentence = ["-"] * len(sentence)
+    verb_only_sentence = ['-'] * len(sentence)
     if verb_index:
         verb_only_sentence[verb_index] = sentence[verb_index]
 

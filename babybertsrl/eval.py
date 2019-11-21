@@ -21,16 +21,17 @@ def predict_masked_sentences(model, data, vocab):
     with torch.no_grad():
         output_dict = model(**batch)  # input is dict[str, tensor]
 
-    gold_lm_tags = output_dict['words']  # whole words
-    masked_indices = output_dict['masked_indices']  # whole words
-    predicted_lm_tags = model.decode(output_dict).pop("lm_tags")  # whole words
-    assert len(gold_lm_tags) == len(predicted_lm_tags)
+    # show results only for whole-words
+    lm_in = output_dict['lm_in']
+    predicted_lm_out = model.decode(output_dict).pop("lm_tags")
+    gold_lm_tags = output_dict['gold_lm_tags']
+    assert len(lm_in) == len(predicted_lm_out) == len(gold_lm_tags)
 
-    for g, p, m in zip(gold_lm_tags, predicted_lm_tags, masked_indices):
-        print(len(g), len(p), len(m))
-        for gi, pi, mi in zip(g, p, m):
-            print(f'{gi:>20} {pi:>20} {"masked" if mi else ""}')  # TODO save to file
-    print()
+    for a, b, c in zip(lm_in, predicted_lm_out, gold_lm_tags):
+        print(len(a), len(b), len(c), flush=True)
+        for ai, bi, ci in zip(a, b, c):
+            print(f'{ai:>20} {bi:>20} {ci:>20}', flush=True)  # TODO save to file
+    print(flush=True)
 
 
 def evaluate_model_on_pp(model, params, bucket_batcher, instances):
@@ -59,7 +60,7 @@ def evaluate_model_on_pp(model, params, bucket_batcher, instances):
 def evaluate_model_on_f1(model, params, srl_eval_path, bucket_batcher, instances):
 
     span_metric = SrlEvalScorer(srl_eval_path,
-                                ignore_classes=["V"])
+                                ignore_classes=['V'])
 
     model.eval()
     instances_generator = bucket_batcher(instances, num_epochs=1)
@@ -74,14 +75,14 @@ def evaluate_model_on_f1(model, params, srl_eval_path, bucket_batcher, instances
 
         # metadata
         metadata = batch['metadata']
-        batch_verb_indices = [example_metadata["verb_index"] for example_metadata in metadata]
-        batch_sentences = [example_metadata["words"] for example_metadata in metadata]
+        batch_verb_indices = [example_metadata['verb_index'] for example_metadata in metadata]
+        batch_sentences = [example_metadata['words'] for example_metadata in metadata]
 
         # Get the BIO tags from decode()
         batch_bio_predicted_tags = model.decode(output_dict).pop("tags")
         batch_conll_predicted_tags = [convert_bio_tags_to_conll_format(tags) for
                                       tags in batch_bio_predicted_tags]
-        batch_bio_gold_tags = [example_metadata["gold_tags"] for example_metadata in metadata]
+        batch_bio_gold_tags = [example_metadata['gold_tags'] for example_metadata in metadata]
         batch_conll_gold_tags = [convert_bio_tags_to_conll_format(tags) for
                                  tags in batch_bio_gold_tags]
 

@@ -132,10 +132,10 @@ class Data:
 
         # meta data only has whole words
         metadata_dict = dict()
-        metadata_dict["offsets"] = start_offsets
-        metadata_dict["words"] = lm_in
-        metadata_dict["masked_indices"] = lm_mask  # mask is list containing zeros and ones
-        metadata_dict["gold_lm_tags"] = lm_tags  # is just a copy of the input without the mask
+        metadata_dict['offsets'] = start_offsets
+        metadata_dict['lm_in'] = lm_in
+        metadata_dict['masked_indices'] = lm_mask  # mask is list containing zeros and ones
+        metadata_dict['gold_lm_tags'] = lm_tags  # is just a copy of the input without the mask
 
         text_field = TextField(new_tokens, self.token_indexers)
         fields = {'tokens': text_field,

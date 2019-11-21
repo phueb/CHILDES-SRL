@@ -3,7 +3,6 @@ import torch
 from torch.nn import Linear, Dropout, functional as F
 from pytorch_pretrained_bert.modeling import BertModel, BertConfig
 from overrides import overrides
-from itertools import zip_longest
 
 from pytorch_pretrained_bert.modeling import BertOnlyMLMHead
 
@@ -78,9 +77,9 @@ class LMBert(Model):
             A torch tensor representing the sequence of integer gold class labels
             of shape ``(batch_size, num_tokens)``
         metadata : ``List[Dict[str, Any]]``, optional, (default = None)
-            metadata contains the original words in the sentence, the language modeling mask,
-             and start offsets for converting wordpieces back to a sequence of words,
-            under 'words', 'lm_mask' and 'offsets' keys, respectively.
+            metadata contains the original lm_in in the sentence, the language modeling mask,
+             and start offsets for converting wordpieces back to a sequence of lm_in,
+            under 'lm_in', 'lm_mask' and 'offsets' keys, respectively.
         Returns
         -------
         An output dictionary consisting of:
@@ -101,7 +100,7 @@ class LMBert(Model):
             lm_tags = lm_tags.cuda()
 
         mask = get_text_field_mask(tokens)
-        bert_embeddings, _ = self.bert_model(input_ids=tokens["tokens"],
+        bert_embeddings, _ = self.bert_model(input_ids=tokens['tokens'],
                                              token_type_ids=mask_indicator,  # indices of tokens to be predicted
                                              attention_mask=mask,
                                              output_all_encoded_layers=False)
@@ -118,10 +117,10 @@ class LMBert(Model):
         output_dict = {"logits": logits, "class_probabilities": class_probabilities, "mask": mask}
 
         # We add in the offsets here so we can compute the un-wordpieced lm_tags.
-        words, masked_indices, offsets = zip(*[(x["words"], x['masked_indices'], x["offsets"]) for x in metadata])
-        output_dict["words"] = list(words)
-        output_dict["masked_indices"] = list(masked_indices)
-        output_dict["wordpiece_offsets"] = list(offsets)
+        lm_in, gold_lm_tags, offsets = zip(*[(x['lm_in'], x['gold_lm_tags'], x['offsets']) for x in metadata])
+        output_dict['lm_in'] = list(lm_in)
+        output_dict['gold_lm_tags'] = list(gold_lm_tags)
+        output_dict['wordpiece_offsets'] = list(offsets)
 
         # TODO the correct way to do language modeling would be to use
         #  standard cross entropy rather than sequence cross entropy because only one masked word is predicted,
@@ -133,7 +132,7 @@ class LMBert(Model):
             loss = sequence_cross_entropy_with_logits(logits,
                                                       lm_tags,
                                                       mask)
-            output_dict["loss"] = loss
+            output_dict['loss'] = loss
         return output_dict
 
     @overrides
@@ -144,7 +143,7 @@ class LMBert(Model):
         Note: decoding is performed on word-pieces, and word-pieces are then converted to whole words
         """
         all_predictions = output_dict['class_probabilities']
-        sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict["mask"]).data.tolist()
+        sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict['mask']).data.tolist()
 
         if all_predictions.dim() == 3:
             predictions_list = [all_predictions[i].detach().cpu() for i in range(all_predictions.size(0))]
@@ -164,7 +163,7 @@ class LMBert(Model):
         # We add in the offsets here so we can compute the un-wordpieced tags.
         for predictions, length, offsets in zip(predictions_list,
                                                 sequence_lengths,
-                                                output_dict["wordpiece_offsets"]):
+                                                output_dict['wordpiece_offsets']):
             tag_sequence = predictions[:length]
             max_likelihood_sequence, _ = viterbi_decode(tag_sequence,
                                                         transition_matrix,
@@ -190,7 +189,7 @@ class LMBert(Model):
         # forward + loss
         optimizer.zero_grad()
         output_dict = self(**batch)  # input is dict[str, tensor]
-        loss = output_dict["loss"] + self.get_regularization_penalty()
+        loss = output_dict['loss'] + self.get_regularization_penalty()
         if torch.isnan(loss):
             raise ValueError("nan loss encountered")
 

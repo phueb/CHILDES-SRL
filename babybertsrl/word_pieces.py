@@ -26,7 +26,7 @@ def wordpiece_tokenize_input(tokens: List[str],
 
     For example:
 
-    `annotate` will be bert tokenized as ["anno", "##tate"].
+    `annotate` will be bert tokenized as ['anno", "##tate'].
     If this is tagged as [B-V, I-V] as it should be, we need to select the
     _first_ wordpiece label to be the label for the token, because otherwise
     we may end up with invalid tag sequences (we cannot start a new tag with an I).
@@ -55,7 +55,7 @@ def wordpiece_tokenize_input(tokens: List[str],
         end_offsets.append(cumulative)
         word_piece_tokens.extend(word_pieces)
 
-    wordpieces = ["[CLS]"] + word_piece_tokens + ["[SEP]"]
+    wordpieces = ['[CLS]'] + word_piece_tokens + ['[SEP]']
 
     return wordpieces, end_offsets, start_offsets
 
@@ -162,4 +162,4 @@ def convert_tags_to_wordpiece_tags(tags: List[str],
             j += 1
 
     # Add O tags for cls and sep tokens.
-    return ["O"] + new_tags + ["O"]
+    return ['O'] + new_tags + ['O']

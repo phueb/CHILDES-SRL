@@ -131,7 +131,7 @@ class Data:
         # WARNING:
         # setting text_id causes tokens not to be found by Allen Vocabulary.
         # allen nlp bert test case doesn't use token fields, but instead uses:
-        # tokens = fields["metadata"]["words"]
+        # tokens = fields['metadata']['words']
 
         text_field = TextField(new_tokens, self.token_indexers)
         verb_indicator = SequenceLabelField(new_verbs, text_field)
@@ -147,17 +147,17 @@ class Data:
             verb_index = verb_label.index(1)
             verb = tokens[verb_index].text
 
-        metadata_dict["offsets"] = start_offsets
-        metadata_dict["words"] = [x.text for x in tokens]
-        metadata_dict["verb"] = verb
-        metadata_dict["verb_index"] = verb_index
+        metadata_dict['offsets'] = start_offsets
+        metadata_dict['words'] = [x.text for x in tokens]
+        metadata_dict['verb'] = verb
+        metadata_dict['verb_index'] = verb_index
 
         if tags:
             new_tags = convert_tags_to_wordpiece_tags(tags, offsets)
             fields['tags'] = SequenceLabelField(new_tags, text_field)
-            metadata_dict["gold_tags"] = tags  # non word-piece tags
+            metadata_dict['gold_tags'] = tags  # non word-piece tags
 
-        fields["metadata"] = MetadataField(metadata_dict)
+        fields['metadata'] = MetadataField(metadata_dict)
 
         return Instance(fields)
 
