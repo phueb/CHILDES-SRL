@@ -4,7 +4,7 @@ from allennlp.data.iterators import BucketIterator
 from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
 
 
-def predict_masked_sentences(model, data, vocab):
+def predict_masked_sentences(model, data):
     model.eval()
 
     # make test batch
@@ -14,7 +14,7 @@ def predict_masked_sentences(model, data, vocab):
     instances = data.make_instances(utterances)
     num_instances = len(instances)
     bucket_batcher = BucketIterator(batch_size=num_instances, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher.index_with(vocab)  # this mus
+    bucket_batcher.index_with(data.vocab)
     batch = next(bucket_batcher(instances, num_epochs=1))
 
     # get predictions

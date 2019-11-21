@@ -3,8 +3,9 @@ import numpy as np
 import pandas as pd
 import attr
 from pathlib import Path
+import torch
+import logging
 
-from allennlp.data.vocabulary import Vocabulary
 from allennlp.data.iterators import BucketIterator
 
 from pytorch_pretrained_bert import BertAdam
@@ -31,6 +32,11 @@ class Params(object):
 
     @classmethod
     def from_param2val(cls, param2val):
+        """
+        instantiate class.
+        exclude keys from param2val which are added by Ludwig.
+        they are relevant to job submission only.
+        """
         kwargs = {k: v for k, v in param2val.items()
                   if k not in ['job_name', 'param_name', 'project_path', 'save_path']}
         return cls(**kwargs)
@@ -48,21 +54,13 @@ def main(param2val):
     dev_data_path = project_path / 'data' / 'CHILDES' / 'childes-20180319_dev.txt'
     vocab_path = project_path / 'data' / 'childes-20180319_vocab_4096.txt'  # TODO put in params
 
-    # data + vocab + batcher
+    # data + batcher
     data = Data(params, train_data_path, dev_data_path, str(vocab_path))
-    vocab = Vocabulary.from_instances(data.train_instances + data.dev_instances)
-    vocab.print_statistics()
     bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher.index_with(vocab)  # this must be an Allen Vocabulary instance
-
-    # note:
-    # the Vocab object has word-piece tokenized tokens, ready to be fed directly to bert.
-    # the Vocab object uses a pre-made 30k bert vocabulary with which to build the vocabulary.
-    # this means that words in the data not in the pre-made vocabulary are excluded
-    print(f'Vocab size={vocab.get_vocab_size("tokens")}')
+    bucket_batcher.index_with(data.vocab)  # this must be an Allen Vocabulary instance
 
     # model + optimizer
-    bert_lm = make_bert_lm(params, vocab)
+    bert_lm = make_bert_lm(params, data)
     optimizer = BertAdam(params=bert_lm.parameters(),
                          lr=5e-5,
                          max_grad_norm=1.0,
@@ -94,10 +92,12 @@ def main(param2val):
                 dev_pps.append(dev_pp)
                 print(f'dev-pp={dev_pp}', flush=True)
 
-                predict_masked_sentences(bert_lm, data, vocab)  # TODO save results to file
+                # test sentences
+                predict_masked_sentences(bert_lm, data)  # TODO save results to file
 
+                # console
                 min_elapsed = (time.time() - train_start) // 60
-                print(f'step {step:<6}: x-ent-loss={loss:2.2f} total minutes elapsed={min_elapsed:<3}', flush=True)
+                print(f'step {step:<6}: pp={torch.exp(loss):2.4f} total minutes elapsed={min_elapsed:<3}', flush=True)
 
     # to pandas
     s1 = pd.Series(train_pps, index=np.arange(params.num_epochs))

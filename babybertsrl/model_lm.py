@@ -19,31 +19,21 @@ from allennlp.common import Params as AllenParams
 
 class LMBert(Model):
     """
-        Parameters
-        ----------
-        vocab : ``Vocabulary``, required
-            A Vocabulary, required in order to compute sizes for input/output projections.
-        bert_model : ``Union[str, BertModel]``, required.
-            A string describing the BERT model to load or an already constructed BertModel.
-        initializer : ``InitializerApplicator``, optional (default=``InitializerApplicator()``)
-            Used to initialize the model parameters.
-        regularizer : ``RegularizerApplicator``, optional (default=``None``)
-            If provided, will be used to calculate the regularization penalty during training.
-        """
+    custom Model built on top of un-trained Bert to train Bert on masked language modeling task
+    """
+
     def __init__(self,
                  vocab: Vocabulary,
-                 bert_model: Union[str, BertModel],
+                 bert_model: BertModel,
                  embedding_dropout: float = 0.0,
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None,
                  ) -> None:
         super(LMBert, self).__init__(vocab, regularizer)
 
-        if isinstance(bert_model, str):
-            self.bert_model = BertModel.from_pretrained(bert_model)  # Ph; too big for a single  GTX 1080 Ti
-        else:
-            self.bert_model = bert_model
+        self.bert_model = bert_model
 
+        # labels namespace is 2 elements shorter than tokens because it does not have PADDING and UNKNOWN
         self.num_out = self.vocab.get_vocab_size('labels')                    # 4099
         self.projection_layer = Linear(self.bert_model.config.hidden_size, self.num_out)
 
@@ -138,49 +128,39 @@ class LMBert(Model):
     @overrides
     def decode(self, output_dict: Dict[str, Any]) -> Dict[str, Any]:
         """
-        ph: Do NOT perform Viterbi decoding - we are interested in learning dynamics, not best performance.
-
+        ph: Do NOT use decoding constraints - transition matrix has zeros only
+        we are interested in learning dynamics, not best performance.
         Note: decoding is performed on word-pieces, and word-pieces are then converted to whole words
         """
+
+        # get probabilities
         all_predictions = output_dict['class_probabilities']
+        predictions_list = [all_predictions[i].detach().cpu() for i in range(all_predictions.size(0))]
         sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict['mask']).data.tolist()
 
-        if all_predictions.dim() == 3:
-            predictions_list = [all_predictions[i].detach().cpu() for i in range(all_predictions.size(0))]
-        else:
-            predictions_list = [all_predictions]
-
         # ph: transition matrices contain only ones (and no -inf, which would signal illegal transition)
+        transition_matrix = torch.zeros([self.num_out, self.num_out])
+
+        # decode
         wordpiece_tags = []
         word_tags = []
-
-        # labels namespace is 2 elements shorter than tokens because it does not have PADDING and UNKNOWN
-        all_labels = self.vocab.get_index_to_token_vocabulary("labels")
-        num_labels = len(all_labels)
-        transition_matrix = torch.zeros([num_labels, num_labels])
-        start_transitions = torch.zeros(num_labels)
-
-        # We add in the offsets here so we can compute the un-wordpieced tags.
         for predictions, length, offsets in zip(predictions_list,
                                                 sequence_lengths,
                                                 output_dict['wordpiece_offsets']):
-            tag_sequence = predictions[:length]
-            max_likelihood_sequence, _ = viterbi_decode(tag_sequence,
-                                                        transition_matrix,
-                                                        allowed_start_transitions=start_transitions)
+            tag_probabilities = predictions[:length]
+            max_likelihood_tag_ids, _ = viterbi_decode(tag_probabilities,
+                                                       transition_matrix)
             tags = [self.vocab.get_token_from_index(x, namespace="labels")
-                    for x in max_likelihood_sequence]
-
+                    for x in max_likelihood_tag_ids]
             wordpiece_tags.append(tags)
             word_tags.append([tags[i] for i in offsets])
+
+        # collect results
         output_dict['wordpiece_lm_tags'] = wordpiece_tags
         output_dict['lm_tags'] = word_tags
         return output_dict
 
     def train_on_batch(self, batch, optimizer):
-        """
-        written by ph to keep interface between models consistent
-        """
         # to cuda
         batch['tokens']['tokens'] = batch['tokens']['tokens'].cuda()
         batch['mask_indicator'] = batch['mask_indicator'].cuda()
@@ -202,14 +182,14 @@ class LMBert(Model):
 
 
 def make_bert_lm(params,
-                 vocab,  # must be Allen Vocabulary instance
+                 data,
                  ):
 
     print('Preparing BERT model...')
     # parameters of original implementation are specified here:
     # https://github.com/allenai/allennlp/blob/master/training_config/bert_base_srl.jsonnet
 
-    vocab_size = vocab.get_vocab_size("tokens")
+    vocab_size = len(data.bert_tokenizer.vocab)
 
     config = BertConfig(vocab_size_or_config_json_file=vocab_size,  # was 32K
                         hidden_size=params.hidden_size,  # was 768
@@ -229,7 +209,7 @@ def make_bert_lm(params,
     initializer = InitializerApplicator.from_params(initializer_params)
 
     # model
-    model = LMBert(vocab=vocab,
+    model = LMBert(vocab=data.vocab,
                    bert_model=bert_model,
                    initializer=initializer,
                    embedding_dropout=0.1)

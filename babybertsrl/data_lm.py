@@ -1,9 +1,11 @@
 import numpy as np
 from typing import Iterator, List, Tuple
 from pathlib import Path
+import pyprind
 
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 
+from allennlp.data.vocabulary import Vocabulary
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data.tokenizers import Token
 from allennlp.data import Instance
@@ -62,10 +64,17 @@ class Data:
             print("Median {} sentence length: {}".format(name, np.median(lengths)))
             print()
 
-        # training with Allen NLP toolkit
-        self.token_indexers = {'tokens': SingleIdTokenIndexer()}
+        # use Allen NLP logic:
+        self.token_indexers = {'tokens': SingleIdTokenIndexer()}  # specifies how a token is indexed
         self.train_instances = self.make_instances(self.train_utterances)
         self.dev_instances = self.make_instances(self.dev_utterances)
+
+        # use vocab to store labels vocab, input vocab is stored in bert_tokenizer.vocab
+        # what from_instances() does:
+        # 1. it iterates over all instances, and all fields, and all toke indexers
+        # 2. the token indexer is used to update vocabulary count, skipping words whose text_id is already set
+        self.vocab = Vocabulary.from_instances(self.train_instances + self.dev_instances)
+        self.vocab.print_statistics()
 
     @property
     def num_train_sentences(self):
@@ -78,35 +87,39 @@ class Data:
     def get_utterances_from_file(self, file_path):
         res = []
         punctuation = {'.', '?', '!'}
-        num_skipped = 0
+        num_too_small = 0
+        num_too_large = 0
         with file_path.open('r') as f:
 
             for line in f.readlines():
 
-                tokens = line.strip().split()  # a transcript containing multiple utterances
+                # tokenize transcript
+                transcript = line.strip().split()  # a transcript containing multiple utterances
                 if self.lowercase:
-                    tokens = [w.lower() for w in tokens]
+                    transcript = [w.lower() for w in transcript]
 
-                # split by utterance marker
+                # split transcript into utterances
                 utterances = [[]]
-                for w in tokens:
+                for w in transcript:
                     utterances[-1].append(w)
                     if w in punctuation:
                         utterances.append([])
 
-                # collect
+                # collect utterances
                 for utterance in utterances:
 
-                    # check sentence length
+                    # check  length
                     if len(utterance) <= config.Data.min_utterance_length:
-                        num_skipped += 1
+                        num_too_small += 1
                         continue
                     if len(utterance) > self.params.max_sentence_length:
+                        num_too_large += 1
                         continue
 
                     res.append(utterance)
 
-        print(f'WARNING: Skipped {num_skipped} utterances which are shorter than {config.Data.min_utterance_length}.')
+        print(f'WARNING: Skipped {num_too_small} utterances which are shorter than {config.Data.min_utterance_length}.')
+        print(f'WARNING: Skipped {num_too_large} utterances which are larger than {self.params.max_sentence_length}.')
 
         return res
 
@@ -121,12 +134,6 @@ class Data:
         word_pieces, offsets, start_offsets = wordpiece_tokenize_input(lm_in,
                                                                        self.bert_tokenizer,
                                                                        self.lowercase)
-
-        # AllenNLP says: In order to override the indexing mechanism, we need to set the `text_id`
-        # attribute directly. This causes the indexing to use this id.
-        # new_tokens = [Token(t, text_id=self.bert_tokenizer.vocab[t]) for t in word_pieces]
-        # But, setting text_id causes tokens not to be found by Allen Vocabulary.
-        # so, I don't set it:
         new_tokens = [Token(t) for t in word_pieces]
         new_mask = convert_lm_mask_to_wordpiece_lm_mask(lm_mask, offsets)
 
@@ -154,6 +161,7 @@ class Data:
 
         """
         res = []
+        progress = pyprind.ProgBar(len(utterances), stream=2, title='Making instances')
         for utterance in utterances:
 
             # collect each multiple times, each time with a different masked word
@@ -165,5 +173,7 @@ class Data:
                 lm_in, lm_mask, lm_tags = prepare_utterance_for_instance(utterance, masked_id)
                 instance = self._text_to_instance(lm_in, lm_mask, lm_tags)
                 res.append(instance)
+
+            progress.update()
 
         return res  # TODO how to return a generator here? instances are fed to vocab which require list

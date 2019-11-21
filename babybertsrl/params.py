@@ -21,5 +21,5 @@ param2default = {
     'max_sentence_length': 128,
     'num_epochs': 50,  # 15 fine-tuning epochs is original implementation
 
-    'num_masked': 3,  # TODO
+    'num_masked': 1,  # TODO
 }
