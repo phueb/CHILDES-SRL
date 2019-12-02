@@ -2,6 +2,7 @@ import numpy as np
 from typing import Iterator, List, Tuple
 from pathlib import Path
 import pyprind
+from itertools import chain
 
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 
@@ -66,16 +67,20 @@ class Data:
             print("Median {} sentence length: {}".format(name, np.median(lengths)))
             print()
 
-        # use Allen NLP logic:
         self.token_indexers = {'tokens': SingleIdTokenIndexer()}  # specifies how a token is indexed
-        self.train_instances = self.make_instances(self.train_utterances)
-        self.dev_instances = self.make_instances(self.dev_utterances)
+
+        # instances
+        _train_instances = self.make_instances(self.train_utterances)
+        _dev_instances = self.make_instances(self.dev_utterances)
+        all_instances = chain(_train_instances, _dev_instances)
 
         # use vocab to store labels vocab, input vocab is stored in bert_tokenizer.vocab
         # what from_instances() does:
         # 1. it iterates over all instances, and all fields, and all toke indexers
         # 2. the token indexer is used to update vocabulary count, skipping words whose text_id is already set
-        self.vocab = Vocabulary.from_instances(self.train_instances + self.dev_instances)
+
+        # TODO can i chain() the two instances after making them generators?
+        self.vocab = Vocabulary.from_instances(all_instances)
         self.vocab.print_statistics()
 
     @property
@@ -152,6 +157,14 @@ class Data:
         tokens = [Token(t) for t in lm_in_word_pieces]
         text_field = TextField(tokens, self.token_indexers)
         new_mask = convert_lm_mask_to_wordpiece_lm_mask(lm_mask, offsets)
+
+        if len(lm_in_word_pieces) != len(lm_tags_word_pieces):
+            # the code does not yet support custom word-pieces in vocabulary,
+            # because it does not handle case when masked word is split into word-pieces.
+            # In such a case, input and output length are mismatched.
+            # The output is longer, because it contains more than 1 piece for the masked whole word in the input.
+            raise UserWarning('A word-piece split word was masked. Word pieces are not supported')
+
         fields = {'tokens': text_field,
                   'mask_indicator': SequenceLabelField(new_mask, text_field),
                   'lm_tags': SequenceLabelField(lm_tags_word_pieces, text_field),
@@ -161,14 +174,9 @@ class Data:
 
     def make_instances(self, utterances) -> Iterator[Instance]:
         """
-        because lazy is by default False, return a list rather than a generator.
-        When lazy=False, the generator would be converted to a list anyway.
-
         roughly equivalent to Allen NLP toolkit dataset.read()
 
         """
-        res = []
-        progress = pyprind.ProgBar(len(utterances), stream=2, title='Making instances')
         for utterance in utterances:
 
             # collect each multiple times, each time with a different masked word
@@ -179,8 +187,5 @@ class Data:
                 # collect instance
                 lm_in, lm_mask, lm_tags = prepare_utterance_for_instance(utterance, masked_id)
                 instance = self._text_to_instance(lm_in, lm_mask, lm_tags)
-                res.append(instance)
 
-            progress.update()
-
-        return res  # TODO how to return a generator here? instances are fed to vocab which require list
+                yield instance

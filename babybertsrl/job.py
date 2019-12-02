@@ -4,7 +4,6 @@ import pandas as pd
 import attr
 from pathlib import Path
 import torch
-import logging
 
 from allennlp.data.iterators import BucketIterator
 
@@ -74,6 +73,7 @@ def main(param2val):
     # train + eval loop
     dev_pps = []
     train_pps = []
+    eval_steps = []
     train_start = time.time()
     for epoch in range(params.num_epochs):
         print(f'\nEpoch: {epoch}', flush=True)
@@ -85,15 +85,17 @@ def main(param2val):
 
         # train
         bert_lm.train()
-        train_generator = bucket_batcher(data.train_instances, num_epochs=1)
+        train_generator = bucket_batcher(data.make_instances(data.train_utterances), num_epochs=1)
         for step, batch in enumerate(train_generator):
             loss = bert_lm.train_on_batch(batch, optimizer)
-            # print
+
             if step % config.Eval.loss_interval == 0:
 
                 # evaluate perplexity
-                dev_pp = evaluate_model_on_pp(bert_lm, params, bucket_batcher, data.dev_instances)
+                instances_generator = bucket_batcher(data.make_instances(data.dev_utterances), num_epochs=1)
+                dev_pp = evaluate_model_on_pp(bert_lm, params, instances_generator)
                 dev_pps.append(dev_pp)
+                eval_steps.append(step)
                 print(f'dev-pp={dev_pp}', flush=True)
 
                 # test sentences
@@ -106,7 +108,7 @@ def main(param2val):
     # to pandas
     s1 = pd.Series(train_pps, index=np.arange(params.num_epochs))
     s1.name = 'train_pp'
-    s2 = pd.Series(dev_pps, index=np.arange(params.num_epochs))
+    s2 = pd.Series(dev_pps, index=eval_steps)  # TODO test
     s2.name = 'dev_pp'
 
     return [s1, s2]

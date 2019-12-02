@@ -12,6 +12,7 @@ class Global:
 
 class Data:
     min_utterance_length = 3  # used during language modeling task
+    replace = {''}
 
 
 class Eval:

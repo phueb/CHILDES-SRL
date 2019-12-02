@@ -8,11 +8,25 @@ def predict_masked_sentences(model, data):
     model.eval()
 
     # make test batch
-    utterances = [['say', 'thank', 'you'],
-                  ['what', "'s", 'that', '?'],
-                  ['what', 'are', 'they', 'doing', '?']]
+    utterances = [
+        s.split() for s in
+        [
+            "she 's playing dress up .",
+            "who 's that ?",
+            "is that your book ?",
+            "let 's put everything in the box .",
+            "how does a cow go ?",
+            "here try that .",
+            "where 's the baby ?",
+            "would you like some water ?",
+            "careful of the camera okay ?",
+            "yeah that button turns it on .",
+            "mommy will draw you a face .",
+            "look how soft !",
+        ]
+    ]
     instances = data.make_instances(utterances)
-    num_instances = len(instances)
+    num_instances = len(utterances)
     bucket_batcher = BucketIterator(batch_size=num_instances, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher.index_with(data.vocab)
     batch = next(bucket_batcher(instances, num_epochs=1))
@@ -34,17 +48,16 @@ def predict_masked_sentences(model, data):
     print(flush=True)
 
 
-def evaluate_model_on_pp(model, params, bucket_batcher, instances):
+def evaluate_model_on_pp(model, params, instances_generator):
     model.eval()
 
-    instances_generator = bucket_batcher(instances, num_epochs=1)
     pp_sum = torch.zeros(size=(1,)).cuda()
     num_steps = 0
     for step, batch in enumerate(instances_generator):
 
-        if len(batch['lm_tags']) != params.batch_size:
-            print('WARNING: Batch size is {}. Skipping'.format(len(batch['lm_tags'])))
-            continue
+        # if len(batch['lm_tags']) != params.batch_size:
+        #     print('WARNING: Batch size is {}. Skipping'.format(len(batch['lm_tags'])))
+        #     continue
 
         # get predictions
         with torch.no_grad():
