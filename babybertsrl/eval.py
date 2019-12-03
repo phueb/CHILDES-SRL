@@ -11,17 +11,17 @@ def predict_masked_sentences(model, data):
     utterances = [
         s.split() for s in
         [
-            "she 's playing dress up .",
-            "who 's that ?",
+            "she is playing dress up .",
+            "who is that ?",
             "is that your book ?",
-            "let 's put everything in the box .",
+            "let us put everything in the box .",
             "how does a cow go ?",
             "here try that .",
-            "where 's the baby ?",
+            "where is the baby ?",
             "would you like some water ?",
             "careful of the camera okay ?",
             "yeah that button turns it on .",
-            "mommy will draw you a face .",
+            "[NAME] will draw you a face .",
             "look how soft !",
         ]
     ]

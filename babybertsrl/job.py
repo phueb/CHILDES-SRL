@@ -51,9 +51,9 @@ def main(param2val):
 
     #  paths
     project_path = Path(param2val['project_path'])
-    train_data_path = project_path / 'data' / 'CHILDES' / 'childes-20180319_train.txt'
-    dev_data_path = project_path / 'data' / 'CHILDES' / 'childes-20180319_dev.txt'
-    vocab_path = project_path / 'data' / 'childes-20180319_vocab_4096.txt'  # TODO put in params
+    train_data_path = project_path / 'data' / 'CHILDES' / 'childes-20191202_train.txt'
+    dev_data_path = project_path / 'data' / 'CHILDES' / 'childes-20191202_dev.txt'
+    vocab_path = project_path / 'data' / 'childes-20180319_vocab_4096-no-names.txt'  # TODO put in params
 
     # data + batcher
     data = Data(params, train_data_path, dev_data_path, str(vocab_path))

@@ -3,6 +3,8 @@
 [SEP]
 [MASK]
 [PAD]
+[NAME]
+[POSSESSIVE]
 .
 ?
 you
