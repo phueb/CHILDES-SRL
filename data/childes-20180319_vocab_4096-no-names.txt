@@ -2,7 +2,6 @@
 ?
 .
 '
-�
 a
 a.
 abc
@@ -2392,7 +2391,6 @@ popsicle
 porch
 porcupine
 porridge
-[POSSESSIVE]
 possible
 post
 poster

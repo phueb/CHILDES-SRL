@@ -1,12 +1,9 @@
 import numpy as np
-from typing import Iterator, List, Tuple
+from typing import Iterator, List, Tuple, Optional
 from pathlib import Path
-import pyprind
-from itertools import chain
 
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 
-from allennlp.data.vocabulary import Vocabulary
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data.tokenizers import Token
 from allennlp.data import Instance
@@ -35,61 +32,38 @@ class Data:
 
     def __init__(self,
                  params,
-                 train_data_path: Path,
-                 dev_data_path: Path,
-                 vocab_path_name: str,
+                 data_path: Path,
+                 vocab_path_name: Optional[str] = None,
                  ):
         """
         loads text from file and puts them in Allen NLP toolkit instances format
         for training with BERT.
         designed to use with CHILDES sentences
+
         """
 
         self.params = params
-        self.lowercase = False  # set to false because [MASK] must be uppercase?
+        self.lowercase = False  # set to false because [MASK] must be uppercase
+
+        # load utterances
+        self.utterances = self.get_utterances_from_file(data_path)
+        lengths = [len(s[0]) for s in self.utterances]
+        print('Found {:,} utterances'.format(len(self.utterances)))
+        print(f'Max    utterance length: {np.max(lengths):.2f}')
+        print(f'Mean   utterance length: {np.mean(lengths):.2f}')
+        print(f'Median utterance length: {np.median(lengths):.2f}')
+        print()
+
+        if not vocab_path_name:  # e.g. when only using utterances for srl tagging
+            return
+
         self.bert_tokenizer = BertTokenizer(vocab_path_name,
                                             do_basic_tokenize=False,
                                             do_lower_case=self.lowercase)
 
-        # load sentences
-        self.train_utterances = self.get_utterances_from_file(train_data_path)
-        self.dev_utterances = self.get_utterances_from_file(dev_data_path)
-
-        # print info
-        print('Found {:,} training sentences ...'.format(self.num_train_sentences))
-        print('Found {:,} dev sentences ...'.format(self.num_dev_sentences))
-        print()
-        for name, sentences in zip(['train', 'dev'],
-                                   [self.train_utterances, self.dev_utterances]):
-            lengths = [len(s[0]) for s in sentences]
-            print("Max {} sentence length: {}".format(name, np.max(lengths)))
-            print("Mean {} sentence length: {}".format(name, np.mean(lengths)))
-            print("Median {} sentence length: {}".format(name, np.median(lengths)))
-            print()
-
-        self.token_indexers = {'tokens': SingleIdTokenIndexer()}  # specifies how a token is indexed
-
         # instances
-        _train_instances = self.make_instances(self.train_utterances)
-        _dev_instances = self.make_instances(self.dev_utterances)
-        all_instances = chain(_train_instances, _dev_instances)
-
-        # use vocab to store labels vocab, input vocab is stored in bert_tokenizer.vocab
-        # what from_instances() does:
-        # 1. it iterates over all instances, and all fields, and all toke indexers
-        # 2. the token indexer is used to update vocabulary count, skipping words whose text_id is already set
-
-        # TODO can i chain() the two instances after making them generators?
-        self.vocab = Vocabulary.from_instances(all_instances)
-        self.vocab.print_statistics()
-
-    @property
-    def num_train_sentences(self):
-        return len(self.train_utterances)
-
-    @property
-    def num_dev_sentences(self):
-        return len(self.dev_utterances)
+        self.token_indexers = {'tokens': SingleIdTokenIndexer()}  # specifies how a token is indexed
+        self.instances = self.make_instances(self.utterances)
 
     def get_utterances_from_file(self, file_path):
         res = []

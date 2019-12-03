@@ -28,6 +28,13 @@ at the Department of Psychology at [UIUC](https://psychology.illinois.edu/).
 Because the vocabulary holds word pieces for both input and output words, and the model works with word-pieces only,
 a decoding function is called which converts the word pieces back into whole words.
 
+Currently, word-pieces are not supported. 
+The word-piece vocab file must contain whole words only.
+Word-piece tokenization therefore is a no-op.
+Using word-pieces would require handling the case when a whole word in the input is masked,
+and the same word in the output is split into multiple word pieces. 
+The number of input and output elements would mismatch. 
+
 
 ## Compatibility
 

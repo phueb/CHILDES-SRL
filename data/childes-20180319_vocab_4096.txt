@@ -4,7 +4,6 @@
 [MASK]
 [PAD]
 [NAME]
-[POSSESSIVE]
 .
 ?
 you

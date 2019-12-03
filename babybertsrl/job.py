@@ -4,7 +4,9 @@ import pandas as pd
 import attr
 from pathlib import Path
 import torch
+from itertools import chain
 
+from allennlp.data.vocabulary import Vocabulary
 from allennlp.data.iterators import BucketIterator
 
 from pytorch_pretrained_bert import BertAdam
@@ -53,22 +55,36 @@ def main(param2val):
     project_path = Path(param2val['project_path'])
     train_data_path = project_path / 'data' / 'CHILDES' / 'childes-20191202_train.txt'
     dev_data_path = project_path / 'data' / 'CHILDES' / 'childes-20191202_dev.txt'
+    test_data_path = project_path / 'data' / 'CHILDES' / 'childes-20191202_test.txt'
     vocab_path = project_path / 'data' / 'childes-20180319_vocab_4096-no-names.txt'  # TODO put in params
 
-    # data + batcher
-    data = Data(params, train_data_path, dev_data_path, str(vocab_path))
+    # load utterances
+    train_data = Data(params, train_data_path, str(vocab_path))
+    dev_data = Data(params, dev_data_path, str(vocab_path))
+    test_data = Data(params, test_data_path, str(vocab_path))
+
+    # get output_vocab
+    # note: Allen NLP output_vocab holds labels, bert_tokenizer.output_vocab holds input tokens
+    # what from_instances() does:
+    # 1. it iterates over all instances, and all fields, and all toke indexers
+    # 2. the token indexer is used to update vocabulary count, skipping words whose text_id is already set
+    all_instances = chain(train_data.instances, dev_data.instances)
+    output_vocab = Vocabulary.from_instances(all_instances)
+    output_vocab.print_statistics()
+
+    # batcher
     bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher.index_with(data.vocab)  # this must be an Allen Vocabulary instance
+    bucket_batcher.index_with(output_vocab)  # this must be an Allen Vocabulary instance
 
     # model + optimizer
-    bert_lm = make_bert_lm(params, data)
+    bert_lm = make_bert_lm(params, input_vocab=train_data.bert_tokenizer.vocab, output_vocab=output_vocab)
     optimizer = BertAdam(params=bert_lm.parameters(),
                          lr=5e-5,
                          max_grad_norm=1.0,
                          t_total=-1,
                          weight_decay=0.01)
 
-    predict_masked_sentences(bert_lm, data)
+    predict_masked_sentences(bert_lm, test_data, output_vocab)
 
     # train + eval loop
     dev_pps = []
@@ -85,21 +101,21 @@ def main(param2val):
 
         # train
         bert_lm.train()
-        train_generator = bucket_batcher(data.make_instances(data.train_utterances), num_epochs=1)
+        train_generator = bucket_batcher(train_data.make_instances(train_data.utterances), num_epochs=1)
         for step, batch in enumerate(train_generator):
             loss = bert_lm.train_on_batch(batch, optimizer)
 
             if step % config.Eval.loss_interval == 0:
 
                 # evaluate perplexity
-                instances_generator = bucket_batcher(data.make_instances(data.dev_utterances), num_epochs=1)
-                dev_pp = evaluate_model_on_pp(bert_lm, params, instances_generator)
+                instances_generator = bucket_batcher(dev_data.make_instances(dev_data.utterances), num_epochs=1)
+                dev_pp = evaluate_model_on_pp(bert_lm, instances_generator)
                 dev_pps.append(dev_pp)
                 eval_steps.append(step)
                 print(f'dev-pp={dev_pp}', flush=True)
 
                 # test sentences
-                predict_masked_sentences(bert_lm, data)  # TODO save results to file
+                predict_masked_sentences(bert_lm, test_data, output_vocab)  # TODO save results to file
 
                 # console
                 min_elapsed = (time.time() - train_start) // 60
@@ -108,7 +124,7 @@ def main(param2val):
     # to pandas
     s1 = pd.Series(train_pps, index=np.arange(params.num_epochs))
     s1.name = 'train_pp'
-    s2 = pd.Series(dev_pps, index=eval_steps)  # TODO test
+    s2 = pd.Series(dev_pps, index=eval_steps)
     s2.name = 'dev_pp'
 
     return [s1, s2]

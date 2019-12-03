@@ -182,14 +182,15 @@ class LMBert(Model):
 
 
 def make_bert_lm(params,
-                 data,
+                 input_vocab,   # bert_tokenizer.vocab
+                 output_vocab,  # Allen NLP vocab
                  ):
 
     print('Preparing BERT model...')
     # parameters of original implementation are specified here:
     # https://github.com/allenai/allennlp/blob/master/training_config/bert_base_srl.jsonnet
 
-    vocab_size = len(data.bert_tokenizer.vocab)
+    vocab_size = len(input_vocab)
 
     config = BertConfig(vocab_size_or_config_json_file=vocab_size,  # was 32K
                         hidden_size=params.hidden_size,  # was 768
@@ -209,7 +210,7 @@ def make_bert_lm(params,
     initializer = InitializerApplicator.from_params(initializer_params)
 
     # model
-    model = LMBert(vocab=data.vocab,
+    model = LMBert(vocab=output_vocab,
                    bert_model=bert_model,
                    initializer=initializer,
                    embedding_dropout=0.1)
