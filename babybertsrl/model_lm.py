@@ -1,10 +1,8 @@
 from typing import Dict, List, Optional, Any, Union
 import torch
 from torch.nn import Linear, Dropout, functional as F
-from pytorch_pretrained_bert.modeling import BertModel, BertConfig
+from pytorch_pretrained_bert.modeling import BertModel
 from overrides import overrides
-
-from pytorch_pretrained_bert.modeling import BertOnlyMLMHead
 
 from allennlp.data import Vocabulary
 from allennlp.models import Model
@@ -14,7 +12,6 @@ from allennlp.nn.util import sequence_cross_entropy_with_logits
 from allennlp.nn.util import get_lengths_from_binary_sequence_mask
 from allennlp.nn.util import viterbi_decode
 from allennlp.training.util import rescale_gradients
-from allennlp.common import Params as AllenParams
 
 
 class LMBert(Model):
@@ -179,45 +176,3 @@ class LMBert(Model):
         optimizer.step()
 
         return loss
-
-
-def make_bert_lm(params,
-                 input_vocab,   # bert_tokenizer.vocab
-                 output_vocab,  # Allen NLP vocab
-                 ):
-
-    print('Preparing BERT model...')
-    # parameters of original implementation are specified here:
-    # https://github.com/allenai/allennlp/blob/master/training_config/bert_base_srl.jsonnet
-
-    vocab_size = len(input_vocab)
-
-    config = BertConfig(vocab_size_or_config_json_file=vocab_size,  # was 32K
-                        hidden_size=params.hidden_size,  # was 768
-                        num_hidden_layers=params.num_layers,  # was 12
-                        num_attention_heads=params.num_attention_heads,  # was 12
-                        intermediate_size=params.intermediate_size)  # was 3072
-    bert_model = BertModel(config=config)
-
-    # TODO bert also needs
-    #  * learning rate scheduler - "slanted_triangular"
-
-    # initializer
-    initializer_params = [
-        ("",
-         AllenParams({}))
-    ]
-    initializer = InitializerApplicator.from_params(initializer_params)
-
-    # model
-    model = LMBert(vocab=output_vocab,
-                   bert_model=bert_model,
-                   initializer=initializer,
-                   embedding_dropout=0.1)
-    model.cuda()
-
-    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print('Finished model preparation.'
-          'Number of model parameters: {:,}'.format(num_params), flush=True)
-
-    return model

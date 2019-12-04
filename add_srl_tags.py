@@ -26,7 +26,6 @@ for tokenized_utterance in data.utterances:
     words = [token.text for token in tokens]
     instances = []
     for i, word in enumerate(tokens):
-        print(word.pos_)
         if word.pos_ == "VERB":
             verb_labels = [0 for _ in words]
             verb_labels[i] = 1

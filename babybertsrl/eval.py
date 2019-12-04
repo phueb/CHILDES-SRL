@@ -49,18 +49,13 @@ def evaluate_model_on_pp(model, instances_generator):
     return pp_sum.cpu().numpy().item() / num_steps
 
 
-def evaluate_model_on_f1(model, params, srl_eval_path, bucket_batcher, instances):
+def evaluate_model_on_f1(model, srl_eval_path, instances_generator):
 
     span_metric = SrlEvalScorer(srl_eval_path,
                                 ignore_classes=['V'])
 
     model.eval()
-    instances_generator = bucket_batcher(instances, num_epochs=1)
     for step, batch in enumerate(instances_generator):
-
-        if len(batch['tags']) != params.batch_size:
-            print('WARNING: Batch size is {}. Skipping'.format(len(batch['tags'])))
-            continue
 
         # get predictions
         output_dict = model(**batch)  # input is dict[str, tensor]

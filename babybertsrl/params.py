@@ -5,11 +5,13 @@ param2requests = {
     "num_attention_heads": [8],
     "hidden_size": [512],
     "intermediate_size": [1024],
-    'num_epochs': [1],  # TODO separate pre-training from fine-tuning epochs
+    'num_pre_train_epochs': [1],
+    'num_fine_tune_epochs': [1],
 }
 
 param2debug = {
-    "num_epochs": 1,
+    "num_pre_train_epochs": 1,
+    "num_fine_tune_epochs": 1,
 }
 
 param2default = {
@@ -19,7 +21,9 @@ param2default = {
     'num_attention_heads': 8,
     'intermediate_size': 1024,
     'max_sentence_length': 128,
-    'num_epochs': 50,  # 15 fine-tuning epochs is original implementation
-
-    'num_masked': 3,  # TODO
+    'num_pre_train_epochs': 1,
+    'num_fine_tune_epochs': 1,
+    'num_masked': 7,
+    'corpus_name': 'childes-20191204',
+    'vocab_size': 4000,
 }
