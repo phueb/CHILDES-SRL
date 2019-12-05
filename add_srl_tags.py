@@ -2,18 +2,20 @@ from spacy.tokens import Doc
 
 from allennlp.predictors.predictor import Predictor
 
-from babybertsrl.data_lm import Data
+from babybertsrl.data_lm import DataLM
 from babybertsrl import config
 from babybertsrl.job import Params
 from babybertsrl.params import param2default
+
+CORPUS_NAME = 'childes-20191204_train'
 
 predictor = Predictor.from_path("https://s3-us-west-2.amazonaws.com/allennlp/models/bert-base-srl-2019.06.17.tar.gz",
                                 cuda_device=0)
 
 # data
-data_path = config.Dirs.data / 'CHILDES' / 'childes-20191202_terms.txt'
+data_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}.txt'
 params = Params.from_param2val(param2default)
-data = Data(params, data_path, vocab_path_name=None)
+data = DataLM(params, data_path, bert_tokenizer=None)
 
 for tokenized_utterance in data.utterances:
     # tag verbs
@@ -38,5 +40,12 @@ for tokenized_utterance in data.utterances:
     res = predictor.predict_instances(instances)
     #
     print(tokens)
-    print(res)
+    for d in res['verbs']:
+        print(d['verb'])
+        print(d['description'])
     print()
+    raise SystemExit
+
+    # TODO use spacy sentence boundary detection?
+
+    # TODO random spit into train/test

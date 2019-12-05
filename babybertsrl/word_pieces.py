@@ -5,10 +5,10 @@ obtained from Allen NLP toolkit in September 2019
 from typing import List, Tuple
 
 
-def wordpiece_tokenize(tokens: List[str],
-                       bert_tokenizer,
-                       lowercase_input: bool,
-                       ) -> Tuple[List[str], List[int], List[int]]:
+def wordpiece(tokens: List[str],
+              bert_tokenizer,
+              lowercase_input: bool,
+              ) -> Tuple[List[str], List[int], List[int]]:
     """
     Convert a list of tokens to wordpiece tokens and offsets, as well as adding
     BERT CLS and SEP tokens to the begining and end of the sentence.

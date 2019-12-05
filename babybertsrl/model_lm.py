@@ -123,7 +123,8 @@ class LMBert(Model):
         return output_dict
 
     @overrides
-    def decode(self, output_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def decode(self, output_dict: Dict[str, Any],
+               ) -> Dict[str, Any]:
         """
         ph: Do NOT use decoding constraints - transition matrix has zeros only
         we are interested in learning dynamics, not best performance.

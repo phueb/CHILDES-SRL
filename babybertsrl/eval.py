@@ -62,14 +62,14 @@ def evaluate_model_on_f1(model, srl_eval_path, instances_generator):
 
         # metadata
         metadata = batch['metadata']
-        batch_verb_indices = [example_metadata['verb_index'] for example_metadata in metadata]
-        batch_sentences = [example_metadata['words'] for example_metadata in metadata]
+        batch_verb_indices = [example_metadata['verb_indices'] for example_metadata in metadata]
+        batch_sentences = [example_metadata['srl_in'] for example_metadata in metadata]
 
         # Get the BIO tags from decode()
-        batch_bio_predicted_tags = model.decode(output_dict).pop("tags")
+        batch_bio_predicted_tags = model.decode(output_dict).pop("srl_tags")
         batch_conll_predicted_tags = [convert_bio_tags_to_conll_format(tags) for
                                       tags in batch_bio_predicted_tags]
-        batch_bio_gold_tags = [example_metadata['gold_tags'] for example_metadata in metadata]
+        batch_bio_gold_tags = [example_metadata['gold_srl_tags'] for example_metadata in metadata]
         batch_conll_gold_tags = [convert_bio_tags_to_conll_format(tags) for
                                  tags in batch_bio_gold_tags]
 

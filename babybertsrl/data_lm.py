@@ -10,7 +10,7 @@ from allennlp.data import Instance
 from allennlp.data.fields import TextField, SequenceLabelField, MetadataField
 
 from babybertsrl import config
-from babybertsrl.word_pieces import wordpiece_tokenize
+from babybertsrl.word_pieces import wordpiece
 from babybertsrl.word_pieces import convert_lm_mask_to_wordpiece_lm_mask
 
 
@@ -28,12 +28,12 @@ def prepare_utterance_for_instance(words: List[str],
     return lm_in, lm_mask, lm_tags
 
 
-class Data:
+class DataLM:
 
     def __init__(self,
                  params,
                  data_path: Path,
-                 vocab_path_name: Optional[str] = None,
+                 bert_tokenizer: Optional[BertTokenizer] = None,
                  ):
         """
         loads text from file and puts them in Allen NLP toolkit instances format
@@ -43,7 +43,6 @@ class Data:
         """
 
         self.params = params
-        self.lowercase = False  # set to false because [MASK] must be uppercase
 
         # load utterances
         self.utterances = self.get_utterances_from_file(data_path)
@@ -54,12 +53,10 @@ class Data:
         print(f'Median utterance length: {np.median(lengths):.2f}')
         print()
 
-        if not vocab_path_name:  # e.g. when only using utterances for srl tagging
+        if not bert_tokenizer:  # e.g. when only using utterances for srl tagging
             return
 
-        self.bert_tokenizer = BertTokenizer(vocab_path_name,
-                                            do_basic_tokenize=False,
-                                            do_lower_case=self.lowercase)
+        self.bert_tokenizer = bert_tokenizer
 
         # instances
         self.token_indexers = {'tokens': SingleIdTokenIndexer()}  # specifies how a token is indexed
@@ -76,8 +73,7 @@ class Data:
 
                 # tokenize transcript
                 transcript = line.strip().split()  # a transcript containing multiple utterances
-                if self.lowercase:
-                    transcript = [w.lower() for w in transcript]
+                transcript = [w.lower() for w in transcript]
 
                 # split transcript into utterances
                 utterances = [[]]
@@ -113,12 +109,12 @@ class Data:
                           ) -> Instance:
 
         # to word-pieces
-        lm_in_word_pieces, offsets, start_offsets = wordpiece_tokenize(lm_in,
-                                                                       self.bert_tokenizer,
-                                                                       self.lowercase)
-        lm_tags_word_pieces, _, _ = wordpiece_tokenize(lm_tags,
-                                                       self.bert_tokenizer,
-                                                       self.lowercase)
+        lm_in_word_pieces, offsets, start_offsets = wordpiece(lm_in,
+                                                              self.bert_tokenizer,
+                                                              lowercase_input=False)
+        lm_tags_word_pieces, _, _ = wordpiece(lm_tags,
+                                              self.bert_tokenizer,
+                                              lowercase_input=False)
         lm_mask_word_pieces = convert_lm_mask_to_wordpiece_lm_mask(lm_mask, offsets)
 
         # meta data only has whole words

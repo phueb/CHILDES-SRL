@@ -74,9 +74,9 @@ class SrlBert(Model):
             A torch tensor representing the sequence of integer gold class labels
             of shape ``(batch_size, num_tokens)``
         metadata : ``List[Dict[str, Any]]``, optional, (default = None)
-            metadata containg the original words in the sentence, the verb to compute the
-            frame for, and start offsets for converting wordpieces back to a sequence of words,
-            under 'words', 'verb' and 'offsets' keys, respectively.
+            metadata containg the original srl_in in the sentence, the verb to compute the
+            frame for, and start offsets for converting wordpieces back to a sequence of srl_in,
+            under 'srl_in', 'verb' and 'offsets' keys, respectively.
         Returns
         -------
         An output dictionary consisting of:
@@ -113,9 +113,9 @@ class SrlBert(Model):
         # probabilities are defined over word-pieces
         output_dict = {"logits": logits, "class_probabilities": class_probabilities, "mask": mask}
 
-        # We add in the offsets here so we can compute the un-wordpieced tags.
-        words, verbs, offsets = zip(*[(x['words'], x['verb'], x['offsets']) for x in metadata])
-        output_dict['words'] = list(words)
+        # We add in the offsets here so we can compute the un-word-pieced tags.
+        srl_in, verbs, offsets = zip(*[(x['srl_in'], x['verb'], x['offsets']) for x in metadata])
+        output_dict['srl_in'] = list(srl_in)
         output_dict['verb'] = list(verbs)
         output_dict['wordpiece_offsets'] = list(offsets)
 
@@ -128,41 +128,42 @@ class SrlBert(Model):
         return output_dict
 
     @overrides
-    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    def decode(self, output_dict: Dict[str, Any],
+               ) -> Dict[str, Any]:
         """
-        ph: Do NOT perform Viterbi decoding - we are interested in learning dynamics, not best performance.
-
+        ph: Do NOT use decoding constraints - transition matrix has zeros only
+        we are interested in learning dynamics, not best performance.
         Note: decoding is performed on word-pieces, and word-pieces are then converted to whole words
         """
+
+        # get probabilities
         all_predictions = output_dict['class_probabilities']
+        predictions_list = [all_predictions[i].detach().cpu() for i in range(all_predictions.size(0))]
         sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict['mask']).data.tolist()
 
-        if all_predictions.dim() == 3:
-            predictions_list = [all_predictions[i].detach().cpu() for i in range(all_predictions.size(0))]
-        else:
-            predictions_list = [all_predictions]
-
         # ph: transition matrices contain only ones (and no -inf, which would signal illegal transition)
-        wordpiece_tags = []
-        word_tags = []
         all_labels = self.vocab.get_index_to_token_vocabulary("labels")
         num_labels = len(all_labels)
         transition_matrix = torch.zeros([num_labels, num_labels])
-        start_transitions = torch.zeros(num_labels)
 
-        # We add in the offsets here so we can compute the un-wordpieced tags.
+        # decode
+        wordpiece_srl_tags = []
+        srl_tags = []
         for predictions, length, offsets in zip(predictions_list,
                                                 sequence_lengths,
                                                 output_dict['wordpiece_offsets']):
-            max_likelihood_sequence, _ = viterbi_decode(predictions[:length], transition_matrix,
-                                                        allowed_start_transitions=start_transitions)
+            tag_probabilities = predictions[:length]
+            max_likelihood_tag_ids, _ = viterbi_decode(tag_probabilities,
+                                                       transition_matrix)
             tags = [self.vocab.get_token_from_index(x, namespace="labels")
-                    for x in max_likelihood_sequence]
+                    for x in max_likelihood_tag_ids]
 
-            wordpiece_tags.append(tags)
-            word_tags.append([tags[i] for i in offsets])
-        output_dict['wordpiece_tags'] = wordpiece_tags
-        output_dict['tags'] = word_tags
+            wordpiece_srl_tags.append(tags)
+            srl_tags.append([tags[i] for i in offsets])
+
+        # collect results
+        output_dict['wordpiece_srl_tags'] = wordpiece_srl_tags
+        output_dict['srl_tags'] = srl_tags
         return output_dict
 
     def train_on_batch(self, batch, optimizer):
@@ -172,7 +173,7 @@ class SrlBert(Model):
         # to cuda
         batch['tokens']['tokens'] = batch['tokens']['tokens'].cuda()
         batch['verb_indicator'] = batch['verb_indicator'].cuda()
-        batch['tags'] = batch['tags'].cuda()
+        batch['srl_tags'] = batch['srl_tags'].cuda()
 
         # forward + loss
         optimizer.zero_grad()
@@ -187,13 +188,3 @@ class SrlBert(Model):
         optimizer.step()
 
         return loss
-
-    @staticmethod
-    def handle_metadata(metadata):
-        """
-        added by ph.
-        moved below code from self.forward() here because it was not used there
-        """
-        # We add in the offsets here so we can compute the un-wordpieced tags.
-        words, verbs, offsets = zip(*[(x['words'], x['verb'], x['offsets']) for x in metadata])
-        return list(words), list(verbs), list(offsets)

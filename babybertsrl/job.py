@@ -8,12 +8,15 @@ from itertools import chain
 
 from allennlp.data.vocabulary import Vocabulary
 from allennlp.data.iterators import BucketIterator
+from allennlp.training.util import move_optimizer_to_cuda
 
+from pytorch_pretrained_bert.tokenization import BertTokenizer
 from pytorch_pretrained_bert.modeling import BertModel, BertConfig
 from pytorch_pretrained_bert import BertAdam
 
 from babybertsrl import config
-from babybertsrl.data_lm import Data
+from babybertsrl.data_lm import DataLM
+from babybertsrl.data_srl import DataSRL
 from babybertsrl.eval import evaluate_model_on_pp
 from babybertsrl.eval import predict_masked_sentences
 from babybertsrl.model_lm import LMBert
@@ -56,34 +59,49 @@ def main(param2val):
     #  paths
     project_path = Path(param2val['project_path'])
     srl_eval_path = project_path / 'perl' / 'srl-eval.pl'
-    train_data_path = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_train.txt'
-    dev_data_path = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_dev.txt'
-    test_data_path = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_test.txt'
-    vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab_{params.vocab_size}.txt'  # TODO put in params
+    train_data_path_lm = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_train_lm.txt'
+    dev_data_path_lm = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_dev_lm.txt'
+    test_data_path_lm = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_test_lm.txt'
+    train_data_path_srl = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_train_srl.txt'
+    dev_data_path_srl = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_dev_srl.txt'
+    test_data_path_srl = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_test_srl.txt'
+    vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab_{params.vocab_size}.txt'
 
-    # load utterances
-    train_data = Data(params, train_data_path, str(vocab_path))
-    dev_data = Data(params, dev_data_path, str(vocab_path))
-    test_data = Data(params, test_data_path, str(vocab_path))
+    # BERT tokenizer - defines input vocabulary
+    bert_tokenizer = BertTokenizer(str(vocab_path),
+                                   do_basic_tokenize=False,
+                                   do_lower_case=False)  # set to false because [MASK] must be uppercase
 
-    # get output_vocab
-    # note: Allen NLP output_vocab holds labels, bert_tokenizer.output_vocab holds input tokens
+    # load utterances for pre-training
+    train_data_lm = DataLM(params, train_data_path_lm, bert_tokenizer)
+    dev_data_lm = DataLM(params, dev_data_path_lm, bert_tokenizer)
+    test_data_lm = DataLM(params, test_data_path_lm, bert_tokenizer)
+
+    # load propositions for fine-tuning on SRL task
+    # train_data_srl = DataSRL(params, train_data_path_srl, bert_tokenizer)
+    # dev_data_srl = DataSRL(params, dev_data_path_srl, bert_tokenizer)
+    # test_data_srl = DataSRL(params, test_data_path_srl, bert_tokenizer)
+
+    # TODO merge lm and srl instances to get combined output vocab?
+
+    # get indexing_vocab
+    # note: Allen NLP vocab holds labels, bert_tokenizer.vocab holds input tokens
     # what from_instances() does:
-    # 1. it iterates over all instances, and all fields, and all toke indexers
+    # 1. it iterates over all instances, and all fields, and all token indexers
     # 2. the token indexer is used to update vocabulary count, skipping words whose text_id is already set
-    all_instances = chain(train_data.instances, dev_data.instances)
-    output_vocab = Vocabulary.from_instances(all_instances)
-    output_vocab.print_statistics()
+    all_instances = chain(train_data_lm.instances, dev_data_lm.instances)
+    indexing_vocab = Vocabulary.from_instances(all_instances)
+    indexing_vocab.print_statistics()
 
     # batcher
     bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher.index_with(output_vocab)  # this must be an Allen Vocabulary instance
+    bucket_batcher.index_with(indexing_vocab)  # sets vocab as attribute of bucket_batcher
 
     # BERT  # TODO original implementation used slanted_triangular learning rate scheduler
     # parameters of original implementation are specified here:
     # https://github.com/allenai/allennlp/blob/master/training_config/bert_base_srl.jsonnet
-    print('Preparing BERT model...')
-    input_vocab_size = len(train_data.bert_tokenizer.vocab)
+    print('Preparing BERT for pre-training...')
+    input_vocab_size = len(train_data_lm.bert_tokenizer.vocab)
     bert_config = BertConfig(vocab_size_or_config_json_file=input_vocab_size,  # was 32K
                              hidden_size=params.hidden_size,  # was 768
                              num_hidden_layers=params.num_layers,  # was 12
@@ -91,25 +109,31 @@ def main(param2val):
                              intermediate_size=params.intermediate_size)  # was 3072
     bert_model = BertModel(config=bert_config)
 
+    # TODO mismatch between vocabs?
+
+    print(input_vocab_size)
+    print(indexing_vocab.get_vocab_size('tokens'))
+    raise SystemExit
+
     # BERT + LM head
-    bert_lm = LMBert(vocab=output_vocab,
+    bert_lm = LMBert(vocab=indexing_vocab,
                      bert_model=bert_model,
                      embedding_dropout=0.1)
     bert_lm.cuda()
     num_params = sum(p.numel() for p in bert_lm.parameters() if p.requires_grad)
-    print('Finished model preparation.'
-          'Number of model parameters: {:,}'.format(num_params), flush=True)
-    optimizer = BertAdam(params=bert_lm.parameters(),
-                         lr=5e-5,
-                         max_grad_norm=1.0,
-                         t_total=-1,
-                         weight_decay=0.01)
+    print('Number of model parameters: {:,}'.format(num_params), flush=True)
+    optimizer_lm = BertAdam(params=bert_lm.parameters(),
+                            lr=5e-5,
+                            max_grad_norm=1.0,
+                            t_total=-1,
+                            weight_decay=0.01)
+    move_optimizer_to_cuda(optimizer_lm)
 
     # ///////////////////////////////////////////
     # pre train
     # ///////////////////////////////////////////
 
-    predict_masked_sentences(bert_lm, test_data, output_vocab)
+    predict_masked_sentences(bert_lm, test_data_lm, indexing_vocab)
 
     dev_pps = []
     train_pps = []
@@ -125,21 +149,21 @@ def main(param2val):
 
         # train
         bert_lm.train()
-        train_generator = bucket_batcher(train_data.make_instances(train_data.utterances), num_epochs=1)
+        train_generator = bucket_batcher(train_data_lm.make_instances(train_data_lm.utterances), num_epochs=1)
         for step, batch in enumerate(train_generator):
-            loss = bert_lm.train_on_batch(batch, optimizer)
+            loss = bert_lm.train_on_batch(batch, optimizer_lm)
 
             if step % config.Eval.loss_interval == 0:
 
                 # evaluate perplexity
-                instances_generator = bucket_batcher(dev_data.make_instances(dev_data.utterances), num_epochs=1)
+                instances_generator = bucket_batcher(dev_data_lm.make_instances(dev_data_lm.utterances), num_epochs=1)
                 dev_pp = evaluate_model_on_pp(bert_lm, instances_generator)
                 dev_pps.append(dev_pp)
                 eval_steps.append(step)
                 print(f'dev-pp={dev_pp}', flush=True)
 
                 # test sentences
-                predict_masked_sentences(bert_lm, test_data, output_vocab)  # TODO save results to file
+                predict_masked_sentences(bert_lm, test_data_lm, indexing_vocab)  # TODO save results to file
 
                 # console
                 min_elapsed = (time.time() - train_start) // 60
@@ -155,14 +179,14 @@ def main(param2val):
     # fine-tune
     # ///////////////////////////////////////////
 
-    bert_srl = SrlBert(vocab=output_vocab,
+    print('Preparing BERT for fine-tuning...')
+    bert_srl = SrlBert(vocab=indexing_vocab,
                        bert_model=bert_model,  # bert_model is reused 
                        embedding_dropout=0.1)
     bert_srl.cuda()
 
     num_params = sum(p.numel() for p in bert_srl.parameters() if p.requires_grad)
-    print('Finished model preparation.'
-          'Number of model parameters: {:,}'.format(num_params), flush=True)
+    print('Number of model parameters: {:,}'.format(num_params), flush=True)
     optimizer_srl = BertAdam(params=bert_srl.parameters(),
                              lr=5e-5,
                              max_grad_norm=1.0,
@@ -176,20 +200,22 @@ def main(param2val):
     for epoch in range(params.num_fine_tune_epochs):
         print(f'\nEpoch: {epoch}', flush=True)
 
-        # evaluate train perplexity
+        # evaluate train f1
         train_f1 = None
         train_f1s.append(train_f1)
         print(f'train-f1={train_f1}', flush=True)
 
         # train
         bert_srl.train()
-        train_generator = bucket_batcher(train_data.make_instances(train_data.utterances), num_epochs=1)
+        train_generator = bucket_batcher(train_data_srl.make_instances(train_data_srl.propositions),
+                                         num_epochs=1)
         for step, batch in enumerate(train_generator):
             loss = bert_srl.train_on_batch(batch, optimizer_srl)
 
             if step % config.Eval.loss_interval == 0:
-                # evaluate f1
-                instances_generator = bucket_batcher(dev_data.make_instances(dev_data.utterances), num_epochs=1)
+                # evaluate dev f1
+                instances_generator = bucket_batcher(dev_data_srl.make_instances(dev_data_srl.propositions),
+                                                     num_epochs=1)
                 dev_f1 = evaluate_model_on_f1(bert_srl, srl_eval_path, instances_generator)
                 dev_f1s.append(dev_f1)
                 eval_steps.append(step)
