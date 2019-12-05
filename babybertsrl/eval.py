@@ -22,11 +22,11 @@ def predict_masked_sentences(model: Model,
 
     # show results only for whole-words
     mlm_in = output_dict['mlm_in']
-    predicted_mlm_out = model.decode(output_dict).pop("mlm_tags")
+    predicted_mlm_tags = model.decode(output_dict)
     gold_mlm_tags = output_dict['gold_mlm_tags']
-    assert len(mlm_in) == len(predicted_mlm_out) == len(gold_mlm_tags)
+    assert len(mlm_in) == len(predicted_mlm_tags) == len(gold_mlm_tags)
 
-    for a, b, c in zip(mlm_in, predicted_mlm_out, gold_mlm_tags):
+    for a, b, c in zip(mlm_in, predicted_mlm_tags, gold_mlm_tags):
         print(len(a), len(b), len(c), flush=True)
         for ai, bi, ci in zip(a, b, c):
             print(f'{ai:>20} {bi:>20} {ci:>20}', flush=True)  # TODO save to file
@@ -68,7 +68,7 @@ def evaluate_model_on_f1(model, srl_eval_path, instances_generator):
         batch_sentences = [example_metadata['srl_in'] for example_metadata in metadata]
 
         # Get the BIO tags from decode()
-        batch_bio_predicted_tags = model.decode(output_dict).pop("srl_tags")
+        batch_bio_predicted_tags = model.decode(output_dict)
         batch_conll_predicted_tags = [convert_bio_tags_to_conll_format(tags) for
                                       tags in batch_bio_predicted_tags]
         batch_bio_gold_tags = [example_metadata['gold_srl_tags'] for example_metadata in metadata]

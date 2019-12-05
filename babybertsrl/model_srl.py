@@ -111,16 +111,18 @@ class SrlBert(Model):
 
         output_dict = {"logits": logits,
                        "class_probabilities": class_probabilities,  # defined over word-pieces
-                       "mask": mask,
+                       "mask": mask,         # for decoding
+                       'start_offsets': [],  # for decoding
                        'srl_in': [],
                        'verb': [],
-                       'start_offsets': [],  # for decoding
+                       'gold_srl_tags': [],
                        }
 
         # add meta data to output
         for d in metadata:
             output_dict['srl_in'].append(d['srl_in'])
             output_dict['verb'].append(d['verb'])
+            output_dict['gold_srl_tags'].append(d['gold_srl_tags'])
             output_dict['start_offsets'].append(d['start_offsets'])
 
         if srl_tags is not None:
@@ -133,7 +135,7 @@ class SrlBert(Model):
 
     @overrides
     def decode(self, output_dict: Dict[str, Any],
-               ) -> Dict[str, Any]:
+               ) -> List[List[str]]:
         """
         ph: Do NOT use decoding constraints - transition matrix has zeros only
         we are interested in learning dynamics, not best performance.
@@ -151,31 +153,19 @@ class SrlBert(Model):
         transition_matrix = torch.zeros([num_labels, num_labels])
 
         # decode
-        wordpiece_srl_tags = []
         srl_tags = []
-        for predictions, length, offsets in zip(predictions_list,
-                                                sequence_lengths,
-                                                output_dict['start_offsets']):
+        for predictions, length, offsets, gold_srl_tags, in zip(predictions_list,
+                                                                sequence_lengths,
+                                                                output_dict['start_offsets'],
+                                                                output_dict['gold_srl_tags']):
             tag_probabilities = predictions[:length]
             max_likelihood_tag_ids, _ = viterbi_decode(tag_probabilities,
                                                        transition_matrix)
-            tags = [self.vocab.get_token_from_index(x, namespace="labels")
-                    for x in max_likelihood_tag_ids]
+            srl_tags_word_pieces = [self.vocab.get_token_from_index(x, namespace="labels")
+                                    for x in max_likelihood_tag_ids]
+            srl_tags.append([srl_tags_word_pieces[i] for i in offsets])
 
-            # TODO debug
-            print(len(tag_probabilities))
-            print(length)
-            print(tags)
-            print(offsets)
-            print()
-
-            wordpiece_srl_tags.append(tags)
-            srl_tags.append([tags[i] for i in offsets])
-
-        # collect results
-        output_dict['wordpiece_srl_tags'] = wordpiece_srl_tags
-        output_dict['srl_tags'] = srl_tags
-        return output_dict
+        return srl_tags
 
     def train_on_batch(self, batch, optimizer):
         """

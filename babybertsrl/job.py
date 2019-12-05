@@ -65,6 +65,12 @@ def main(param2val):
     vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab_{params.vocab_size}.txt'
 
     # BERT tokenizer - defines input vocabulary
+    _vocab = vocab_path.read_text().split('\n')
+    assert _vocab[0] == '[PAD]'  # AllenNLP expects this
+    assert _vocab[1] == '[UNK]'  # AllenNLP expects this
+    assert _vocab[2] == '[CLS]'
+    assert _vocab[3] == '[SEP]'
+    assert _vocab[4] == '[MASK]'
     bert_tokenizer = BertTokenizer(str(vocab_path),
                                    do_basic_tokenize=False,
                                    do_lower_case=False)  # set to false because [MASK] must be uppercase
@@ -94,19 +100,17 @@ def main(param2val):
                               converter_mlm.make_instances(devel_utterances),
                               converter_mlm.make_instances(test_utterances),
                               )
-    output_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)
-    output_vocab_mlm.print_statistics()
+    index_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)
+    # index_vocab_mlm.print_statistics()
 
     all_instances_srl = chain(converter_srl.make_instances(train_propositions),
                               converter_srl.make_instances(devel_propositions),
                               converter_srl.make_instances(test_propositions),
                               )
-    output_vocab_srl = Vocabulary.from_instances(all_instances_srl)
-    output_vocab_srl.print_statistics()
+    index_vocab_srl = Vocabulary.from_instances(all_instances_srl)
+    # index_vocab_srl.print_statistics()
 
     # BERT  # TODO original implementation used slanted_triangular learning rate scheduler
-    # parameters of original implementation are specified here:
-    # https://github.com/allenai/allennlp/blob/master/training_config/bert_base_srl.jsonnet
     print('Preparing BERT for pre-training...')
     input_vocab_size = len(converter_mlm.bert_tokenizer.vocab)
     bert_config = BertConfig(vocab_size_or_config_json_file=input_vocab_size,  # was 32K
@@ -116,11 +120,12 @@ def main(param2val):
                              intermediate_size=params.intermediate_size)  # was 3072
     bert_model = BertModel(config=bert_config)
 
-    # TODO how does PADDING get represented in model?
-    # TODO Allen NLP padding symbol is different from [PAD]
+    print(index_vocab_mlm.get_vocab_size('tokens'), len(bert_tokenizer.vocab))
+    print(index_vocab_srl.get_vocab_size('tokens'), len(bert_tokenizer.vocab))
+    assert index_vocab_mlm.get_vocab_size('tokens') == index_vocab_srl.get_vocab_size('tokens')
 
     # BERT + LM head
-    bert_mlm = MLMBert(vocab=output_vocab_mlm,
+    bert_mlm = MLMBert(vocab=index_vocab_mlm,
                        bert_model=bert_model,
                        embedding_dropout=0.1)
     bert_mlm.cuda()
@@ -139,7 +144,7 @@ def main(param2val):
 
     # batcher
     bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher.index_with(output_vocab_mlm)
+    bucket_batcher.index_with(index_vocab_mlm)
 
     # test sentences
     instances_generator = bucket_batcher(converter_mlm.make_instances(test_utterances), num_epochs=1)
@@ -192,10 +197,10 @@ def main(param2val):
 
     # batcher
     bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher.index_with(output_vocab_srl)
+    bucket_batcher.index_with(index_vocab_srl)
 
     print('Preparing BERT for fine-tuning...')
-    bert_srl = SrlBert(vocab=output_vocab_srl,
+    bert_srl = SrlBert(vocab=index_vocab_srl,
                        bert_model=bert_model,  # bert_model is reused 
                        embedding_dropout=0.1)
     bert_srl.cuda()

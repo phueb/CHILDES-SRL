@@ -1,8 +1,8 @@
+[PAD]
 [UNK]
 [CLS]
 [SEP]
 [MASK]
-[PAD]
 .
 ?
 you

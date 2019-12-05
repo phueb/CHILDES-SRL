@@ -100,14 +100,18 @@ class MLMBert(Model):
                                                                           sequence_length,
                                                                           self.num_out])
 
-        # probabilities are defined over word-pieces
-        output_dict = {"logits": logits, "class_probabilities": class_probabilities, "mask": mask}
+        output_dict = {"logits": logits,
+                       "class_probabilities": class_probabilities,  # defined over word-pieces
+                       "mask": mask,         # for decoding
+                       'start_offsets': [],  # for decoding
+                       'mlm_in': [],
+                       'gold_mlm_tags': [],
+                       }
 
-        # We add in the offsets here so we can compute the un-wordpieced mlm_tags.
-        mlm_in, gold_mlm_tags, offsets = zip(*[(x['mlm_in'], x['gold_mlm_tags'], x['start_offsets']) for x in metadata])
-        output_dict['mlm_in'] = list(mlm_in)
-        output_dict['gold_mlm_tags'] = list(gold_mlm_tags)
-        output_dict['start_offsets'] = list(offsets)
+        for d in metadata:
+            output_dict['mlm_in'].append(d['mlm_in'])
+            output_dict['gold_mlm_tags'].append(d['gold_mlm_tags'])
+            output_dict['start_offsets'].append(d['start_offsets'])
 
         # TODO the correct way to do language modeling would be to use
         #  standard cross entropy rather than sequence cross entropy because only one masked word is predicted,
@@ -124,7 +128,7 @@ class MLMBert(Model):
 
     @overrides
     def decode(self, output_dict: Dict[str, Any],
-               ) -> Dict[str, Any]:
+               ) -> List[List[str]]:
         """
         ph: Do NOT use decoding constraints - transition matrix has zeros only
         we are interested in learning dynamics, not best performance.
@@ -140,23 +144,19 @@ class MLMBert(Model):
         transition_matrix = torch.zeros([self.num_out, self.num_out])
 
         # decode
-        wordpiece_tags = []
-        word_tags = []
-        for predictions, length, offsets in zip(predictions_list,
-                                                sequence_lengths,
-                                                output_dict['start_offsets']):
+        mlm_tags = []
+        for predictions, length, offsets, gold_mlm_tags in zip(predictions_list,
+                                                               sequence_lengths,
+                                                               output_dict['start_offsets'],
+                                                               output_dict['gold_mlm_tags']):
             tag_probabilities = predictions[:length]
             max_likelihood_tag_ids, _ = viterbi_decode(tag_probabilities,
                                                        transition_matrix)
-            tags = [self.vocab.get_token_from_index(x, namespace="labels")
-                    for x in max_likelihood_tag_ids]
-            wordpiece_tags.append(tags)
-            word_tags.append([tags[i] for i in offsets])
+            mlm_tags_word_pieces = [self.vocab.get_token_from_index(x, namespace="labels")
+                                    for x in max_likelihood_tag_ids]
+            mlm_tags.append([mlm_tags_word_pieces[i] for i in offsets])
 
-        # collect results
-        output_dict['wordpiece_mlm_tags'] = wordpiece_tags
-        output_dict['mlm_tags'] = word_tags
-        return output_dict
+        return mlm_tags
 
     def train_on_batch(self, batch, optimizer):
         # to cuda

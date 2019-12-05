@@ -14,7 +14,15 @@ The goal of this research project is to test theories of how children learn to u
 Investigation into the inner workings of the model began in in September 2019 while under the supervision of [Cynthia Fisher](https://psychology.illinois.edu/directory/profile/clfishe)
 at the Department of Psychology at [UIUC](https://psychology.illinois.edu/). 
 
-## How it works
+## BERT
+ 
+Due to the limited size of child-directed speech data, 
+a much smaller BERT than the standard BERT models is trained here.
+
+For example, compare the architecture specified in `params.py` to the
+architecture of the state-of-the-art BERT-based SRL tagger [here](https://github.com/allenai/allennlp/blob/master/training_config/bert_base_srl.jsonnet)
+
+## Using logic from the AllenNLP toolkit
 
 * Utterances are loaded from text file
 * A word in each utterance is masked
@@ -34,6 +42,11 @@ Word-piece tokenization therefore is a no-op.
 Using word-pieces would require handling the case when a whole word in the input is masked,
 and the same word in the output is split into multiple word pieces. 
 The number of input and output elements would mismatch. 
+
+## Gotchas
+
+If using a custom vocab file, make sure to put `[PAD]` first, and `[UNK]` second.
+This is necessary, as the vocabulary indexing logic behind AllenNLP requires this.  
 
 
 ## Compatibility
