@@ -58,7 +58,7 @@ class ConverterMLM:
 
         # meta data only has whole words
         metadata_dict = dict()
-        metadata_dict['offsets'] = start_offsets
+        metadata_dict['start_offsets'] = start_offsets
         metadata_dict['mlm_in'] = mlm_in
         metadata_dict['masked_indices'] = mlm_mask  # mask is list containing zeros and ones
         metadata_dict['gold_mlm_tags'] = mlm_tags  # is just a copy of the input without the mask
@@ -151,7 +151,7 @@ class ConverterSRL:
 
         # metadata only has whole words
         metadata_dict = dict()
-        metadata_dict['offsets'] = start_offsets
+        metadata_dict['start_offsets'] = start_offsets
         metadata_dict['srl_in'] = srl_in   # previously called "words"
         metadata_dict['verb'] = verb
         metadata_dict['verb_index'] = verb_index  # must be an integer

@@ -25,8 +25,8 @@ srl_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}_srl.txt'
 out_f = srl_path.open('w')
 
 progress_bar = pyprind.ProgBar(len(utterances),
-                              title=f'Srl tagging..',
-                              stream=1)
+                               title=f'Srl tagging..',
+                               stream=1)
 for tokenized_utterance in utterances:
 
     # TODO use spacy sentence boundary detection before srl tagging ?
@@ -64,6 +64,8 @@ for tokenized_utterance in utterances:
         else:
             out_f.close()
             raise SystemExit('Quit')
+
+    # TODO do no lowercase - [NAME] is converted to [name]
 
     # write to file
     left_input = ' '.join(tokenized_utterance)

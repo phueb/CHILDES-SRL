@@ -66,7 +66,7 @@ class MLMBert(Model):
         metadata : ``List[Dict[str, Any]]``, optional, (default = None)
             metadata contains the original mlm_in in the sentence, the language modeling mask,
              and start offsets for converting wordpieces back to a sequence of mlm_in,
-            under 'mlm_in', 'mlm_mask' and 'offsets' keys, respectively.
+            under 'mlm_in', 'mlm_mask' and 'start_offsets' keys, respectively.
         Returns
         -------
         An output dictionary consisting of:
@@ -104,10 +104,10 @@ class MLMBert(Model):
         output_dict = {"logits": logits, "class_probabilities": class_probabilities, "mask": mask}
 
         # We add in the offsets here so we can compute the un-wordpieced mlm_tags.
-        mlm_in, gold_mlm_tags, offsets = zip(*[(x['mlm_in'], x['gold_mlm_tags'], x['offsets']) for x in metadata])
+        mlm_in, gold_mlm_tags, offsets = zip(*[(x['mlm_in'], x['gold_mlm_tags'], x['start_offsets']) for x in metadata])
         output_dict['mlm_in'] = list(mlm_in)
         output_dict['gold_mlm_tags'] = list(gold_mlm_tags)
-        output_dict['wordpiece_offsets'] = list(offsets)
+        output_dict['start_offsets'] = list(offsets)
 
         # TODO the correct way to do language modeling would be to use
         #  standard cross entropy rather than sequence cross entropy because only one masked word is predicted,
@@ -144,7 +144,7 @@ class MLMBert(Model):
         word_tags = []
         for predictions, length, offsets in zip(predictions_list,
                                                 sequence_lengths,
-                                                output_dict['wordpiece_offsets']):
+                                                output_dict['start_offsets']):
             tag_probabilities = predictions[:length]
             max_likelihood_tag_ids, _ = viterbi_decode(tag_probabilities,
                                                        transition_matrix)

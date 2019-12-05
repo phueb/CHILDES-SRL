@@ -73,9 +73,9 @@ class SrlBert(Model):
             A torch tensor representing the sequence of integer gold class labels
             of shape ``(batch_size, num_tokens)``
         metadata : ``List[Dict[str, Any]]``, optional, (default = None)
-            metadata containg the original srl_in in the sentence, the verb to compute the
+            metadata containg the original words in the sentence, the verb to compute the
             frame for, and start offsets for converting wordpieces back to a sequence of srl_in,
-            under 'srl_in', 'verb' and 'offsets' keys, respectively.
+            under 'srl_in', 'verb' and 'start_offsets' keys, respectively.
         Returns
         -------
         An output dictionary consisting of:
@@ -109,14 +109,19 @@ class SrlBert(Model):
                                                                           sequence_length,
                                                                           self.num_classes])
 
-        # probabilities are defined over word-pieces
-        output_dict = {"logits": logits, "class_probabilities": class_probabilities, "mask": mask}
+        output_dict = {"logits": logits,
+                       "class_probabilities": class_probabilities,  # defined over word-pieces
+                       "mask": mask,
+                       'srl_in': [],
+                       'verb': [],
+                       'start_offsets': [],  # for decoding
+                       }
 
-        # We add in the offsets here so we can compute the un-word-pieced tags.
-        srl_in, verbs, offsets = zip(*[(x['srl_in'], x['verb'], x['offsets']) for x in metadata])
-        output_dict['srl_in'] = list(srl_in)
-        output_dict['verb'] = list(verbs)
-        output_dict['wordpiece_offsets'] = list(offsets)
+        # add meta data to output
+        for d in metadata:
+            output_dict['srl_in'].append(d['srl_in'])
+            output_dict['verb'].append(d['verb'])
+            output_dict['start_offsets'].append(d['start_offsets'])
 
         if srl_tags is not None:
             loss = sequence_cross_entropy_with_logits(logits,
@@ -150,12 +155,19 @@ class SrlBert(Model):
         srl_tags = []
         for predictions, length, offsets in zip(predictions_list,
                                                 sequence_lengths,
-                                                output_dict['wordpiece_offsets']):
+                                                output_dict['start_offsets']):
             tag_probabilities = predictions[:length]
             max_likelihood_tag_ids, _ = viterbi_decode(tag_probabilities,
                                                        transition_matrix)
             tags = [self.vocab.get_token_from_index(x, namespace="labels")
                     for x in max_likelihood_tag_ids]
+
+            # TODO debug
+            print(len(tag_probabilities))
+            print(length)
+            print(tags)
+            print(offsets)
+            print()
 
             wordpiece_srl_tags.append(tags)
             srl_tags.append([tags[i] for i in offsets])

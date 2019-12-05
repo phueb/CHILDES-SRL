@@ -10,7 +10,7 @@ param2requests = {
 }
 
 param2debug = {
-    "num_pre_train_epochs": 1,
+    "num_pre_train_epochs": 0,
     "num_fine_tune_epochs": 1,
     'num_masked': 1,
 }
