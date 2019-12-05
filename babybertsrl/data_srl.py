@@ -113,67 +113,56 @@ class Data:
         return res
 
     def _text_to_instance(self,
-                          tokens: List[Token],
-                          verb_label: List[int],
-                          tags: List[str] = None) -> Instance:
+                          srl_in: List[str],
+                          srl_verb_indices: List[int],
+                          srl_tags: List[str],
+                          ) -> Instance:
 
         # to word-pieces
-        word_pieces, offsets, start_offsets = wordpiece_tokenize([t.text for t in tokens],
-                                                                 self.bert_tokenizer,
-                                                                 self.lowercase)
-        new_verbs = convert_verb_indices_to_wordpiece_indices(verb_label, offsets)
+        srl_in_word_pieces, offsets, start_offsets = wordpiece_tokenize(srl_in,
+                                                                        self.bert_tokenizer,
+                                                                        self.lowercase)
+        srl_tags_word_pieces = convert_tags_to_wordpiece_tags(srl_tags, offsets)
+        verb_indices_word_pieces = convert_verb_indices_to_wordpiece_indices(srl_verb_indices, offsets)
 
-        new_tokens = [Token(t) for t in word_pieces]
-
-        # WARNING:
-        # setting text_id causes tokens not to be found by Allen Vocabulary.
-        # allen nlp bert test case doesn't use token fields, but instead uses:
-        # tokens = fields['metadata']['words']
-
-        text_field = TextField(new_tokens, self.token_indexers)
-        verb_indicator = SequenceLabelField(new_verbs, text_field)
-        fields = {'tokens': text_field,
-                  'verb_indicator': verb_indicator}
-
-        # metadata
-        metadata_dict: Dict[str, Any] = {}
-
-        if all([x == 0 for x in verb_label]):
+        # compute verb
+        if all([x == 0 for x in srl_verb_indices]):
             raise ValueError('Verb indicator contains zeros only. ')
         else:
-            verb_index = verb_label.index(1)
-            verb = tokens[verb_index].text
+            verb_index = srl_verb_indices.index(1)
+            verb = srl_in_word_pieces[verb_index]
 
+        # metadata only has whole words
+        metadata_dict = dict()
         metadata_dict['offsets'] = start_offsets
-        metadata_dict['words'] = [x.text for x in tokens]
+        metadata_dict['srl_in'] = srl_in   # TODO previously called "words"
         metadata_dict['verb'] = verb
-        metadata_dict['verb_index'] = verb_index
+        metadata_dict['verb_indices'] = srl_verb_indices  # TODO previously called "verb index"
+        metadata_dict['gold_srl_tags'] = srl_tags  # non word-piece tags
 
-        if tags:
-            new_tags = convert_tags_to_wordpiece_tags(tags, offsets)
-            fields['tags'] = SequenceLabelField(new_tags, text_field)
-            metadata_dict['gold_tags'] = tags  # non word-piece tags
+        # fields
+        tokens = [Token(t) for t in srl_in_word_pieces]
+        text_field = TextField(tokens, self.token_indexers)
 
-        fields['metadata'] = MetadataField(metadata_dict)
+        fields = {'tokens': text_field,
+                  'verb_indicator': SequenceLabelField(verb_indices_word_pieces, text_field),
+                  'srl_tags': SequenceLabelField(srl_tags_word_pieces, text_field),
+                  'metadata': MetadataField(metadata_dict)}
 
         return Instance(fields)
 
     def make_instances(self, propositions) -> Iterator[Instance]:
         """
-        because lazy is by default False, return a list rather than a generator.
-        When lazy=False, the generator would be converted to a list anyway.
-
         roughly equivalent to Allen NLP toolkit dataset.read()
 
         """
-        res = []
         for proposition in propositions:
             words = proposition[0]
             predicate_one_hot = self.make_predicate_one_hot(proposition)
             tags = proposition[2]
+
             # to instance
             instance = self._text_to_instance([Token(word) for word in words],
                                               predicate_one_hot,
                                               tags)
-            res.append(instance)
-        return res
+            yield instance

@@ -116,9 +116,10 @@ class Data:
         lm_in_word_pieces, offsets, start_offsets = wordpiece_tokenize(lm_in,
                                                                        self.bert_tokenizer,
                                                                        self.lowercase)
-        lm_tags_word_pieces, offsets, start_offsets = wordpiece_tokenize(lm_tags,
-                                                                         self.bert_tokenizer,
-                                                                         self.lowercase)
+        lm_tags_word_pieces, _, _ = wordpiece_tokenize(lm_tags,
+                                                       self.bert_tokenizer,
+                                                       self.lowercase)
+        lm_mask_word_pieces = convert_lm_mask_to_wordpiece_lm_mask(lm_mask, offsets)
 
         # meta data only has whole words
         metadata_dict = dict()
@@ -130,7 +131,6 @@ class Data:
         # fields
         tokens = [Token(t) for t in lm_in_word_pieces]
         text_field = TextField(tokens, self.token_indexers)
-        new_mask = convert_lm_mask_to_wordpiece_lm_mask(lm_mask, offsets)
 
         if len(lm_in_word_pieces) != len(lm_tags_word_pieces):
             # the code does not yet support custom word-pieces in vocabulary,
@@ -140,7 +140,7 @@ class Data:
             raise UserWarning('A word-piece split word was masked. Word pieces are not supported')
 
         fields = {'tokens': text_field,
-                  'mask_indicator': SequenceLabelField(new_mask, text_field),
+                  'mask_indicator': SequenceLabelField(lm_mask_word_pieces, text_field),
                   'lm_tags': SequenceLabelField(lm_tags_word_pieces, text_field),
                   'metadata': MetadataField(metadata_dict)}
 

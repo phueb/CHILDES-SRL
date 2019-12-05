@@ -183,13 +183,13 @@ def main(param2val):
 
         # train
         bert_srl.train()
-        train_generator = bucket_batcher(train_data_srl.make_instances(train_data_srl.utterances), num_epochs=1)
+        train_generator = bucket_batcher(train_data.make_instances(train_data.utterances), num_epochs=1)
         for step, batch in enumerate(train_generator):
             loss = bert_srl.train_on_batch(batch, optimizer_srl)
 
             if step % config.Eval.loss_interval == 0:
                 # evaluate f1
-                instances_generator = bucket_batcher(dev_data_srl.make_instances(dev_data_srl.utterances), num_epochs=1)
+                instances_generator = bucket_batcher(dev_data.make_instances(dev_data.utterances), num_epochs=1)
                 dev_f1 = evaluate_model_on_f1(bert_srl, srl_eval_path, instances_generator)
                 dev_f1s.append(dev_f1)
                 eval_steps.append(step)
