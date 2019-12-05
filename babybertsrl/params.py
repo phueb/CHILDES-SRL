@@ -21,7 +21,6 @@ param2default = {
     'num_layers': 8,  # 6 is better than any lower number
     'num_attention_heads': 8,
     'intermediate_size': 1024,
-    'max_sentence_length': 128,
     'num_pre_train_epochs': 1,
     'num_fine_tune_epochs': 1,
     'num_masked': 7,

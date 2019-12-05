@@ -1,33 +1,33 @@
 from spacy.tokens import Doc
-import random
+import pyprind
 
 from allennlp.predictors.predictor import Predictor
 
-from babybertsrl.data_lm import DataLM
+from babybertsrl.io import load_utterances_from_file
 from babybertsrl import config
 from babybertsrl.job import Params
 from babybertsrl.params import param2default
 
 CORPUS_NAME = 'childes-20191204'
-DEVEL_PROB = 0.5
 INSPECT_ONLY = False
-INTERACTIVE = True
+INTERACTIVE = False
 
 predictor = Predictor.from_path("https://s3-us-west-2.amazonaws.com/allennlp/models/bert-base-srl-2019.06.17.tar.gz",
                                 cuda_device=0)
 
-# data
-data_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}.txt'
+# utterances
+utterances_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}_mlm.txt'
 params = Params.from_param2val(param2default)
-data = DataLM(params, data_path, bert_tokenizer=None)
+utterances = load_utterances_from_file(utterances_path)
 
 # open files
-train_srl_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}_train_srl.txt'
-devel_srl_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}_devel_srl.txt'
-train_srl_f = train_srl_path.open('w')
-devel_srl_f = devel_srl_path.open('w')
+srl_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}_srl.txt'
+out_f = srl_path.open('w')
 
-for tokenized_utterance in data.utterances:
+progress_bar = pyprind.ProgBar(len(utterances),
+                              title=f'Srl tagging..',
+                              stream=1)
+for tokenized_utterance in utterances:
 
     # TODO use spacy sentence boundary detection before srl tagging ?
 
@@ -62,8 +62,7 @@ for tokenized_utterance in data.utterances:
         if key != 'q':
             continue
         else:
-            train_srl_f.close()
-            devel_srl_f.close()
+            out_f.close()
             raise SystemExit('Quit')
 
     # write to file
@@ -71,6 +70,10 @@ for tokenized_utterance in data.utterances:
     for d in res['verbs']:
         # make line
         tags = d['tags']
+
+        # TODO debugging
+        print(tags)
+
         verb_index = tags.index('B-V')
         right_input = ' '.join(tags)
         line = f'{verb_index} {left_input} ||| {right_input}'
@@ -81,15 +84,11 @@ for tokenized_utterance in data.utterances:
             if key != 'q':
                 pass
             else:
-                train_srl_f.close()
-                devel_srl_f.close()
+                out_f.close()
                 raise SystemExit('Quit')
 
-        # if True, write line to devel_srl
-        if random.choices([True, False], weights=[DEVEL_PROB, 1 - DEVEL_PROB])[0]:
-            devel_srl_f.write(line + '\n')
-        else:
-            train_srl_f.write(line + '\n')
+        out_f.write(line + '\n')
 
-train_srl_f.close()
-devel_srl_f.close()
+    progress_bar.update()
+
+out_f.close()

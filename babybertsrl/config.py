@@ -12,7 +12,8 @@ class Global:
 
 class Data:
     min_utterance_length = 3  # used during language modeling task
-    replace = {''}
+    max_utterance_length = 128  # used during language modeling task
+    train_prob = 0.8  # probability that utterance is train utterance
 
 
 class Eval:

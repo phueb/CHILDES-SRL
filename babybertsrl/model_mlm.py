@@ -14,7 +14,7 @@ from allennlp.nn.util import viterbi_decode
 from allennlp.training.util import rescale_gradients
 
 
-class LMBert(Model):
+class MLMBert(Model):
     """
     custom Model built on top of un-trained Bert to train Bert on masked language modeling task
     """
@@ -26,7 +26,7 @@ class LMBert(Model):
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None,
                  ) -> None:
-        super(LMBert, self).__init__(vocab, regularizer)
+        super(MLMBert, self).__init__(vocab, regularizer)
 
         self.bert_model = bert_model
 
@@ -46,7 +46,7 @@ class LMBert(Model):
                 tokens: Dict[str, torch.Tensor],
                 mask_indicator: torch.Tensor,
                 metadata: List[Any],
-                lm_tags: torch.LongTensor = None,
+                mlm_tags: torch.LongTensor = None,
                 ) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         """
@@ -60,13 +60,13 @@ class LMBert(Model):
             An integer ``SequenceFeatureField`` representation of the position of the masked-token (ph)
             in the sentence. This should have shape (batch_size, num_tokens) and importantly, can be
             all zeros, in the case that the sentence has no mask.
-        lm_tags : torch.LongTensor, optional (default = None)
+        mlm_tags : torch.LongTensor, optional (default = None)
             A torch tensor representing the sequence of integer gold class labels
             of shape ``(batch_size, num_tokens)``
         metadata : ``List[Dict[str, Any]]``, optional, (default = None)
-            metadata contains the original lm_in in the sentence, the language modeling mask,
-             and start offsets for converting wordpieces back to a sequence of lm_in,
-            under 'lm_in', 'lm_mask' and 'offsets' keys, respectively.
+            metadata contains the original mlm_in in the sentence, the language modeling mask,
+             and start offsets for converting wordpieces back to a sequence of mlm_in,
+            under 'mlm_in', 'mlm_mask' and 'offsets' keys, respectively.
         Returns
         -------
         An output dictionary consisting of:
@@ -83,8 +83,8 @@ class LMBert(Model):
         # added by ph
         tokens['tokens'] = tokens['tokens'].cuda()
         mask_indicator = mask_indicator.cuda()
-        if lm_tags is not None:
-            lm_tags = lm_tags.cuda()
+        if mlm_tags is not None:
+            mlm_tags = mlm_tags.cuda()
 
         mask = get_text_field_mask(tokens)
         bert_embeddings, _ = self.bert_model(input_ids=tokens['tokens'],
@@ -103,10 +103,10 @@ class LMBert(Model):
         # probabilities are defined over word-pieces
         output_dict = {"logits": logits, "class_probabilities": class_probabilities, "mask": mask}
 
-        # We add in the offsets here so we can compute the un-wordpieced lm_tags.
-        lm_in, gold_lm_tags, offsets = zip(*[(x['lm_in'], x['gold_lm_tags'], x['offsets']) for x in metadata])
-        output_dict['lm_in'] = list(lm_in)
-        output_dict['gold_lm_tags'] = list(gold_lm_tags)
+        # We add in the offsets here so we can compute the un-wordpieced mlm_tags.
+        mlm_in, gold_mlm_tags, offsets = zip(*[(x['mlm_in'], x['gold_mlm_tags'], x['offsets']) for x in metadata])
+        output_dict['mlm_in'] = list(mlm_in)
+        output_dict['gold_mlm_tags'] = list(gold_mlm_tags)
         output_dict['wordpiece_offsets'] = list(offsets)
 
         # TODO the correct way to do language modeling would be to use
@@ -115,9 +115,9 @@ class LMBert(Model):
 
         # TODO use the mask to mask all words which should not be predicted?
 
-        if lm_tags is not None:
+        if mlm_tags is not None:
             loss = sequence_cross_entropy_with_logits(logits,
-                                                      lm_tags,
+                                                      mlm_tags,
                                                       mask)
             output_dict['loss'] = loss
         return output_dict
@@ -154,15 +154,15 @@ class LMBert(Model):
             word_tags.append([tags[i] for i in offsets])
 
         # collect results
-        output_dict['wordpiece_lm_tags'] = wordpiece_tags
-        output_dict['lm_tags'] = word_tags
+        output_dict['wordpiece_mlm_tags'] = wordpiece_tags
+        output_dict['mlm_tags'] = word_tags
         return output_dict
 
     def train_on_batch(self, batch, optimizer):
         # to cuda
         batch['tokens']['tokens'] = batch['tokens']['tokens'].cuda()
         batch['mask_indicator'] = batch['mask_indicator'].cuda()
-        batch['lm_tags'] = batch['lm_tags'].cuda()
+        batch['mlm_tags'] = batch['mlm_tags'].cuda()
 
         # forward + loss
         optimizer.zero_grad()

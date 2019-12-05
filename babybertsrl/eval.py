@@ -1,30 +1,32 @@
 import torch
-from allennlp.data.iterators import BucketIterator
+from typing import Iterator
+
+from allennlp.models import Model
 
 from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
 
 
-def predict_masked_sentences(model, test_data, output_vocab):
+def predict_masked_sentences(model: Model,
+                             instances_generator: Iterator,
+                             ):
     model.eval()
 
-    # make test batch
-    instances = test_data.make_instances(test_data.utterances)
-    num_instances = len(test_data.utterances)
-    bucket_batcher = BucketIterator(batch_size=num_instances, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher.index_with(output_vocab)
-    batch = next(bucket_batcher(instances, num_epochs=1))
+    # get batch
+    batch = next(instances_generator)
+
+    # TODO currently only first batch in test split is considered
 
     # get predictions
     with torch.no_grad():
         output_dict = model(**batch)  # input is dict[str, tensor]
 
     # show results only for whole-words
-    lm_in = output_dict['lm_in']
-    predicted_lm_out = model.decode(output_dict).pop("lm_tags")
-    gold_lm_tags = output_dict['gold_lm_tags']
-    assert len(lm_in) == len(predicted_lm_out) == len(gold_lm_tags)
+    mlm_in = output_dict['mlm_in']
+    predicted_mlm_out = model.decode(output_dict).pop("mlm_tags")
+    gold_mlm_tags = output_dict['gold_mlm_tags']
+    assert len(mlm_in) == len(predicted_mlm_out) == len(gold_mlm_tags)
 
-    for a, b, c in zip(lm_in, predicted_lm_out, gold_lm_tags):
+    for a, b, c in zip(mlm_in, predicted_mlm_out, gold_mlm_tags):
         print(len(a), len(b), len(c), flush=True)
         for ai, bi, ci in zip(a, b, c):
             print(f'{ai:>20} {bi:>20} {ci:>20}', flush=True)  # TODO save to file

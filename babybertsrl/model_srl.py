@@ -12,7 +12,6 @@ from allennlp.nn.util import sequence_cross_entropy_with_logits
 from allennlp.nn.util import get_lengths_from_binary_sequence_mask
 from allennlp.nn.util import viterbi_decode
 from allennlp.training.util import rescale_gradients
-from allennlp.common import Params as AllenParams
 
 
 class SrlBert(Model):
