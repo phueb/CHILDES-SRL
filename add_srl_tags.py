@@ -9,8 +9,7 @@ from babybertsrl.job import Params
 from babybertsrl.params import param2default
 
 CORPUS_NAME = 'childes-20191204'
-INSPECT_ONLY = False
-INTERACTIVE = False
+INTERACTIVE = True
 
 predictor = Predictor.from_path("https://s3-us-west-2.amazonaws.com/allennlp/models/bert-base-srl-2019.06.17.tar.gz",
                                 cuda_device=0)
@@ -25,7 +24,6 @@ srl_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}_srl.txt'
 out_f = srl_path.open('w')
 
 progress_bar = pyprind.ProgBar(len(utterances),
-                               title=f'Srl tagging..',
                                stream=1)
 for tokenized_utterance in utterances:
 
@@ -50,22 +48,8 @@ for tokenized_utterance in utterances:
     if not instances:
         continue
 
+    # get SRL predictions
     res = predictor.predict_instances(instances)
-
-    if INSPECT_ONLY:
-        for d in res['verbs']:
-            print(d['verb'])
-            print(d['description'])
-        print()
-
-        key = input('[q] to quit. Any key to continue.')
-        if key != 'q':
-            continue
-        else:
-            out_f.close()
-            raise SystemExit('Quit')
-
-    # TODO do no lowercase - [NAME] is converted to [name]
 
     # write to file
     left_input = ' '.join(tokenized_utterance)
@@ -85,6 +69,8 @@ for tokenized_utterance in utterances:
         line = f'{verb_index} {left_input} ||| {right_input}'
 
         if INTERACTIVE:
+            print('=====================================')
+            print(d['description'])
             print(line)
             key = input('\n[q] to quit. Any key to continue.\n')
             if key != 'q':

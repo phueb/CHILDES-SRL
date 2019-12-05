@@ -41,7 +41,7 @@ def load_utterances_from_file(file_path: Path,
 
             # tokenize transcript
             transcript = line.strip().split()  # a transcript containing multiple utterances
-            transcript = [w.lower() for w in transcript]
+            transcript = [w for w in transcript]
 
             # split transcript into utterances
             utterances = [[]]
