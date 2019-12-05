@@ -56,7 +56,7 @@ class SrlBert(Model):
                 tokens: Dict[str, torch.Tensor],
                 verb_indicator: torch.Tensor,
                 metadata: List[Any],
-                tags: torch.LongTensor = None,
+                srl_tags: torch.LongTensor = None,
                 ) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         """
@@ -70,7 +70,7 @@ class SrlBert(Model):
             An integer ``SequenceFeatureField`` representation of the position of the verb
             in the sentence. This should have shape (batch_size, num_tokens) and importantly, can be
             all zeros, in the case that the sentence has no verbal predicate.
-        tags : torch.LongTensor, optional (default = None)
+        srl_tags : torch.LongTensor, optional (default = None)
             A torch tensor representing the sequence of integer gold class labels
             of shape ``(batch_size, num_tokens)``
         metadata : ``List[Dict[str, Any]]``, optional, (default = None)
@@ -93,8 +93,8 @@ class SrlBert(Model):
         # added by ph
         tokens['tokens'] = tokens['tokens'].cuda()
         verb_indicator = verb_indicator.cuda()
-        if tags is not None:
-            tags = tags.cuda()
+        if srl_tags is not None:
+            srl_tags = srl_tags.cuda()
 
         mask = get_text_field_mask(tokens)
         bert_embeddings, _ = self.bert_model(input_ids=tokens['tokens'],
@@ -119,9 +119,9 @@ class SrlBert(Model):
         output_dict['verb'] = list(verbs)
         output_dict['wordpiece_offsets'] = list(offsets)
 
-        if tags is not None:
+        if srl_tags is not None:
             loss = sequence_cross_entropy_with_logits(logits,
-                                                      tags,
+                                                      srl_tags,
                                                       mask,
                                                       label_smoothing=self._label_smoothing)
             output_dict['loss'] = loss

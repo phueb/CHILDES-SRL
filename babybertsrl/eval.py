@@ -62,7 +62,7 @@ def evaluate_model_on_f1(model, srl_eval_path, instances_generator):
 
         # metadata
         metadata = batch['metadata']
-        batch_verb_indices = [example_metadata['verb_indices'] for example_metadata in metadata]
+        batch_verb_indices = [example_metadata['verb_index'] for example_metadata in metadata]
         batch_sentences = [example_metadata['srl_in'] for example_metadata in metadata]
 
         # Get the BIO tags from decode()

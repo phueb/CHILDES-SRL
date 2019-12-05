@@ -2,15 +2,13 @@
 Code obtained from Allen AI NLP toolkit in September 2019
 """
 
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, TextIO
 import os
 import shutil
 import subprocess
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-
-from babybertsrl import config
 
 
 class SrlEvalScorer:
@@ -40,12 +38,12 @@ class SrlEvalScorer:
         self._false_negatives = defaultdict(int)
 
     def __call__(self,  # type: ignore
-                 batch_verb_indices,  # : List[Optional[int]]
-                 batch_sentences,  # : List[List[str]]
-                 batch_conll_formatted_predicted_tags,  # : List[List[str]]
-                 batch_conll_formatted_gold_tags,
+                 batch_verb_indices: List[Optional[int]],
+                 batch_sentences: List[List[str]],
+                 batch_conll_formatted_predicted_tags: List[List[str]],
+                 batch_conll_formatted_gold_tags: List[List[str]],
                  verbose: bool = False,
-                 ) -> None:  # : List[List[str]]
+                 ):
         # pylint: disable=signature-differs
         """
         Parameters
@@ -165,7 +163,8 @@ class SrlEvalScorer:
         self._false_negatives = defaultdict(int)
 
 
-def convert_bio_tags_to_conll_format(labels):  # List[str]
+def convert_bio_tags_to_conll_format(labels: List[str],
+                                     ):
     """
     Converts BIO formatted SRL tags to the format required for evaluation with the
     official CONLL 2005 perl script. Spans are represented by bracketed labels,
@@ -203,12 +202,13 @@ def convert_bio_tags_to_conll_format(labels):  # List[str]
     return conll_labels
 
 
-def write_conll_formatted_tags_to_file(prediction_file,  # : TextIO
-                                       gold_file,  # : TextIO
-                                       verb_index,  # : Optional[int]
-                                       sentence,  # : List[str]
-                                       conll_formatted_predictions,  #: List[str]
-                                       conll_formatted_gold_labels):  # : List[str]
+def write_conll_formatted_tags_to_file(prediction_file: TextIO,
+                                       gold_file: TextIO,
+                                       verb_index: int,
+                                       sentence: List[str],
+                                       conll_formatted_predictions: List[str],
+                                       conll_formatted_gold_labels: List[str],
+                                       ):
     """
     Prints predicate argument predictions and gold labels for a single verbal
     predicate in a sentence to two provided file references.

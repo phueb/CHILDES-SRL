@@ -80,7 +80,7 @@ def main(param2val):
     train_data_srl = DataSRL(params, train_data_path_srl, bert_tokenizer)
     devel_data_srl = DataSRL(params, devel_data_path_srl, bert_tokenizer)
 
-    # get output_vocab_lm
+    # get output_vocab
     # note: Allen NLP vocab holds labels, bert_tokenizer.vocab holds input tokens
     # what from_instances() does:
     # 1. it iterates over all instances, and all fields, and all token indexers
@@ -88,13 +88,13 @@ def main(param2val):
     # input tokens are not indexed, as they are already indexed by bert tokenizer vocab.
     # this ensures that the model is built with inputs for all vocab words,
     # such that words that occur only in LM or SRL task can still be input
-    all_instances = chain(train_data_lm.instances, devel_data_lm.instances)
-    output_vocab_lm = Vocabulary.from_instances(all_instances)
+    all_instances_lm = chain(train_data_lm.instances, devel_data_lm.instances)
+    output_vocab_lm = Vocabulary.from_instances(all_instances_lm)
     output_vocab_lm.print_statistics()
 
-    # batcher
-    bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher.index_with(output_vocab_lm)  # sets vocab as attribute of bucket_batcher
+    all_instances_srl = chain(train_data_srl.instances, devel_data_srl.instances)
+    output_vocab_srl = Vocabulary.from_instances(all_instances_srl)
+    output_vocab_srl.print_statistics()
 
     # BERT  # TODO original implementation used slanted_triangular learning rate scheduler
     # parameters of original implementation are specified here:
@@ -128,6 +128,10 @@ def main(param2val):
     # ///////////////////////////////////////////
     # pre train
     # ///////////////////////////////////////////
+
+    # batcher
+    bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
+    bucket_batcher.index_with(output_vocab_lm)
 
     predict_masked_sentences(bert_lm, test_data_lm, output_vocab_lm)
 
@@ -175,8 +179,12 @@ def main(param2val):
     # fine-tune
     # ///////////////////////////////////////////
 
+    # batcher
+    bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
+    bucket_batcher.index_with(output_vocab_srl)
+
     print('Preparing BERT for fine-tuning...')
-    bert_srl = SrlBert(vocab=output_vocab_lm,
+    bert_srl = SrlBert(vocab=output_vocab_srl,
                        bert_model=bert_model,  # bert_model is reused 
                        embedding_dropout=0.1)
     bert_srl.cuda()

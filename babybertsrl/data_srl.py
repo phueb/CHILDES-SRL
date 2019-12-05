@@ -113,7 +113,7 @@ class DataSRL:
         metadata_dict['offsets'] = start_offsets
         metadata_dict['srl_in'] = srl_in   # previously called "words"
         metadata_dict['verb'] = verb
-        metadata_dict['verb_indices'] = srl_verb_indices  # previously called "verb index"
+        metadata_dict['verb_index'] = verb_index  # must be an integer
         metadata_dict['gold_srl_tags'] = srl_tags  # non word-piece tags
 
         # fields
