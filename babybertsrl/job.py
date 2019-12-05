@@ -61,6 +61,7 @@ def main(param2val):
     srl_eval_path = project_path / 'perl' / 'srl-eval.pl'
     train_data_path_lm = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_train_lm.txt'
     devel_data_path_lm = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_devel_lm.txt'
+    test_data_path_lm = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_test_lm.txt'
     train_data_path_srl = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_train_srl.txt'
     devel_data_path_srl = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_devel_srl.txt'
     vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab_{params.vocab_size}.txt'
@@ -73,6 +74,7 @@ def main(param2val):
     # load utterances for pre-training
     train_data_lm = DataLM(params, train_data_path_lm, bert_tokenizer)
     devel_data_lm = DataLM(params, devel_data_path_lm, bert_tokenizer)
+    test_data_lm = DataLM(params, test_data_path_lm, bert_tokenizer)
 
     # load propositions for fine-tuning on SRL task
     train_data_srl = DataSRL(params, train_data_path_srl, bert_tokenizer)
