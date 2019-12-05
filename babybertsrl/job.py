@@ -60,11 +60,9 @@ def main(param2val):
     project_path = Path(param2val['project_path'])
     srl_eval_path = project_path / 'perl' / 'srl-eval.pl'
     train_data_path_lm = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_train_lm.txt'
-    dev_data_path_lm = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_dev_lm.txt'
-    test_data_path_lm = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_test_lm.txt'
+    devel_data_path_lm = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_devel_lm.txt'
     train_data_path_srl = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_train_srl.txt'
-    dev_data_path_srl = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_dev_srl.txt'
-    test_data_path_srl = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_test_srl.txt'
+    devel_data_path_srl = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_devel_srl.txt'
     vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab_{params.vocab_size}.txt'
 
     # BERT tokenizer - defines input vocabulary
@@ -74,17 +72,13 @@ def main(param2val):
 
     # load utterances for pre-training
     train_data_lm = DataLM(params, train_data_path_lm, bert_tokenizer)
-    dev_data_lm = DataLM(params, dev_data_path_lm, bert_tokenizer)
-    test_data_lm = DataLM(params, test_data_path_lm, bert_tokenizer)
+    devel_data_lm = DataLM(params, devel_data_path_lm, bert_tokenizer)
 
     # load propositions for fine-tuning on SRL task
-    # train_data_srl = DataSRL(params, train_data_path_srl, bert_tokenizer)
-    # dev_data_srl = DataSRL(params, dev_data_path_srl, bert_tokenizer)
-    # test_data_srl = DataSRL(params, test_data_path_srl, bert_tokenizer)
+    train_data_srl = DataSRL(params, train_data_path_srl, bert_tokenizer)
+    devel_data_srl = DataSRL(params, devel_data_path_srl, bert_tokenizer)
 
-    # TODO merge lm and srl instances to get combined output vocab?
-
-    # get indexing_vocab
+    # get output_vocab_lm
     # note: Allen NLP vocab holds labels, bert_tokenizer.vocab holds input tokens
     # what from_instances() does:
     # 1. it iterates over all instances, and all fields, and all token indexers
@@ -92,13 +86,13 @@ def main(param2val):
     # input tokens are not indexed, as they are already indexed by bert tokenizer vocab.
     # this ensures that the model is built with inputs for all vocab words,
     # such that words that occur only in LM or SRL task can still be input
-    all_instances = chain(train_data_lm.instances, dev_data_lm.instances)
-    indexing_vocab = Vocabulary.from_instances(all_instances)
-    indexing_vocab.print_statistics()
+    all_instances = chain(train_data_lm.instances, devel_data_lm.instances)
+    output_vocab_lm = Vocabulary.from_instances(all_instances)
+    output_vocab_lm.print_statistics()
 
     # batcher
     bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher.index_with(indexing_vocab)  # sets vocab as attribute of bucket_batcher
+    bucket_batcher.index_with(output_vocab_lm)  # sets vocab as attribute of bucket_batcher
 
     # BERT  # TODO original implementation used slanted_triangular learning rate scheduler
     # parameters of original implementation are specified here:
@@ -116,7 +110,7 @@ def main(param2val):
     # TODO Allen NLP padding symbol is different from [PAD]
 
     # BERT + LM head
-    bert_lm = LMBert(vocab=indexing_vocab,
+    bert_lm = LMBert(vocab=output_vocab_lm,
                      bert_model=bert_model,
                      embedding_dropout=0.1)
     bert_lm.cuda()
@@ -133,9 +127,9 @@ def main(param2val):
     # pre train
     # ///////////////////////////////////////////
 
-    predict_masked_sentences(bert_lm, test_data_lm, indexing_vocab)
+    predict_masked_sentences(bert_lm, test_data_lm, output_vocab_lm)
 
-    dev_pps = []
+    devel_pps = []
     train_pps = []
     eval_steps = []
     train_start = time.time()
@@ -156,14 +150,14 @@ def main(param2val):
             if step % config.Eval.loss_interval == 0:
 
                 # evaluate perplexity
-                instances_generator = bucket_batcher(dev_data_lm.make_instances(dev_data_lm.utterances), num_epochs=1)
-                dev_pp = evaluate_model_on_pp(bert_lm, instances_generator)
-                dev_pps.append(dev_pp)
+                instances_generator = bucket_batcher(devel_data_lm.make_instances(devel_data_lm.utterances), num_epochs=1)
+                devel_pp = evaluate_model_on_pp(bert_lm, instances_generator)
+                devel_pps.append(devel_pp)
                 eval_steps.append(step)
-                print(f'dev-pp={dev_pp}', flush=True)
+                print(f'devel-pp={devel_pp}', flush=True)
 
                 # test sentences
-                predict_masked_sentences(bert_lm, test_data_lm, indexing_vocab)  # TODO save results to file
+                predict_masked_sentences(bert_lm, test_data_lm, output_vocab_lm)  # TODO save results to file
 
                 # console
                 min_elapsed = (time.time() - train_start) // 60
@@ -172,15 +166,15 @@ def main(param2val):
     # to pandas
     s1 = pd.Series(train_pps, index=np.arange(params.num_pre_train_epochs))
     s1.name = 'train_pp'
-    s2 = pd.Series(dev_pps, index=eval_steps)
-    s2.name = 'dev_pp'
+    s2 = pd.Series(devel_pps, index=eval_steps)
+    s2.name = 'devel_pp'
 
     # ///////////////////////////////////////////
     # fine-tune
     # ///////////////////////////////////////////
 
     print('Preparing BERT for fine-tuning...')
-    bert_srl = SrlBert(vocab=indexing_vocab,
+    bert_srl = SrlBert(vocab=output_vocab_lm,
                        bert_model=bert_model,  # bert_model is reused 
                        embedding_dropout=0.1)
     bert_srl.cuda()
@@ -193,7 +187,7 @@ def main(param2val):
                              t_total=-1,
                              weight_decay=0.01)
 
-    dev_f1s = []
+    devel_f1s = []
     train_f1s = []
     eval_steps = []
     train_start = time.time()
@@ -213,13 +207,13 @@ def main(param2val):
             loss = bert_srl.train_on_batch(batch, optimizer_srl)
 
             if step % config.Eval.loss_interval == 0:
-                # evaluate dev f1
-                instances_generator = bucket_batcher(dev_data_srl.make_instances(dev_data_srl.propositions),
+                # evaluate devel f1
+                instances_generator = bucket_batcher(devel_data_srl.make_instances(devel_data_srl.propositions),
                                                      num_epochs=1)
-                dev_f1 = evaluate_model_on_f1(bert_srl, srl_eval_path, instances_generator)
-                dev_f1s.append(dev_f1)
+                devel_f1 = evaluate_model_on_f1(bert_srl, srl_eval_path, instances_generator)
+                devel_f1s.append(devel_f1)
                 eval_steps.append(step)
-                print(f'dev-f1={dev_f1}', flush=True)
+                print(f'devel-f1={devel_f1}', flush=True)
 
                 # console
                 min_elapsed = (time.time() - train_start) // 60
@@ -228,7 +222,7 @@ def main(param2val):
     # to pandas
     s3 = pd.Series(train_f1s, index=np.arange(params.num_fine_tune_epochs))
     s3.name = 'train_f1'
-    s4 = pd.Series(dev_f1s, index=eval_steps)
-    s4.name = 'dev_f1'
+    s4 = pd.Series(devel_f1s, index=eval_steps)
+    s4.name = 'devel_f1'
 
     return [s1, s2, s3, s4]
