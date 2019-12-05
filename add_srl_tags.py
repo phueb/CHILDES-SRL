@@ -68,12 +68,16 @@ for tokenized_utterance in utterances:
     # write to file
     left_input = ' '.join(tokenized_utterance)
     for d in res['verbs']:
+
+        # TODO debugging - sometimes there is no B-V
+        if 'B-V' not in d['tags']:
+            print(tokenized_utterance)
+            print(d)
+            print('WARNING: No verb found. Skipping.')
+            continue
+
         # make line
         tags = d['tags']
-
-        # TODO debugging
-        print(tags)
-
         verb_index = tags.index('B-V')
         right_input = ' '.join(tags)
         line = f'{verb_index} {left_input} ||| {right_input}'
