@@ -125,7 +125,7 @@ class DataLM:
         metadata_dict['gold_lm_tags'] = lm_tags  # is just a copy of the input without the mask
 
         # fields
-        tokens = [Token(t) for t in lm_in_word_pieces]
+        tokens = [Token(t, text_id=self.bert_tokenizer.vocab[t]) for t in lm_in_word_pieces]
         text_field = TextField(tokens, self.token_indexers)
 
         if len(lm_in_word_pieces) != len(lm_tags_word_pieces):

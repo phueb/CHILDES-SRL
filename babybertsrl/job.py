@@ -89,6 +89,9 @@ def main(param2val):
     # what from_instances() does:
     # 1. it iterates over all instances, and all fields, and all token indexers
     # 2. the token indexer is used to update vocabulary count, skipping words whose text_id is already set
+    # input tokens are not indexed, as they are already indexed by bert tokenizer vocab.
+    # this ensures that the model is built with inputs for all vocab words,
+    # such that words that occur only in LM or SRL task can still be input
     all_instances = chain(train_data_lm.instances, dev_data_lm.instances)
     indexing_vocab = Vocabulary.from_instances(all_instances)
     indexing_vocab.print_statistics()
@@ -109,11 +112,8 @@ def main(param2val):
                              intermediate_size=params.intermediate_size)  # was 3072
     bert_model = BertModel(config=bert_config)
 
-    # TODO mismatch between vocabs?
-
-    print(input_vocab_size)
-    print(indexing_vocab.get_vocab_size('tokens'))
-    raise SystemExit
+    # TODO how does PADDING get represented in model?
+    # TODO Allen NLP padding symbol is different from [PAD]
 
     # BERT + LM head
     bert_lm = LMBert(vocab=indexing_vocab,

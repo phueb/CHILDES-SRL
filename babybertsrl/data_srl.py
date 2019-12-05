@@ -117,7 +117,7 @@ class DataSRL:
         metadata_dict['gold_srl_tags'] = srl_tags  # non word-piece tags
 
         # fields
-        tokens = [Token(t) for t in srl_in_word_pieces]
+        tokens = [Token(t, text_id=self.bert_tokenizer.vocab[t]) for t in srl_in_word_pieces]
         text_field = TextField(tokens, self.token_indexers)
 
         fields = {'tokens': text_field,
