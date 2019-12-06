@@ -9,7 +9,7 @@ from babybertsrl.job import Params
 from babybertsrl.params import param2default
 
 CORPUS_NAME = 'childes-20191204'
-INTERACTIVE = True
+INTERACTIVE = False
 
 predictor = Predictor.from_path("https://s3-us-west-2.amazonaws.com/allennlp/models/bert-base-srl-2019.06.17.tar.gz",
                                 cuda_device=0)
@@ -23,11 +23,14 @@ utterances = load_utterances_from_file(utterances_path)
 srl_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}_srl.txt'
 out_f = srl_path.open('w')
 
-progress_bar = pyprind.ProgBar(len(utterances),
-                               stream=1)
+progress_bar = pyprind.ProgBar(len(utterances), stream=1)
+num_no_verb = 0
 for tokenized_utterance in utterances:
 
     # TODO use spacy sentence boundary detection before srl tagging ?
+
+    # TODO this is really slow - use nlp.pipe
+    # TODO and compute srl tags over larger number of instances
 
     # tag verbs
     spacy_doc = Doc(predictor._tokenizer.spacy.vocab, words=tokenized_utterance)
@@ -49,6 +52,7 @@ for tokenized_utterance in utterances:
         continue
 
     # get SRL predictions
+    # print(f'Predicting SRL tags for {len(instances)} instances')
     res = predictor.predict_instances(instances)
 
     # write to file
@@ -57,9 +61,10 @@ for tokenized_utterance in utterances:
 
         # TODO debugging - sometimes there is no B-V
         if 'B-V' not in d['tags']:
-            print(tokenized_utterance)
-            print(d)
-            print('WARNING: No verb found. Skipping.')
+            # print(tokenized_utterance)
+            # print(d)
+            # print('WARNING: No verb found. Skipping.')
+            num_no_verb += 1
             continue
 
         # make line
@@ -84,3 +89,4 @@ for tokenized_utterance in utterances:
     progress_bar.update()
 
 out_f.close()
+print(f'Skipped {num_no_verb} utterances due to absence of B-V tag')

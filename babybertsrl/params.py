@@ -1,12 +1,8 @@
 
 
 param2requests = {
-    "num_layers": [8],
-    "num_attention_heads": [8],
-    "hidden_size": [512],
-    "intermediate_size": [1024],
-    'num_pre_train_epochs': [1],
-    'num_fine_tune_epochs': [1],
+    'num_pre_train_epochs': [0, 1],
+    'num_fine_tune_epochs': [0, 1],
 }
 
 param2debug = {
