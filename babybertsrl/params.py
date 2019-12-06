@@ -20,6 +20,6 @@ param2default = {
     'num_pre_train_epochs': 1,
     'num_fine_tune_epochs': 1,
     'num_masked': 7,
-    'corpus_name': 'childes-20191204',
+    'corpus_name': 'childes-20191206',
     'vocab_size': 4000,
 }

@@ -10,13 +10,14 @@ from allennlp.data.vocabulary import Vocabulary
 from allennlp.data.iterators import BucketIterator
 from allennlp.training.util import move_optimizer_to_cuda
 
-from pytorch_pretrained_bert.tokenization import BertTokenizer
+from pytorch_pretrained_bert.tokenization import WordpieceTokenizer
 from pytorch_pretrained_bert.modeling import BertModel, BertConfig
 from pytorch_pretrained_bert import BertAdam
 
 from babybertsrl import config
 from babybertsrl.io import load_utterances_from_file
 from babybertsrl.io import load_propositions_from_file
+from babybertsrl.io import load_vocab
 from babybertsrl.io import split
 from babybertsrl.converter import ConverterMLM, ConverterSRL
 from babybertsrl.eval import evaluate_model_on_pp
@@ -62,18 +63,16 @@ def main(param2val):
     srl_eval_path = project_path / 'perl' / 'srl-eval.pl'
     data_path_mlm = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_mlm.txt'
     data_path_srl = project_path / 'data' / 'CHILDES' / f'{params.corpus_name}_srl.txt'
-    vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab_{params.vocab_size}.txt'
+    vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab.txt'
 
-    # BERT tokenizer - defines input vocabulary
-    _vocab = vocab_path.read_text().split('\n')
-    assert _vocab[0] == '[PAD]'  # AllenNLP expects this
-    assert _vocab[1] == '[UNK]'  # AllenNLP expects this
-    assert _vocab[2] == '[CLS]'
-    assert _vocab[3] == '[SEP]'
-    assert _vocab[4] == '[MASK]'
-    bert_tokenizer = BertTokenizer(str(vocab_path),
-                                   do_basic_tokenize=False,
-                                   do_lower_case=False)  # set to false because [MASK] must be uppercase
+    # Wordpiece tokenizer - defines input vocabulary
+    vocab = load_vocab(vocab_path, params.vocab_size)
+    assert vocab['[PAD]'] == 0  # AllenNLP expects this
+    assert vocab['[UNK]'] == 1  # AllenNLP expects this
+    assert vocab['[CLS]'] == 2
+    assert vocab['[SEP]'] == 3
+    assert vocab['[MASK]'] == 4
+    wordpiece_tokenizer = WordpieceTokenizer(vocab)
 
     # load utterances for pre-training
     utterances = load_utterances_from_file(data_path_mlm)
@@ -84,11 +83,11 @@ def main(param2val):
     train_propositions, devel_propositions, test_propositions = split(propositions)
 
     # converters handle conversion from text to instances
-    converter_mlm = ConverterMLM(params, bert_tokenizer)
-    converter_srl = ConverterSRL(params, bert_tokenizer)
+    converter_mlm = ConverterMLM(params, wordpiece_tokenizer)
+    converter_srl = ConverterSRL(params, wordpiece_tokenizer)
 
     # get output_vocab
-    # note: Allen NLP vocab holds labels, bert_tokenizer.vocab holds input tokens
+    # note: Allen NLP vocab holds labels, wordpiece_tokenizer.vocab holds input tokens
     # what from_instances() does:
     # 1. it iterates over all instances, and all fields, and all token indexers
     # 2. the token indexer is used to update vocabulary count, skipping words whose text_id is already set
@@ -112,7 +111,7 @@ def main(param2val):
 
     # BERT  # TODO original implementation used slanted_triangular learning rate scheduler
     print('Preparing BERT for pre-training...')
-    input_vocab_size = len(converter_mlm.bert_tokenizer.vocab)
+    input_vocab_size = len(converter_mlm.wordpiece_tokenizer.vocab)
     bert_config = BertConfig(vocab_size_or_config_json_file=input_vocab_size,  # was 32K
                              hidden_size=params.hidden_size,  # was 768
                              num_hidden_layers=params.num_layers,  # was 12
@@ -120,8 +119,8 @@ def main(param2val):
                              intermediate_size=params.intermediate_size)  # was 3072
     bert_model = BertModel(config=bert_config)
 
-    print(index_vocab_mlm.get_vocab_size('tokens'), len(bert_tokenizer.vocab))
-    print(index_vocab_srl.get_vocab_size('tokens'), len(bert_tokenizer.vocab))
+    print(index_vocab_mlm.get_vocab_size('tokens'), len(wordpiece_tokenizer.vocab))
+    print(index_vocab_srl.get_vocab_size('tokens'), len(wordpiece_tokenizer.vocab))
     assert index_vocab_mlm.get_vocab_size('tokens') == index_vocab_srl.get_vocab_size('tokens')
 
     # BERT + LM head
@@ -154,6 +153,7 @@ def main(param2val):
     train_pps = []
     eval_steps = []
     train_start = time.time()
+    max_step = len(train_utterances)
     for epoch in range(params.num_pre_train_epochs):
         print(f'\nEpoch: {epoch}', flush=True)
 
@@ -183,7 +183,8 @@ def main(param2val):
 
                 # console
                 min_elapsed = (time.time() - train_start) // 60
-                print(f'step {step:<6}: pp={torch.exp(loss):2.4f} total minutes elapsed={min_elapsed:<3}', flush=True)
+                print(f'step {step:<6}/{max_step}: pp={torch.exp(loss):2.4f} total minutes elapsed={min_elapsed:<3}',
+                      flush=True)
 
     # to pandas
     s1 = pd.Series(train_pps, index=np.arange(params.num_pre_train_epochs))
@@ -217,6 +218,7 @@ def main(param2val):
     train_f1s = []
     eval_steps = []
     train_start = time.time()
+    max_step = len(train_propositions)
     for epoch in range(params.num_fine_tune_epochs):
         print(f'\nEpoch: {epoch}', flush=True)
 
@@ -243,7 +245,8 @@ def main(param2val):
 
                 # console
                 min_elapsed = (time.time() - train_start) // 60
-                print(f'step {step:<6}: loss={loss:2.4f} total minutes elapsed={min_elapsed:<3}', flush=True)
+                print(f'step {step:<6}/{max_step}: loss={loss:2.4f} total minutes elapsed={min_elapsed:<3}',
+                      flush=True)
 
     # to pandas
     s3 = pd.Series(train_f1s, index=np.arange(params.num_fine_tune_epochs))

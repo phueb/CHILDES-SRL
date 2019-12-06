@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 
 def wordpiece(tokens: List[str],
-              bert_tokenizer,
+              wordpiece_tokenizer,
               lowercase_input: bool,
               ) -> Tuple[List[str], List[int], List[int]]:
     """
@@ -49,7 +49,7 @@ def wordpiece(tokens: List[str],
     for token in tokens:
         if lowercase_input:
             token = token.lower()
-        word_pieces = bert_tokenizer.wordpiece_tokenizer.tokenize(token)
+        word_pieces = wordpiece_tokenizer.tokenize(token)
         start_offsets.append(cumulative + 1)
         cumulative += len(word_pieces)
         end_offsets.append(cumulative)
@@ -92,8 +92,8 @@ def convert_verb_indices_to_wordpiece_indices(verb_indices: List[int],
 
 
 def convert_mlm_mask_to_wordpiece_mlm_mask(mlm_mask: List[int],
-                                         offsets: List[int],
-                                         ) -> List[int]:
+                                           offsets: List[int],
+                                           ) -> List[int]:
     """
     written by ph
 

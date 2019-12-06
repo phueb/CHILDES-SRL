@@ -2,8 +2,32 @@ import numpy as np
 from typing import List
 from pathlib import Path
 import random
+from collections import OrderedDict
 
 from babybertsrl import config
+
+
+def load_vocab(vocab_file, vocab_size):
+    """Loads a vocabulary file into a dictionary."""
+    vocab = OrderedDict()
+    vocab['[PAD]'] = 0
+    vocab['[UNK]'] = 1
+    vocab['[CLS]'] = 2
+    vocab['[SEP]'] = 3
+    vocab['[MASK]'] = 4
+    index = 5
+    with open(vocab_file, "r", encoding="utf-8") as reader:
+        while len(vocab) < vocab_size + 5:
+            token = reader.readline()
+            if not token:
+                break
+            token = token.split()[1]
+            vocab[token] = index
+
+            print(token, index)
+
+            index += 1
+    return vocab
 
 
 def split(data: List):

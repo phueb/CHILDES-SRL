@@ -22,7 +22,7 @@ a much smaller BERT than the standard BERT models is trained here.
 For example, compare the architecture specified in `params.py` to the
 architecture of the state-of-the-art BERT-based SRL tagger [here](https://github.com/allenai/allennlp/blob/master/training_config/bert_base_srl.jsonnet)
 
-## Using logic from the AllenNLP toolkit
+## Working with the AllenNLP toolkit
 
 * Utterances are loaded from text file
 * A word in each utterance is masked
@@ -43,10 +43,21 @@ Using word-pieces would require handling the case when a whole word in the input
 and the same word in the output is split into multiple word pieces. 
 The number of input and output elements would mismatch. 
 
-## Gotchas
+## Custom Vocabulary
 
-If using a custom vocab file, make sure to put `[PAD]` first, and `[UNK]` second.
-This is necessary, as the vocabulary indexing logic behind AllenNLP requires this.  
+If using a custom vocab file, use the following formatting:
+```text
+ 2342 .
+ 1249 you
+  234 I
+  .
+  .
+  .
+```
+
+There are two columns, one containing frequencies, the other words. 
+The columns must be sorted in order of decreasing frequency (most frequent word at the top).
+Place the file in `data`, and specify its name in `params.py`.
 
 
 ## Compatibility

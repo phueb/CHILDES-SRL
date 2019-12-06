@@ -1,3 +1,5 @@
+deepsegment
+pyprind
 sortedcontainers
 overrides
 attrs

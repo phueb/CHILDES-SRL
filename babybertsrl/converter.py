@@ -1,6 +1,6 @@
 from typing import Iterator, List, Tuple, Optional
 
-from pytorch_pretrained_bert.tokenization import BertTokenizer
+from pytorch_pretrained_bert.tokenization import WordpieceTokenizer
 
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data import Instance, Token
@@ -28,7 +28,7 @@ class ConverterMLM:
 
     def __init__(self,
                  params,
-                 bert_tokenizer: BertTokenizer,
+                 wordpiece_tokenizer: WordpieceTokenizer,
                  ):
         """
         converts utterances into Allen NLP toolkit instances format
@@ -38,7 +38,7 @@ class ConverterMLM:
         """
 
         self.params = params
-        self.bert_tokenizer = bert_tokenizer
+        self.wordpiece_tokenizer = wordpiece_tokenizer
         self.token_indexers = {'tokens': SingleIdTokenIndexer()}  # specifies how a token is indexed
 
     def _text_to_instance(self,
@@ -49,10 +49,10 @@ class ConverterMLM:
 
         # to word-pieces
         mlm_in_word_pieces, offsets, start_offsets = wordpiece(mlm_in,
-                                                               self.bert_tokenizer,
+                                                               self.wordpiece_tokenizer,
                                                                lowercase_input=False)
         mlm_tags_word_pieces, _, _ = wordpiece(mlm_tags,
-                                               self.bert_tokenizer,
+                                               self.wordpiece_tokenizer,
                                                lowercase_input=False)
         mlm_mask_word_pieces = convert_mlm_mask_to_wordpiece_mlm_mask(mlm_mask, offsets)
 
@@ -64,7 +64,7 @@ class ConverterMLM:
         metadata_dict['gold_mlm_tags'] = mlm_tags  # is just a copy of the input without the mask
 
         # fields
-        tokens = [Token(t, text_id=self.bert_tokenizer.vocab[t]) for t in mlm_in_word_pieces]
+        tokens = [Token(t, text_id=self.wordpiece_tokenizer.vocab[t]) for t in mlm_in_word_pieces]
         text_field = TextField(tokens, self.token_indexers)
 
         if len(mlm_in_word_pieces) != len(mlm_tags_word_pieces):
@@ -105,7 +105,7 @@ class ConverterSRL:
 
     def __init__(self,
                  params,
-                 bert_tokenizer: BertTokenizer,
+                 wordpiece_tokenizer: WordpieceTokenizer,
                  ):
         """
         converts propositions into Allen NLP toolkit instances format
@@ -114,7 +114,7 @@ class ConverterSRL:
         """
 
         self.params = params
-        self.bert_tokenizer = bert_tokenizer
+        self.wordpiece_tokenizer = wordpiece_tokenizer
         self.token_indexers = {'tokens': SingleIdTokenIndexer()}
 
     @staticmethod
@@ -140,7 +140,7 @@ class ConverterSRL:
 
         # to word-pieces
         srl_in_word_pieces, offsets, start_offsets = wordpiece(srl_in,
-                                                               self.bert_tokenizer,
+                                                               self.wordpiece_tokenizer,
                                                                lowercase_input=False)
         srl_tags_word_pieces = convert_tags_to_wordpiece_tags(srl_tags, offsets)
         verb_indices_word_pieces = convert_verb_indices_to_wordpiece_indices(srl_verb_indices, offsets)
@@ -158,7 +158,7 @@ class ConverterSRL:
         metadata_dict['gold_srl_tags'] = srl_tags  # non word-piece tags
 
         # fields
-        tokens = [Token(t, text_id=self.bert_tokenizer.vocab[t]) for t in srl_in_word_pieces]
+        tokens = [Token(t, text_id=self.wordpiece_tokenizer.vocab[t]) for t in srl_in_word_pieces]
         text_field = TextField(tokens, self.token_indexers)
 
         fields = {'tokens': text_field,
