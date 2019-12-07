@@ -2,9 +2,12 @@ from spacy.tokens import Doc
 import pyprind
 from deepsegment import DeepSegment
 from typing import List, Generator
+import logging
+import tensorflow as tf
 
 from allennlp.predictors.predictor import Predictor
 from allennlp.data.instance import Instance
+from allennlp.common.util import sanitize
 
 from babybertsrl.io import load_utterances_from_file
 from babybertsrl import config
@@ -50,7 +53,6 @@ def gen_instances_from_segment(seg: str,
 
     # to instances - one for each verb in utterance
     tokens = [token for token in spacy_doc]
-    res = []
     for i, word in enumerate(tokens):
         if word.pos_ == "VERB":
             verb_labels = [0 for _ in words]
@@ -79,6 +81,9 @@ predictor = Predictor.from_path("https://s3-us-west-2.amazonaws.com/allennlp/mod
                                 cuda_device=0)
 
 # segmentation model for splitting ill-formed utterances into well-formed sentences
+logging.disable(logging.WARNING)
+gpu_devices = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(gpu_devices[0], True)  # do not take all GPU memory - tagger needs some too
 segmentation = DeepSegment('en')
 
 # utterances
@@ -108,7 +113,7 @@ while outer_loop:
     res = predictor._model.forward_on_instances(batch)
 
     # make a line for each instance
-    for d in res:
+    for d in sanitize(res):
         tags = d['tags']
         words = d['words']
 

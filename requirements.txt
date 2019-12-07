@@ -1,3 +1,4 @@
+tensorflow-gpu==2
 deepsegment
 pyprind
 sortedcontainers

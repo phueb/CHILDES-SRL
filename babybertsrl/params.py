@@ -12,7 +12,7 @@ param2debug = {
 }
 
 param2default = {
-    'batch_size': 32,  # 32 is original implementation
+    'batch_size': 64,  # 32 is original implementation
     'hidden_size': 256,
     'num_layers': 8,  # 6 is better than any lower number
     'num_attention_heads': 8,
