@@ -142,6 +142,7 @@ while outer_loop:
 
     progress_bar.update()
 
+print(f'Collected {len(lines)} lines')
 print(f'Skipped {num_no_verb} utterances due to absence of B-V tag')
 
 print(f'Writing {len(lines)} lines to file...')
