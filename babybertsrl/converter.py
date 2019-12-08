@@ -1,4 +1,5 @@
 from typing import Iterator, List, Tuple, Optional
+import numpy as np
 
 from pytorch_pretrained_bert.tokenization import WordpieceTokenizer
 
@@ -92,7 +93,7 @@ class ConverterMLM:
             # collect each multiple times, each time with a different masked word
             utterance_length = len(utterance)
             num_masked = min(utterance_length, self.params.num_masked)
-            for masked_id in range(num_masked):
+            for masked_id in np.random.choice(utterance_length, num_masked, replace=False):
 
                 # collect instance
                 mlm_in, mlm_mask, mlm_tags = prepare_utterance_for_instance(utterance, masked_id)
