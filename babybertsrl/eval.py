@@ -8,7 +8,7 @@ from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
 
 def predict_masked_sentences(model: Model,
                              instances_generator: Iterator,
-                             ):
+                             verbose: bool = False):
     model.eval()
 
     # get batch
@@ -26,11 +26,14 @@ def predict_masked_sentences(model: Model,
     gold_mlm_tags = output_dict['gold_mlm_tags']
     assert len(mlm_in) == len(predicted_mlm_tags) == len(gold_mlm_tags)
 
-    for a, b, c in zip(mlm_in, predicted_mlm_tags, gold_mlm_tags):
-        print(len(a), len(b), len(c), flush=True)
-        for ai, bi, ci in zip(a, b, c):
-            print(f'{ai:>20} {bi:>20} {ci:>20}', flush=True)  # TODO save to file
-    print(flush=True)
+    # TODO save to file
+    if verbose:
+        for a, b, c in zip(mlm_in, predicted_mlm_tags, gold_mlm_tags):
+            print(len(a), len(b), len(c), flush=True)
+            for ai, bi, ci in zip(a, b, c):
+                print(f'{ai:>20} {bi:>20} {ci:>20}', flush=True)
+
+        print(flush=True)
 
 
 def evaluate_model_on_pp(model, instances_generator):

@@ -47,6 +47,10 @@ def split(data: List):
             else:
                 test.append(i)
 
+    print(f'num train={len(train)}')
+    print(f'num devel={len(devel)}')
+    print(f'num test ={len(test)}')
+
     return train, devel, test
 
 

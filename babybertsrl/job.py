@@ -153,7 +153,8 @@ def main(param2val):
     train_pps = []
     eval_steps = []
     train_start = time.time()
-    max_step = len(train_utterances)
+    loss = np.nan
+    max_step = len(train_utterances) // params.batch_size
     for epoch in range(params.num_pre_train_epochs):
         print(f'\nEpoch: {epoch}', flush=True)
 
@@ -163,10 +164,12 @@ def main(param2val):
         print(f'train-pp={train_pp}', flush=True)
 
         # train
-        bert_mlm.train()
         train_generator = bucket_batcher(converter_mlm.make_instances(train_utterances), num_epochs=1)
         for step, batch in enumerate(train_generator):
-            loss = bert_mlm.train_on_batch(batch, optimizer_mlm)
+
+            if step != 0:  # otherwise evaluation at step 0 is influenced by training on one batch
+                bert_mlm.train()
+                loss = bert_mlm.train_on_batch(batch, optimizer_mlm)
 
             if step % config.Eval.loss_interval == 0:
 
@@ -183,7 +186,7 @@ def main(param2val):
 
                 # console
                 min_elapsed = (time.time() - train_start) // 60
-                print(f'step {step:<6}/{max_step}: pp={torch.exp(loss):2.4f} total minutes elapsed={min_elapsed:<3}',
+                print(f'step {step:<6,}/{max_step:,}: pp={torch.exp(loss):2.4f} total minutes elapsed={min_elapsed:<3}',
                       flush=True)
 
     # to pandas
@@ -218,7 +221,8 @@ def main(param2val):
     train_f1s = []
     eval_steps = []
     train_start = time.time()
-    max_step = len(train_propositions)
+    max_step = len(train_propositions) // params.batch_size
+    loss = np.nan
     for epoch in range(params.num_fine_tune_epochs):
         print(f'\nEpoch: {epoch}', flush=True)
 
@@ -228,11 +232,13 @@ def main(param2val):
         print(f'train-f1={train_f1}', flush=True)
 
         # train
-        bert_srl.train()
         train_generator = bucket_batcher(converter_srl.make_instances(train_propositions),
                                          num_epochs=1)
         for step, batch in enumerate(train_generator):
-            loss = bert_srl.train_on_batch(batch, optimizer_srl)
+
+            if step != 0:  # otherwise evaluation at step 0 is influenced by training on one batch
+                bert_srl.train()
+                loss = bert_srl.train_on_batch(batch, optimizer_srl)
 
             if step % config.Eval.loss_interval == 0:
                 # evaluate devel f1
@@ -245,7 +251,7 @@ def main(param2val):
 
                 # console
                 min_elapsed = (time.time() - train_start) // 60
-                print(f'step {step:<6}/{max_step}: loss={loss:2.4f} total minutes elapsed={min_elapsed:<3}',
+                print(f'step {step:<6,}/{max_step:,}: loss={loss:2.4f} total minutes elapsed={min_elapsed:<3}',
                       flush=True)
 
     # to pandas
