@@ -84,7 +84,7 @@ class ConverterMLM:
     def make_instances(self, utterances:  List[List[str]],
                        ) -> Iterator[Instance]:
         """
-        roughly equivalent to Allen NLP toolkit dataset.read()
+        convert on utterance into possibly multiple Allen NLP instances
 
         """
         for utterance in utterances:
@@ -99,6 +99,19 @@ class ConverterMLM:
                 instance = self._text_to_instance(mlm_in, mlm_mask, mlm_tags)
 
                 yield instance
+
+    def num_instances(self, utterances:  List[List[str]],
+                      ) -> int:
+        """
+        must mirror logic in make_instances() to provide accurate result.
+        """
+        res = 0
+        for utterance in utterances:
+
+            utterance_length = len(utterance)
+            num_masked = min(utterance_length, self.params.num_masked)
+            res += num_masked
+        return res
 
 
 class ConverterSRL:

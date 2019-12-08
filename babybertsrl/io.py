@@ -23,9 +23,6 @@ def load_vocab(vocab_file, vocab_size):
                 break
             token = token.split()[1]
             vocab[token] = index
-
-            print(token, index)
-
             index += 1
     return vocab
 
@@ -47,9 +44,9 @@ def split(data: List):
             else:
                 test.append(i)
 
-    print(f'num train={len(train)}')
-    print(f'num devel={len(devel)}')
-    print(f'num test ={len(test)}')
+    print(f'num train={len(train):,}')
+    print(f'num devel={len(devel):,}')
+    print(f'num test ={len(test):,}')
 
     return train, devel, test
 

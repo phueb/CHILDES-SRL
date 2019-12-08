@@ -154,7 +154,7 @@ def main(param2val):
 	eval_steps = []
 	train_start = time.time()
 	loss = None
-	max_step = len(train_utterances) // params.batch_size
+	max_step = converter_mlm.num_instances(train_utterances) // params.batch_size
 	for epoch in range(params.num_pre_train_epochs):
 		print(f'\nEpoch: {epoch}', flush=True)
 
