@@ -2,7 +2,7 @@
 Adapted from Gerard & Mandler's "Ontological Knowledge and Sentence Anomaly"
 
 each stimuli set consists of terms and predicates.
-some preidcate-term combinations are semantically plausible, others are not.
+some predicate-term combinations are semantically plausible, others are not.
 """
 
 stimuli1 = {

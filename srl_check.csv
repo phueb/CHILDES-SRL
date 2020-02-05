@@ -1,0 +1,13 @@
+is_bad,line
+False,0 do you want to look at that ||| B-V O O O O O O
+False,2 do you want to look at that ||| O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1
+False,4 do you want to look at that ||| O B-ARG0 O O B-V B-ARG1 I-ARG1
+False,1 it says look . ||| B-ARG0 B-V B-ARG1 O
+False,1 there 's a face with glasses . ||| O B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,0 look there 's Pooh_Bear . ||| B-V O O O O
+False,2 look there 's Pooh_Bear . ||| B-ARGM-DIS O B-V B-ARG1 O
+False,1 there 's a baby bear with his bottle . ||| O B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,1 who 's that . ||| B-ARG2 B-V B-ARG1 O
+False,0 is that [NAME] . ||| B-V B-ARG1 B-ARG2 O
+False,2 aha I think I see [NAME] . ||| B-ARGM-DIS B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 O
+True,4 aha I think I see [NAME] . ||| O O O B-ARG0 B-V O O
