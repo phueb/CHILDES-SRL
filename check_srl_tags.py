@@ -68,7 +68,10 @@ for line in text.split('\n'):
     row = pd.DataFrame(data={'line': [line], 'is_bad': [is_bad]})
     df = df.append(row, ignore_index=True, sort=False)
 
-print('Saving the following df:')
-print(df)
 df.to_csv(path, index=False)
-print('Done')
+print('Saved df')
+
+num_good = df.is_bad.value_counts()[0]
+num_bad = df.is_bad.value_counts()[1]
+prop = num_good / len(df)
+print(f'Proportion correct={prop:.2f}')

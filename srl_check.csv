@@ -11,3 +11,36 @@ False,1 who 's that . ||| B-ARG2 B-V B-ARG1 O
 False,0 is that [NAME] . ||| B-V B-ARG1 B-ARG2 O
 False,2 aha I think I see [NAME] . ||| B-ARGM-DIS B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 O
 True,4 aha I think I see [NAME] . ||| O O O B-ARG0 B-V O O
+False,2 there he is . ||| B-ARG2 B-ARG1 B-V O
+False,1 he is . ||| B-ARG1 B-V O
+False,1 you see yourself . ||| B-ARG0 B-V B-ARG1 O
+False,1 that 's my pretty baby boy . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+True,1 I 'm sorry that 's handsome baby boy . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,4 I 'm sorry that 's handsome baby boy . ||| O O O B-ARG1 B-V B-ARG2 B-ARGM-DIS I-ARGM-DIS O
+False,1 you like that . ||| B-ARG0 B-V B-ARG1 O
+False,0 look there 's a bunny+rabbit . ||| B-V O O O O O
+True,2 look there 's a bunny+rabbit . ||| B-ARGM-DIS O B-V B-ARG1 I-ARG1 O
+True,1 there 's kitty+cat . ||| O B-V B-ARG1 O
+False,2 and who 's this it 's a baby . ||| O B-ARG2 B-V B-ARG1 O O O O O
+False,5 and who 's this it 's a baby . ||| B-ARGM-DIS O O O B-ARG1 B-V B-ARG2 I-ARG2 O
+False,1 it 's a baby . ||| B-ARG1 B-V B-ARG2 I-ARG2 O
+False,0 want to look at that . ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,2 want to look at that . ||| O O B-V B-ARG1 I-ARG1 O
+True,0 does it fit your mouth . ||| B-V O O O O O
+False,2 does it fit your mouth . ||| O B-ARG1 B-V B-ARG1 I-ARG1 O
+True,0 let 's see what else there is in here . ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,2 let 's see what else there is in here . ||| O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,6 let 's see what else there is in here . ||| O O O B-ARG1 I-ARG1 O B-V B-ARGM-LOC I-ARGM-LOC O
+True,1 There 's a . ||| O B-V B-ARG1 O
+False,1 you like that book ||| B-ARG0 B-V B-ARG1 I-ARG1
+False,1 it 's very red . ||| B-ARG1 B-V B-ARG2 I-ARG2 O
+False,1 red is a good thing is n't it . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 O O O O
+False,5 red is a good thing is n't it . ||| O O O O O B-V B-ARGM-NEG B-ARG1 O
+False,1 you want your book back do n't you . ||| B-ARG0 B-V B-ARG1 I-ARG1 O O O O O
+True,5 you want your book back do n't you . ||| O O O O O B-V O O O
+True,0 let 's see ||| B-V B-ARG1 I-ARG1
+True,2 let 's see ||| O B-ARG0 B-V
+True,0 do you want to see who this is . ||| B-V O O O O O O O O
+False,2 do you want to see who this is . ||| O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,4 do you want to see who this is . ||| O B-ARG0 O O B-V B-ARG1 I-ARG1 I-ARG1 O
+False,7 do you want to see who this is . ||| O O O O O B-ARG2 B-ARG1 B-V O
