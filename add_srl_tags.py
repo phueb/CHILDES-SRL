@@ -1,7 +1,7 @@
 from spacy.tokens import Doc
 import pyprind
 from deepsegment import DeepSegment
-from typing import List, Generator
+from typing import Generator
 import logging
 import tensorflow as tf
 
@@ -13,34 +13,11 @@ from babybertsrl.io import load_utterances_from_file
 from babybertsrl import config
 from babybertsrl.job import Params
 from babybertsrl.params import param2default
+from babybertsrl.srl_utils import make_srl_string
 
 CORPUS_NAME = 'childes-20191206'
 INTERACTIVE = False
 BATCH_SIZE = 128
-
-
-def make_srl_string(words: List[str],
-                    tags: List[str]) -> str:
-    frame = []
-    chunk = []
-
-    for (token, tag) in zip(words, tags):
-        if tag.startswith("I-"):
-            chunk.append(token)
-        else:
-            if chunk:
-                frame.append("[" + " ".join(chunk) + "]")
-                chunk = []
-
-            if tag.startswith("B-"):
-                chunk.append(tag[2:] + ": " + token)
-            elif tag == "O":
-                frame.append(token)
-
-    if chunk:
-        frame.append("[" + " ".join(chunk) + "]")
-
-    return " ".join(frame)
 
 
 def gen_instances_from_segment(seg: str,
@@ -95,6 +72,7 @@ it = gen_instances()
 
 progress_bar = pyprind.ProgBar(len(utterances) // BATCH_SIZE, stream=1)
 num_no_verb = 0
+num_only_verb = 0
 lines = []
 outer_loop = True
 while outer_loop:
@@ -122,6 +100,11 @@ while outer_loop:
             num_no_verb += 1
             continue
 
+        # sometimes there is only a verb but no arguments (e.g. auxiliary word) - skip
+        if not [tag for tag in tags if 'ARG' in tag]:
+            num_only_verb += 1
+            continue
+
         # make line
         verb_index = tags.index('B-V')
         x_string = " ".join(words)
@@ -144,9 +127,10 @@ while outer_loop:
 
 print(f'Collected {len(lines)} lines')
 print(f'Skipped {num_no_verb} utterances due to absence of B-V tag')
+print(f'Skipped {num_only_verb} utterances due to presence of only B-V tag')
 
 print(f'Writing {len(lines)} lines to file...')
-srl_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}_srl.txt'
+srl_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}_srl_new.txt'
 with srl_path.open('w') as f:
     for line in lines:
         f.write(line + '\n')

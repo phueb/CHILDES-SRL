@@ -5,12 +5,7 @@ import re
 UNKNOWN_LABEL = '0'
 
 
-adam_p = Path('data/BabySRL-XML/Adam')
-eve_p = Path('data/BabySRL-XML/Eve')
-sarah_p = Path('data/BabySRL-XML/Eve')
-
-
-# TODO make thsi into a prepare_data function whcih is called by ludwigcluster before submission of jobs
+XML_PATH = Path('data/babySRL-XML')
 
 
 def has_props(child):
@@ -24,8 +19,8 @@ def has_props(child):
 
 xy = []
 
-for xml_p in sorted(adam_p.glob('*.xml')):
-    tree = ET.parse(str(xml_p))
+for file_path in sorted(XML_PATH.glob('adam*.xml')):
+    tree = ET.parse(str(file_path))
     root = tree.getroot()
     num_props = 0
 
@@ -37,8 +32,10 @@ for xml_p in sorted(adam_p.glob('*.xml')):
             for c2 in c1:  # iterate over children in utterance node
                 if c2.tag == '{http://www.talkbank.org/ns/talkbank}w':
                     words_ = c2.text.split("'")
-                    print(words_)
+                    # print(words_)
                     words += words_
+
+            print(words)
 
             # collect labels
             labels = [UNKNOWN_LABEL] * len(words)  # in a single utterance
@@ -48,15 +45,10 @@ for xml_p in sorted(adam_p.glob('*.xml')):
                         print(label_child)
 
                         res = re.findall(r'(\d+):(\d)-(.*)', label_child)[0]
-                        start = int(res[0])
-                        length = int(res[1]) + 1
+                        loc = int(res[0])
+                        num_up = int(res[1])  # levels up in hierarchy at which all sister-trees are art of span
                         label = str(res[2])
 
-                        label_span = [label] * length
-
-                        for i in range(start, min(start + length, len(labels))):
-                            # noinspection PyTypeChecker
-                            labels[i] = label
 
                     print(labels)
                     assert len(labels) == len(words)
@@ -69,7 +61,7 @@ for xml_p in sorted(adam_p.glob('*.xml')):
             xy.append((words, labels))
 
     print(xy[:10])
-    print('Found {} propositions in {}'.format(num_props, xml_p.name))
+    print('Found {} propositions in {}'.format(num_props, file_path.name))
 
     raise SystemExit
 

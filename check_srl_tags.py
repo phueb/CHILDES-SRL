@@ -1,47 +1,25 @@
-from typing import List
+import random
 import pandas as pd
 import re
 
+from babybertsrl.srl_utils import make_srl_string
 from babybertsrl import config
 
 CORPUS_NAME = 'childes-20191206'
 
 
-def make_srl_string(words: List[str],
-                    tags: List[str]) -> str:
-    frame = []
-    chunk = []
-
-    for (token, tag) in zip(words, tags):
-        if tag.startswith("I-"):
-            chunk.append(token)
-        else:
-            if chunk:
-                frame.append("[" + " ".join(chunk) + "]")
-                chunk = []
-
-            if tag.startswith("B-"):
-                chunk.append(tag[2:] + ": " + token)
-            elif tag == "O":
-                frame.append(token)
-
-    if chunk:
-        frame.append("[" + " ".join(chunk) + "]")
-
-    return " ".join(frame)
-
-
 # load annotations
 srl_path = config.Dirs.data / 'CHILDES' / f'{CORPUS_NAME}_srl.txt'
 text = srl_path.read_text()
+lines = text.split('\n')
 
 # load previously checked annotations
 path = config.Dirs.root / 'srl_check.csv'
 df = pd.read_csv(path, index_col=False)
 
-print(df)
+print(f'Checked {len(df):,}/{len(lines):,} lines')
 
-for line in text.split('\n'):
+for line in random.sample(lines, k=len(lines)):
 
     if df['line'].isin([line]).any():
         print('Checked this line before. Skipping')
@@ -68,8 +46,8 @@ for line in text.split('\n'):
     row = pd.DataFrame(data={'line': [line], 'is_bad': [is_bad]})
     df = df.append(row, ignore_index=True, sort=False)
 
-df.to_csv(path, index=False)
-print('Saved df')
+    df.to_csv(path, index=False)
+    print('Saved df')
 
 num_good = df.is_bad.value_counts()[0]
 num_bad = df.is_bad.value_counts()[1]
