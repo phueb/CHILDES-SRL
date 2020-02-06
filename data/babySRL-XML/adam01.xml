@@ -162,13 +162,13 @@
 
   </u>
   <u uID="u25" who="CHI">
-    <w>ge<shortening>t</shortening><mor type="mor"><mw><pos><c>v</c></pos><stem>get</stem></mw><gra head="0" index="1" relation="ROOT" type="gra"/></mor></w>
+    <w>get<shortening>t</shortening><mor type="mor"><mw><pos><c>v</c></pos><stem>get</stem></mw><gra head="0" index="1" relation="ROOT" type="gra"/></mor></w>
     <w>over<mor type="mor"><mw><pos><c>adv</c></pos><stem>over</stem></mw><gra head="3" index="2" relation="JCT" type="gra"/></mor></w>
     <pause symbolic-length="simple"/>
     <w>Mommy<mor type="mor"><mw><pos><c>n</c><s>prop</s></pos><stem>Mommy</stem></mw><gra head="1" index="3" relation="COMP" type="gra"/></mor></w>
     <t type="p"><mor type="mor"><mt type="p"/><gra head="1" index="4" relation="PUNCT" type="gra"/></mor></t>
 
-  <parse>(S1 (S (VP (VB get) (PP (RB over)))) (, ,) (NP (NNP Mommy)) (. .))</parse><props><proposition annotator="aralluna" lemma="get" sense="get.05"><label>0:0-rel</label><label>1:1-ARG2</label></proposition><proposition annotator="aralluna" lemma="get" sense="get.05"><label>0:0-rel</label><label>1:1-ARG2</label></proposition></props></u>
+  <parse>(S1 (S (VP (VB get) (PP (RB over)))) (, ,) (NP (NNP Mommy)) (. .))</parse><props><proposition annotator="aralluna" lemma="get" sense="get.05"><label>0:0-rel</label><label>1:1-ARG2</label></proposition></props></u>
   <u uID="u26" who="MOT">
     <w>get<mor type="mor"><mw><pos><c>v</c></pos><stem>get</stem></mw><gra head="0" index="1" relation="ROOT" type="gra"/></mor></w>
     <w>over<mor type="mor"><mw><pos><c>adv</c></pos><stem>over</stem></mw><gra head="3" index="2" relation="JCT" type="gra"/></mor></w>
