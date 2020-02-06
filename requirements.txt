@@ -1,5 +1,5 @@
 nltk
-tensorflow-gpu==2.0.0
+tensorflow-gpu==2.0.1
 deepsegment
 pyprind
 sortedcontainers
