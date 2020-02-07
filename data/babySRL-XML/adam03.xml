@@ -2252,7 +2252,7 @@
     <w>happen<mor type="mor"><mw><pos><c>v</c></pos><stem>happen</stem></mw><gra head="0" index="3" relation="ROOT" type="gra"/></mor></w>
     <t type="p"><mor type="mor"><mt type="p"/><gra head="3" index="4" relation="PUNCT" type="gra"/></mor></t>
 
-  <parse>(S1 (FRAG (INTJ (UH oh) (UH no) (UH xxx)) (VP (VB happen))))</parse><props><proposition annotator="aralluna" lemma="happen" sense="happen.01"><label>4:0-rel</label></proposition></props></u>
+  <parse>(S1 (FRAG (INTJ (UH oh) (UH no) (UH xxx)) (VP (VB happen))))</parse><props><proposition annotator="aralluna" lemma="happen" sense="happen.01"><label>3:0-rel</label></proposition></props></u>
   <u uID="u293" who="CHI">
     <w untranscribed="unintelligible">xxx</w>
     <w>break<mor type="mor"><mw><pos><c>v</c></pos><stem>break</stem></mw><gra head="0" index="1" relation="ROOT" type="gra"/></mor></w>
@@ -2820,7 +2820,7 @@
     <w>take<mor type="mor"><mw><pos><c>v</c></pos><stem>take</stem></mw><gra head="1" index="2" relation="OBJ" type="gra"/></mor></w>
     <t type="p"><mor type="mor"><mt type="p"/><gra head="1" index="3" relation="PUNCT" type="gra"/></mor></t>
 
-  <parse>(S1 (FRAG (VP (VB take)) (VP (VB take))) (. .))</parse><props><proposition annotator="aralluna" lemma="take" sense="take.01"><label>0:0-ARG0</label><label>1:0-rel</label></proposition><proposition annotator="aralluna" lemma="take" sense="take.01"><label>3:0-rel</label></proposition></props></u>
+  <parse>(S1 (FRAG (VP (VB take)) (VP (VB take))) (. .))</parse><props><proposition annotator="aralluna" lemma="take" sense="take.01"><label>0:0-ARG0</label><label>1:0-rel</label></proposition><proposition annotator="aralluna" lemma="take" sense="take.01"><label>2:0-rel</label></proposition></props></u>
   <u uID="u371" who="CHI">
     <w>take<mor type="mor"><mw><pos><c>v</c></pos><stem>take</stem></mw><gra head="0" index="1" relation="ROOT" type="gra"/></mor></w>
     <w>suitcase<mor type="mor"><mw><pos><c>n</c></pos><stem>suitcase</stem></mw><gra head="1" index="2" relation="OBJ" type="gra"/></mor></w>
