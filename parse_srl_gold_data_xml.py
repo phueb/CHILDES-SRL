@@ -9,18 +9,42 @@ import pandas as pd
 from babybertsrl.srl_utils import make_srl_string
 from babybertsrl import config
 
+EXCLUDE_CHILD = True
 OUTSIDE_LABEL = '0'
 XML_PATH = Path('data/babySRL-XML')
 VERBOSE = True
 
 
-def has_props(child):
+def has_props(e):
     try:
-        next(child.iterfind('{http://www.talkbank.org/ns/talkbank}props'))
+        next(e.iterfind('{http://www.talkbank.org/ns/talkbank}props'))
     except StopIteration:
         return False
     else:
         return True
+
+
+def is_child(e):
+    """is utterance spoken by child?"""
+    if e.attrib['who'] == 'CHI':
+        return True
+    else:
+        return False
+
+
+def get_start_index(a: List[Any],
+                    b: List[Any],
+                    ) -> int:
+    """return index into "a" which is first location of section of "a" which matches "b". """
+    num_b = len(b)
+    init_length = num_b - 1
+    d = deque(a[:init_length], maxlen=num_b)
+    for n, ai in enumerate(a[init_length:]):
+        d.append(ai)
+        if list(d) == b:
+            return n
+    else:
+        raise ValueError('a does not contain b')
 
 
 num_no_predicate = 0
@@ -35,7 +59,7 @@ for file_path in sorted(XML_PATH.glob('adam*.xml')):
     num_good_props_in_file = 0
 
     for utterance in root:
-        if not has_props(utterance):
+        if not has_props(utterance) or (is_child(utterance) and EXCLUDE_CHILD):
             continue
 
         # get parse tree
@@ -75,15 +99,15 @@ for file_path in sorted(XML_PATH.glob('adam*.xml')):
 
                 # parse label_text
                 res = re.findall(r'(\d+):(\d)-(.*)', label_text)[0]
-                start_loc = int(res[0])  # location in sentence of first word in argument
+                head_loc = int(res[0])  # location in sentence of head (not first word) of argument
                 num_up = int(res[1])  # levels up in hierarchy at which all sister-trees are part of argument span
                 tag = str(res[2])
 
                 if VERBOSE:
-                    print(f'{start_loc:>2} {num_up:>2} {tag:>12}')
+                    print(f'{head_loc:>2} {num_up:>2} {tag:>12}')
 
                 try:
-                    words[start_loc]
+                    words[head_loc]
                 except IndexError:
                     print('WARNING: Bad head location')  # TODO is the data really bad?
                     num_bad_head_loc += 1
@@ -91,24 +115,25 @@ for file_path in sorted(XML_PATH.glob('adam*.xml')):
                     break
 
                 if 'rel' in tag:
-                    labels[start_loc] = 'B-V'
+                    labels[head_loc] = 'B-V'
                 else:
-                    tp = parse_tree.leaf_treeposition(start_loc)
+                    tp = parse_tree.leaf_treeposition(head_loc)
                     argument_tree = parse_tree[tp[: - num_up - 1]]   # go up in tree from head of current argument
                     argument_length = len(argument_tree.leaves())
                     argument_labels = [f'B-{tag}'] + [f'I-{tag}'] * (argument_length - 1)
+                    start_loc = get_start_index(words, argument_tree.leaves())
 
                     if not labels[start_loc: start_loc + argument_length] == [OUTSIDE_LABEL] * argument_length:
                         print('WARNING: Bad argument location. Skipping')  # TODO are there really bad data?
                         num_bad_arg_loc += 1
                         is_bad = True
 
-                        # print(head_loc, start_loc)
-                        # print(labels)
+                        print(labels)
+                        labels[start_loc: start_loc + argument_length] = argument_labels
+                        print(labels)
 
-                        # if input():
-                        #     continue
-
+                        if input():
+                            continue
 
                         break
                     labels[start_loc: start_loc + argument_length] = argument_labels
