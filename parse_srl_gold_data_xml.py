@@ -4,12 +4,14 @@ import re
 from nltk import Tree
 from collections import deque
 from typing import List, Any
+import pandas as pd
 
 from babybertsrl.srl_utils import make_srl_string
+from babybertsrl import config
 
 OUTSIDE_LABEL = '0'
 XML_PATH = Path('data/babySRL-XML')
-VERBOSE = False
+VERBOSE = True
 
 
 def has_props(child):
@@ -21,26 +23,12 @@ def has_props(child):
         return True
 
 
-def get_start_index(a: List[Any],
-                    b: List[Any],
-                    ) -> int:
-    """return index into "a" which is first location of section of "a" which matches "b". """
-    num_b = len(b)
-    init_length = num_b - 1
-    d = deque(a[:init_length], maxlen=num_b)
-    for n, ai in enumerate(a[init_length:]):
-        d.append(ai)
-        if list(d) == b:
-            return n
-    else:
-        raise ValueError('a does not contain b')
-
-
 num_no_predicate = 0
+num_no_arguments = 0
 num_bad_head_loc = 0
 num_bad_arg_loc = 0
 num_total_good = 0
-xy = []
+name2col = {'words': [], 'labels': []}
 for file_path in sorted(XML_PATH.glob('adam*.xml')):
     parse_tree = ET.parse(str(file_path))
     root = parse_tree.getroot()
@@ -87,15 +75,15 @@ for file_path in sorted(XML_PATH.glob('adam*.xml')):
 
                 # parse label_text
                 res = re.findall(r'(\d+):(\d)-(.*)', label_text)[0]
-                head_loc = int(res[0])  # location in sentence of head (not first word) of argument
+                start_loc = int(res[0])  # location in sentence of first word in argument
                 num_up = int(res[1])  # levels up in hierarchy at which all sister-trees are part of argument span
                 tag = str(res[2])
 
                 if VERBOSE:
-                    print(f'{head_loc:>2} {num_up:>2} {tag:>12}')
+                    print(f'{start_loc:>2} {num_up:>2} {tag:>12}')
 
                 try:
-                    words[head_loc]
+                    words[start_loc]
                 except IndexError:
                     print('WARNING: Bad head location')  # TODO is the data really bad?
                     num_bad_head_loc += 1
@@ -103,18 +91,25 @@ for file_path in sorted(XML_PATH.glob('adam*.xml')):
                     break
 
                 if 'rel' in tag:
-                    labels[head_loc] = 'B-V'
+                    labels[start_loc] = 'B-V'
                 else:
-                    tp = parse_tree.leaf_treeposition(head_loc)
+                    tp = parse_tree.leaf_treeposition(start_loc)
                     argument_tree = parse_tree[tp[: - num_up - 1]]   # go up in tree from head of current argument
                     argument_length = len(argument_tree.leaves())
                     argument_labels = [f'B-{tag}'] + [f'I-{tag}'] * (argument_length - 1)
-                    start_loc = get_start_index(words, argument_tree.leaves())
 
                     if not labels[start_loc: start_loc + argument_length] == [OUTSIDE_LABEL] * argument_length:
-                        print('WARNING: Bad index. Skipping')  # TODO are there really bad data?
+                        print('WARNING: Bad argument location. Skipping')  # TODO are there really bad data?
                         num_bad_arg_loc += 1
                         is_bad = True
+
+                        # print(head_loc, start_loc)
+                        # print(labels)
+
+                        # if input():
+                        #     continue
+
+
                         break
                     labels[start_loc: start_loc + argument_length] = argument_labels
 
@@ -131,6 +126,12 @@ for file_path in sorted(XML_PATH.glob('adam*.xml')):
                 print('WARNING: Did not find predicate')
                 num_no_predicate += 1
                 continue
+
+            if sum([1 if l.startswith('B-ARG') else 0 for l in labels]) == 0:
+                print('WARNING: Did not find arguments')
+                num_no_arguments += 1
+                continue
+
             assert len(labels) == len(words)
 
             # console
@@ -139,14 +140,19 @@ for file_path in sorted(XML_PATH.glob('adam*.xml')):
 
             # collect
             num_good_props_in_file += 1
-            xy.append((words, labels))
+            name2col['words'].append(' '.join(words))
+            name2col['labels'].append(' '.join(labels))
 
     print('Collected {} good propositions in {}'.format(num_good_props_in_file, file_path.name))
     num_total_good += num_good_props_in_file
 
 print(f'num good              ={num_total_good:,}')
+print(f'num no arguments      ={num_no_arguments:,}')
 print(f'num no predicate      ={num_no_predicate:,}')
 print(f'num bad head location ={num_bad_head_loc:,}')
 print(f'num bad arg location  ={num_bad_arg_loc:,}')
 
-# TODO align words and labels in a pandas DataFrame and keep in memory to feed directly to model
+
+df = pd.DataFrame(data=name2col)
+path = config.Dirs.root / 'srl_gold.csv'
+df.to_csv(path, index=False)

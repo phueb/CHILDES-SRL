@@ -11127,7 +11127,7 @@
         <w>climb<mor type="mor"><mw><pos><c>v</c></pos><stem>climb</stem></mw><gra head="0" index="1" relation="ROOT" type="gra"/></mor></w>
         <t type="p"><mor type="mor"><mt type="p"/><gra head="1" index="2" relation="PUNCT" type="gra"/></mor></t>
 
-        <parse>(S1 (S (NP (PRP he)) (VP (VBZ sticks) (PP (TO to) (NP (PRP me)) (PP (IN like))))))</parse><props><proposition annotator="aralluna" lemma="stick" sense="stick.01"><label>1:1-ARG1</label><label>2:0-rel</label><label>3:1-ARG2</label></proposition><proposition annotator="aralluna" lemma="to-p" sense="to.Participant/Accompanier"><label>1:0-ARGP-GOV</label><label>2:0-rel</label><label>3:1-ARGP-OBJ</label></proposition><proposition annotator="aralluna" lemma="like-p" sense="like.Manner"><label>1:0-ARGP-GOV</label><label>5:0-rel</label></proposition></props></u>
+        <parse>(S1 (S (NP (PRP he)) (VP (VBZ sticks) (PP (TO to) (NP (PRP me))) (PP (IN like)))))</parse><props><proposition annotator="aralluna" lemma="stick" sense="stick.01"><label>0:1-ARG1</label><label>1:0-rel</label><label>2:1-ARG2</label></proposition><proposition annotator="aralluna" lemma="to-p" sense="to.Location"><label>1:0-ARGP-GOV</label><label>2:0-rel</label><label>3:1-ARGP-OBJ</label></proposition><proposition annotator="aralluna" lemma="like-p" sense="like.Manner"><label>1:0-ARGP-GOV</label><label>5:0-rel</label></proposition></props></u>
     <u uID="u1580" who="MOT">
         <linker type="quoted utterance next"/>
         <w>he<mor type="mor"><mw><pos><c>pro</c><s>sub</s></pos><stem>he</stem></mw><gra head="2" index="1" relation="SUBJ" type="gra"/></mor></w>
