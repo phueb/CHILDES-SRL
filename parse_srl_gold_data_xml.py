@@ -12,7 +12,7 @@ from babybertsrl import config
 EXCLUDE_CHILD = True
 OUTSIDE_LABEL = '0'
 XML_PATH = Path('data/babySRL-XML')
-VERBOSE = True
+VERBOSE = False
 
 
 def has_props(e):
@@ -53,7 +53,7 @@ num_bad_head_loc = 0
 num_bad_arg_loc = 0
 num_total_good = 0
 name2col = {'words': [], 'labels': []}
-for file_path in sorted(XML_PATH.glob('adam*.xml')):
+for file_path in sorted(XML_PATH.rglob('*.xml')):
     parse_tree = ET.parse(str(file_path))
     root = parse_tree.getroot()
     num_good_props_in_file = 0
@@ -128,12 +128,12 @@ for file_path in sorted(XML_PATH.glob('adam*.xml')):
                         num_bad_arg_loc += 1
                         is_bad = True
 
-                        print(labels)
-                        labels[start_loc: start_loc + argument_length] = argument_labels
-                        print(labels)
-
-                        if input():
-                            continue
+                        # print(labels)
+                        # labels[start_loc: start_loc + argument_length] = argument_labels
+                        # print(labels)
+                        #
+                        # if input():
+                        #     continue
 
                         break
                     labels[start_loc: start_loc + argument_length] = argument_labels
