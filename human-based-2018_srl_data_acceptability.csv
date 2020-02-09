@@ -1,0 +1,134 @@
+is_bad,line
+False,3 you have to be careful when you play . ||| B-ARG1 0 0 B-V B-ARG2 0 0 0 0
+False,0 help you reach ? ||| B-V B-ARG1 I-ARG1 0
+False,0 looking for ? ||| B-V B-ARG1 0
+False,"2 no , put it back . ||| 0 0 B-V B-ARG1 B-ARG2 0"
+False,2 where light go ? ||| B-ARG4 B-ARG1 B-V 0
+False,1 who put hole there ? ||| B-ARG1 B-V B-ARG1 B-ARG2 0
+False,3 it 's going be surprise in a few minutes . ||| B-ARG1 0 B-ARGM-MOD B-V B-ARG2 B-ARGM-TMP I-ARGM-TMP I-ARGM-TMP I-ARGM-TMP 0
+False,"6 yes , Mr Green jeans can march . ||| 0 0 B-ARG0 I-ARG0 I-ARG0 B-ARGM-MOD B-V 0"
+False,1 Cromer need some . ||| B-ARG0 B-V B-ARG1 0
+False,0 screw that . ||| B-V B-ARG1 0
+False,1 I saw boats . ||| B-ARG0 B-V B-ARG1 0
+False,"2 boot all gone , Santa took em . ||| B-ARG1 0 B-V 0 0 0 0 0"
+False,"0 is it , Mommy ? ||| B-V B-ARG1 0 B-ARG2 0"
+False,2 whose grandson are you ? ||| B-ARG2 I-ARG2 B-V B-ARG1 0
+False,"3 what did you do to the tape recorder , Adam ? ||| B-ARG1 0 B-ARG0 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 0 0 0"
+False,1 I saw a tree . ||| B-ARG0 B-V B-ARG1 I-ARG1 0
+False,3 where did what go ? ||| B-ARG4 0 B-ARG1 B-V 0
+True,3 what I put in ||| B-ARG1 B-ARG0 0 B-V
+False,4 why do n't you write with this pen ? ||| B-ARGM-CAU 0 B-ARGM-NEG B-ARG0 B-V B-ARGM-MNR I-ARGM-MNR I-ARGM-MNR 0
+True,1 come . ||| B-ARG1 B-V
+False,0 get cranberry . ||| B-V B-ARG1 0
+False,0 excuse me . ||| B-V B-ARG1 0
+False,3 I do n't know . ||| B-ARG0 0 B-ARGM-NEG B-V 0
+False,"5 no , where could she go ? ||| 0 0 B-ARG4 B-ARGM-MOD B-ARG1 B-V 0"
+False,"3 I do n't know , what is it ? ||| B-ARG0 0 B-ARGM-NEG B-V 0 0 0 0 0"
+False,"5 no , you do n't write on buttons . ||| 0 0 B-ARG0 0 0 B-V 0 0 0"
+False,0 going down water . ||| B-V B-ARGM-DIR 0 0
+True,"3 oh , broken . ||| 0 0 B-ARG1 B-V"
+False,2 I 'll hold it while you screw . ||| B-ARG0 B-ARGM-MOD B-V B-ARG1 B-ARGM-TMP I-ARGM-TMP I-ARGM-TMP 0
+False,1 where go ? ||| B-ARG4 B-V 0
+False,"0 drop it , Mommy . ||| B-V B-ARG1 0 0 0"
+False,3 I thought it was a brush . ||| 0 0 B-ARG1 B-V B-ARG2 I-ARG2 0
+False,0 find a train . ||| B-V B-ARG1 I-ARG1 0
+False,"3 yes , you do . ||| 0 0 B-ARG0 B-V 0"
+False,3 please do n't spill your macaroni . ||| B-ARGM-DIS 0 B-ARGM-NEG B-V B-ARG1 I-ARG1 0
+False,1 tunnel whistle . ||| B-ARG0 B-V 0
+False,2 what you drawing ? ||| B-ARG1 B-ARG0 B-V 0
+False,2 where horses go ? ||| B-ARG4 B-ARG1 B-V 0
+False,1 I walking . ||| B-ARG0 B-V 0
+False,2 it got stuck in the drain ? ||| B-ARG1 0 B-V B-ARG2 I-ARG2 I-ARG2 0
+False,0 see it . ||| B-V B-ARG1 0
+False,0 do puzzle . ||| B-V B-ARG1 0
+False,"1 I went went it grandson , son . ||| B-ARG1 B-V 0 0 0 0 0 0"
+False,1 we have another one . ||| B-ARG0 B-V B-ARG1 I-ARG1 0
+False,0 let 's cool that time ? ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,2 Shadow_Gay is gone ? ||| B-ARG0 0 B-V 0
+False,3 I do n't have a ||| B-ARG0 0 B-ARGM-NEG B-V B-ARG1
+False,0 look what he has on his head . ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,1 what happen ? ||| B-ARG1 B-V 0
+False,1 what happened to Humpty Dumpty ? ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 0
+False,"5 oh , look what you found . ||| 0 0 0 B-ARG1 B-ARG0 B-V 0"
+False,1 cowboy reach ? ||| B-ARG0 B-V 0
+False,2 do I want the lion to frighten me ? ||| 0 B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,2 do n't throw the ball . ||| 0 B-ARGM-NEG B-V B-ARG1 I-ARG1 0
+False,5 I do n't want to ride in the back of the truck . ||| B-ARG0 0 0 0 0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,"1 what was that word , honey ? ||| B-ARG2 B-V B-ARG1 I-ARG1 0 0 0"
+False,3 we wo n't go into that . ||| B-ARG0 B-ARGM-MOD B-ARGM-NEG B-V B-ARG2 I-ARG2 0
+False,5 how many doughnuts do you have ? ||| B-ARG1 I-ARG1 I-ARG1 0 B-ARG0 B-V 0
+False,"3 no , I say boxer . ||| 0 0 B-ARG0 B-V B-ARG1 0"
+False,0 want to talk tunnel ? ||| B-V B-ARG1 I-ARG1 I-ARG1 0
+False,"2 I , do you want me put some milk ? ||| B-ARG0 0 B-V 0 0 0 0 0 0 0"
+False,0 want to talk ? ||| B-V B-ARG1 I-ARG1 0
+False,1 he fell . ||| B-ARG1 B-V 0
+False,2 did you see the truck ? ||| 0 B-ARG0 B-V B-ARG1 I-ARG1 0
+False,0 want feed you . ||| B-V B-ARG1 I-ARG1 0
+False,"2 do you want me hold , alligator ? ||| 0 B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 0"
+False,"3 Rin tin tin is a dog , and dogs do n't fly . ||| B-ARG1 I-ARG1 I-ARG1 B-V B-ARG2 I-ARG2 0 0 0 0 0 0 0"
+False,2 whose suitcase is that ? ||| B-ARG2 I-ARG2 B-V B-ARG1 0
+False,7 he jumped up in the air and turned around and ran away as fast as he ||| B-ARG1 0 0 0 0 0 0 B-V B-ARGM-DIR 0 0 0 0 0 0 0
+False,5 if you 're going to shave I think you 'd better put your blade in first . ||| 0 B-ARG0 0 B-ARGM-MOD 0 B-V 0 0 0 0 0 0 0 0 0 0 0
+False,0 open the door . ||| B-V B-ARG1 I-ARG1 0
+False,2 I just checking . ||| B-ARG0 B-ARGM-ADV B-V 0
+False,2 I cannot get the knot out of this balloon . ||| B-ARG0 B-ARGM-MOD B-V B-ARG1 I-ARG1 B-ARG2 I-ARG2 I-ARG2 I-ARG2 0
+False,2 he always leaves the a off when he 's spelling . ||| B-ARG0 B-ARGM-TMP B-V 0 0 0 0 0 0 0 0
+False,3 went went went went Daddy Daddy airplane . ||| 0 0 0 B-V B-ARG1 I-ARG1 B-ARG4 0
+False,0 sit Miss Munroe car ? ||| B-V B-ARG2 I-ARG2 I-ARG2 0
+False,2 do you know what that 's called ? ||| 0 B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,0 look at that man . ||| B-V B-ARG1 I-ARG1 I-ARG1 0
+False,"5 oh , I did n't bring it today , Adam . ||| 0 0 B-ARG0 0 B-ARGM-NEG B-V B-ARG1 B-ARGM-TMP 0 0 0"
+True,4 a monkey train backing up . ||| B-ARG1 I-ARG1 I-ARG1 0 B-V 0
+False,3 I do n't see it . ||| B-ARG0 0 B-ARGM-NEG B-V B-ARG1 0
+False,2 he dressing up . ||| B-ARG0 0 B-V 0
+False,3 I do n't want to sit down . ||| B-ARG0 0 B-ARGM-NEG B-V B-ARG1 I-ARG1 I-ARG1 0
+True,2 take it off . ||| 0 B-ARG1 B-V 0
+False,0 see seal ? ||| B-V B-ARG1 0
+False,0 talk to the can . ||| B-V B-ARG2 I-ARG2 I-ARG2 0
+False,1 what is that ? ||| B-ARG2 B-V B-ARG1 0
+False,0 look like Adam truck . ||| B-V B-ARG1 I-ARG1 I-ARG1 0
+False,3 I think they dropped on the floor . ||| 0 0 B-ARG0 B-V B-ARG4 I-ARG4 I-ARG4 0
+False,3 you do n't want to see it ? ||| B-ARG0 0 B-ARGM-NEG B-V B-ARG1 I-ARG1 I-ARG1 0
+False,5 we make the picture and park in the yard . ||| B-ARG0 0 0 0 0 B-V B-ARG2 I-ARG2 I-ARG2 0
+False,0 make wif that . ||| B-V B-ARG2 I-ARG2 0
+False,2 baby 's going for a ride in the busy bulldozer . ||| B-ARG1 0 B-V B-ARG4 I-ARG4 I-ARG4 I-ARG4 I-ARG4 I-ARG4 I-ARG4 0
+False,2 do you want me take him out ? ||| 0 B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,1 hit hit . ||| B-ARG0 B-V 0
+False,0 write something ? ||| B-V B-ARG1 0
+False,"3 what , that goes ? ||| 0 0 B-ARG1 B-V 0"
+False,1 racket write that ? ||| B-ARG0 B-V B-ARG1 0
+False,3 where are you going ? ||| B-ARG4 0 B-ARG0 B-V 0
+False,4 why do n't you ride your fire truck for a little while . ||| 0 0 B-ARGM-NEG B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 B-ARGM-TMP I-ARGM-TMP I-ARGM-TMP I-ARGM-TMP 0
+False,2 let 's play a game . ||| 0 B-ARG0 B-V B-ARG1 I-ARG1 0
+False,"3 I 'm trying get down , so there . ||| B-ARG1 0 0 B-V B-ARG2 0 0 0 0"
+False,1 Cromer taking many out . ||| B-ARG0 B-V B-ARG1 B-ARG2 0
+False,"0 let me , make rope . ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 0"
+False,0 see a truck . ||| B-V B-ARG1 I-ARG1 0
+False,2 was it moving ? ||| 0 B-ARG1 B-V 0
+False,0 hear nothing . ||| B-V B-ARG1 0
+False,"4 oh , you 're going walking ? ||| 0 0 B-ARG0 0 B-V B-ARG1 0"
+False,2 that fell over . ||| B-ARG0 0 B-V 0
+False,"4 yes , I 'm watching you . ||| 0 0 B-ARG0 0 B-V B-ARG1 0"
+False,1 no thank you . ||| 0 B-V B-ARG1 0
+False,8 that 's the stool I use when I wash dishes . ||| 0 0 0 0 B-ARG0 0 0 0 B-V B-ARG1 0
+False,2 where foot go ? ||| B-ARG4 B-ARG1 B-V 0
+False,4 what story do you want tonight ? ||| B-ARG1 I-ARG1 0 B-ARG0 B-V B-ARGM-TMP 0
+False,1 I see why you did n't want to come in . ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,2 what you say that for ? ||| 0 B-ARG0 B-V B-ARG1 0 0
+False,3 what are you doing ? ||| B-ARG1 0 B-ARG0 B-V 0
+False,1 it 's fourteen clock . ||| B-ARG1 B-V B-ARG2 I-ARG2 0
+False,3 mine let me look in it . ||| 0 0 B-ARG0 B-V B-ARGM-LOC I-ARGM-LOC 0
+False,"0 thank you , Robin . ||| B-V B-ARG1 0 0 0"
+False,1 I cut the light on . ||| B-ARG0 B-V B-ARG1 I-ARG1 0 0
+False,2 shall we do it a different way ? ||| B-ARGM-MOD B-ARG0 B-V B-ARG1 B-ARGM-MNR I-ARGM-MNR I-ARGM-MNR 0
+False,0 thank you . ||| B-V B-ARG1 0
+False,0 read book ? ||| B-V B-ARG1 0
+False,1 who did that ? ||| B-ARG0 B-V B-ARG1 0
+True,5 it 's gonna take trash away . ||| 0 0 0 0 B-ARG1 B-V 0
+False,5 what 're you going to do with it ? ||| B-ARG1 0 B-ARG0 B-ARGM-MOD 0 B-V B-ARG3 I-ARG3 0
+False,0 talk about what ? ||| B-V B-ARG1 I-ARG1 0
+False,1 there are the kitties . ||| B-ARG1 B-V B-ARG2 I-ARG2 0
+False,1 this is a microphone . ||| B-ARG1 B-V B-ARG2 I-ARG2 0
+False,11 that 's where Adam put his paintings so his Daddy will see them when ||| 0 0 0 0 0 0 0 0 B-ARG0 I-ARG0 B-ARGM-MOD B-V B-ARG1 B-ARGM-TMP
+False,2 when spring comes and we go outside you may have a shovel to dig in ||| 0 B-ARG1 B-V 0 0 0 0 0 0 0 0 0 0 0 0
+True,3 get the hand out ? ||| 0 B-ARG1 I-ARG1 B-V 0

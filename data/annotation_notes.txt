@@ -1,6 +1,8 @@
+###############################################
 Notes while checking acceptability of model-based SRL tags.
-Philip Huebner.
+Philip Huebner
 Feb 1, 2020.
+###############################################
 
 srl_check.csv ahas a column "is_bad" which is True if the SRl labels are:
 - incorrectly labeled, or
@@ -13,9 +15,7 @@ For example, the following
 [ARG1: he] [V: 's] drinking water with his trunk .
 is incorrect, because it is missing an important argument without which the meaning would be incomplete.
 
-###############################################
 Are these correct?
-###############################################
 
 I 'm sure she ate before [ARG0: she] [V: went] [ARG4: to work] .
 [V: let] [ARG1: 's fix the straps huh] ?
@@ -30,9 +30,7 @@ you know [ARG1: another thing that we did] [R-ARG1: that] [V: was] [ARG2: fun]
 [ARGM-DIS: okay] [V: want] [ARG1: me to pitch] .
 well I guess [ARG0: we] [ARGM-MOD: 'll] [V: find] out .
 
-###############################################
 Errors involving [NAME]:
-###############################################
 
 [ARG2: where] [V: 's] [ARG1: the big truck [NAME]] .
 [ARGM-TMP: one day] [ARG0: my mother] [V: took] [ARG1: me] and [NAME] [ARG2: to the circus] .
@@ -44,27 +42,21 @@ what [V: 's] [NAME] [ARG2: like] ?
 [NAME] 's at home [ARG1: he] [V: 's] [ARG2: with] [NAME] ?
 was [ARG1: she] willing to [V: marry] [NAME] ?
 
-###############################################
 Interesting successes:
-###############################################
 
 [ARG0: very quiet] did [ARGM-NEG: n't] [V: say] [ARG1: much of anything] .
 [ARGM-MOD: should] [ARG0: he] [V: go] [ARG1: bye bye] [ARGM-ADV: too] .
 can you show me [ARG0: the girl] [V: shows] [ARG1: the dog] [ARG2: to the cat] ?
 I do n't know [ARG0: who] 's [V: driving] [ARGM-DIS: honey] .
 
-###############################################
 Verb identification errors:
-###############################################
 
 would you like [V: spinach] salad girls ?
 I do n't know is that [ARG1: all] [R-ARG0: that] 's [V: left] remember some broke last time when we were playing with them .
 do [ARG0: you] like [V: babysitting] ?
 [ARG1: a little turtle] [V: named] [ARG2: Squirt]
 
-###############################################
 noun conjunctions:
-###############################################
 
 [ARG1: the daddies and mommies] [ARGM-MOD: will] [V: sit] [ARG2: on that bench] ?
 [ARGM-TMP: one day] [ARG0: my mother] [V: took] [ARG1: me] and [NAME] [ARG2: to the circus] .
@@ -72,9 +64,7 @@ this is May twenty five and [ARG0: [NAME] and I] are [V: reading] [ARG1: looking
 the [PLACE] children 's museum while [ARG0: [NAME] and [NAME]] [V: went] [ARG4: to the movies] ?
 [ARG0: they] loved to [V: play] [ARG1: tag and algae] [ARGM-LOC: in the middle] [ARGM-TMP: before school started] .
 
-###############################################
 Problems with CHILDES or sentence segmentation tool (e.g no utterance boundaries):
-###############################################
 
 [ARGM-DIS: no] [ARG1: it] [V: 's] [ARG2: different meet from what we eat] ?
 I 'm gon na take you [V: listen] I 'll take you to the bed+room and talk to you too
@@ -88,19 +78,27 @@ and then [ARG0: we] [V: chug] [ARG1: chug] stop and play .
 [NAME] [V: said] [NAME] [ARGM-DIR: into the trash bucket
 there [V: 's] [ARG1: the cake] [ARGM-LOC: in the bakery window] .
 
-
-
-
-
+###############################################
+Comparing acceptability between different SRL data sources
+Philip Huebner
 Feb 8, 2020
+###############################################
 
-human-based 2008 data stats:
+human-based-2008 data stats:
 num good              =14,772
 num no arguments      =766
 num no predicate      =75
 num bad head location =0
 num bad arg location  =41
 acceptability = 0.95
+
+human-based-2018 data stats:
+num good              =18,153
+num no arguments      =1,630
+num no predicate      =15
+num bad head location =13
+num bad arg location  =245
+acceptability=0.95
 
 model-based data stats:
 num total = 819,949

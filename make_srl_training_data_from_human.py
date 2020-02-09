@@ -8,11 +8,11 @@ from typing import List, Any
 from babybertsrl.srl_utils import make_srl_string
 from babybertsrl import config
 
+NAME = 'human-based-2018'
+XML_PATH = Path(f'data/srl_{NAME}/xml')
+VERBOSE = False
 EXCLUDE_CHILD = True
 OUTSIDE_LABEL = '0'
-XML_PATH = Path('data/babysrl_annotations_2008/xml')
-NAME = 'human-based-2008'
-VERBOSE = False
 
 
 def has_props(e):
@@ -51,6 +51,7 @@ num_no_predicate = 0
 num_no_arguments = 0
 num_bad_head_loc = 0
 num_bad_arg_loc = 0
+num_prepositions = 0
 num_total_good = 0
 lines = []
 for file_path in sorted(XML_PATH.rglob('*.xml')):
@@ -59,8 +60,11 @@ for file_path in sorted(XML_PATH.rglob('*.xml')):
     num_good_props_in_file = 0
 
     for utterance in root:
-        if not has_props(utterance) or (is_child(utterance) and EXCLUDE_CHILD):
+        if not has_props(utterance):
+            print('WARNING: Did not find propositions. Skipping')
             continue
+        if is_child(utterance) and EXCLUDE_CHILD:
+            print('WARNING: Skipping child utterance')
 
         # get parse tree
         parse_string = utterance.find('{http://www.talkbank.org/ns/talkbank}parse').text
@@ -82,6 +86,8 @@ for file_path in sorted(XML_PATH.rglob('*.xml')):
         for proposition in utterance.iter('{http://www.talkbank.org/ns/talkbank}proposition'):
 
             if proposition.attrib['lemma'].endswith('-p'):  # TODO what to do here?
+                print('WARNING: Skipping prepositional proposition')
+                num_prepositions += 1
                 continue
 
             if VERBOSE:
@@ -109,7 +115,7 @@ for file_path in sorted(XML_PATH.rglob('*.xml')):
                 try:
                     words[head_loc]
                 except IndexError:
-                    print('WARNING: Bad head location')  # TODO is the data really bad?
+                    print('WARNING: Bad head location')
                     num_bad_head_loc += 1
                     is_bad = True
                     break
@@ -124,7 +130,7 @@ for file_path in sorted(XML_PATH.rglob('*.xml')):
                     start_loc = get_start_index(words, argument_tree.leaves())
 
                     if not labels[start_loc: start_loc + argument_length] == [OUTSIDE_LABEL] * argument_length:
-                        print('WARNING: Bad argument location. Skipping')  # TODO are there really bad data?
+                        print('WARNING: Bad argument location. Skipping')
                         num_bad_arg_loc += 1
                         is_bad = True
 
@@ -181,6 +187,7 @@ print(f'num no arguments      ={num_no_arguments:,}')
 print(f'num no predicate      ={num_no_predicate:,}')
 print(f'num bad head location ={num_bad_head_loc:,}')
 print(f'num bad arg location  ={num_bad_arg_loc:,}')
+print(f'num prepositions      ={num_prepositions:,}')
 
 
 print(f'Writing {len(lines)} lines to file...')
