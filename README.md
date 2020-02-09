@@ -11,7 +11,11 @@ The goal of this research project is to test theories of how children learn to u
 
 ## History
 
-Investigation into the inner workings of the model began in in September 2019 while under the supervision of [Cynthia Fisher](https://psychology.illinois.edu/directory/profile/clfishe)
+- 2008: The BabySRL project can be traced back to work by Cynthia Fisher, Dan Roth, Michael Connor and Yael Gertner, available [here](https://www.aclweb.org/anthology/W08-2111/).
+
+- 2016: The most recent work, prior to this, can be found [here](https://gitlab-beta.engr.illinois.edu/babysrl-group/babysrl)
+
+- 2019: The current work is an extension of the previous, leveraging the powerful deep-learning model BERT. Investigation into the inner workings of the model began in in September 2019 while under the supervision of [Cynthia Fisher](https://psychology.illinois.edu/directory/profile/clfishe)
 at the Department of Psychology at [UIUC](https://psychology.illinois.edu/). 
 
 ## BERT
