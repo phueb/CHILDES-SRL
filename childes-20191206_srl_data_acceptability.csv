@@ -1,0 +1,372 @@
+is_bad,line
+False,0 do you want to look at that ||| B-V O O O O O O
+False,2 do you want to look at that ||| O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1
+False,4 do you want to look at that ||| O B-ARG0 O O B-V B-ARG1 I-ARG1
+False,1 it says look . ||| B-ARG0 B-V B-ARG1 O
+False,1 there 's a face with glasses . ||| O B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,0 look there 's Pooh_Bear . ||| B-V O O O O
+False,2 look there 's Pooh_Bear . ||| B-ARGM-DIS O B-V B-ARG1 O
+False,1 there 's a baby bear with his bottle . ||| O B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,1 who 's that . ||| B-ARG2 B-V B-ARG1 O
+False,0 is that [NAME] . ||| B-V B-ARG1 B-ARG2 O
+False,2 aha I think I see [NAME] . ||| B-ARGM-DIS B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 O
+True,4 aha I think I see [NAME] . ||| O O O B-ARG0 B-V O O
+False,2 there he is . ||| B-ARG2 B-ARG1 B-V O
+False,1 he is . ||| B-ARG1 B-V O
+False,1 you see yourself . ||| B-ARG0 B-V B-ARG1 O
+False,1 that 's my pretty baby boy . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+True,1 I 'm sorry that 's handsome baby boy . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,4 I 'm sorry that 's handsome baby boy . ||| O O O B-ARG1 B-V B-ARG2 B-ARGM-DIS I-ARGM-DIS O
+False,1 you like that . ||| B-ARG0 B-V B-ARG1 O
+False,0 look there 's a bunny+rabbit . ||| B-V O O O O O
+True,2 look there 's a bunny+rabbit . ||| B-ARGM-DIS O B-V B-ARG1 I-ARG1 O
+True,1 there 's kitty+cat . ||| O B-V B-ARG1 O
+False,2 and who 's this it 's a baby . ||| O B-ARG2 B-V B-ARG1 O O O O O
+False,5 and who 's this it 's a baby . ||| B-ARGM-DIS O O O B-ARG1 B-V B-ARG2 I-ARG2 O
+False,1 it 's a baby . ||| B-ARG1 B-V B-ARG2 I-ARG2 O
+False,0 want to look at that . ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,2 want to look at that . ||| O O B-V B-ARG1 I-ARG1 O
+True,0 does it fit your mouth . ||| B-V O O O O O
+False,2 does it fit your mouth . ||| O B-ARG1 B-V B-ARG1 I-ARG1 O
+True,0 let 's see what else there is in here . ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,2 let 's see what else there is in here . ||| O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,6 let 's see what else there is in here . ||| O O O B-ARG1 I-ARG1 O B-V B-ARGM-LOC I-ARGM-LOC O
+True,1 There 's a . ||| O B-V B-ARG1 O
+False,1 you like that book ||| B-ARG0 B-V B-ARG1 I-ARG1
+False,1 it 's very red . ||| B-ARG1 B-V B-ARG2 I-ARG2 O
+False,1 red is a good thing is n't it . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 O O O O
+False,5 red is a good thing is n't it . ||| O O O O O B-V B-ARGM-NEG B-ARG1 O
+False,1 you want your book back do n't you . ||| B-ARG0 B-V B-ARG1 I-ARG1 O O O O O
+True,5 you want your book back do n't you . ||| O O O O O B-V O O O
+True,0 let 's see ||| B-V B-ARG1 I-ARG1
+True,2 let 's see ||| O B-ARG0 B-V
+True,0 do you want to see who this is . ||| B-V O O O O O O O O
+False,2 do you want to see who this is . ||| O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,4 do you want to see who this is . ||| O B-ARG0 O O B-V B-ARG1 I-ARG1 I-ARG1 O
+False,7 do you want to see who this is . ||| O O O O O B-ARG2 B-ARG1 B-V O
+False,1 this is [NAME] . ||| B-ARG1 B-V B-ARG2 O
+False,0 can you read your book again ||| B-V O O O O O
+False,2 can you read your book again ||| B-ARGM-MOD B-ARG0 B-V B-ARG1 I-ARG1 B-ARGM-TMP
+False,1 you like the book . ||| B-ARG0 B-V B-ARG1 I-ARG1 O
+False,1 you want to see if it fits in your mouth . ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,3 you want to see if it fits in your mouth . ||| B-ARG0 O O B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,6 you want to see if it fits in your mouth . ||| O O O O O B-ARG1 B-V B-ARGM-LOC I-ARGM-LOC I-ARGM-LOC O
+False,0 is that what you want to see . ||| B-V B-ARG1 B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,4 is that what you want to see . ||| O O O B-ARG0 B-V B-ARG1 I-ARG1 O
+False,6 is that what you want to see . ||| O O B-ARG1 B-ARG0 O O B-V O
+False,2 oh that 's too big . ||| B-ARGM-DIS B-ARG1 B-V B-ARG2 I-ARG2 O
+False,1 what do you know . ||| O B-V O O O
+False,3 what do you know . ||| B-ARG1 O B-ARG0 B-V O
+False,1 you want to hold it like that . ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,3 you want to hold it like that . ||| B-ARG0 O O B-V B-ARG1 B-ARGM-MNR I-ARGM-MNR O
+True,1 there 's baby bear with his bottle . ||| O B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,0 see baby bear . ||| B-V B-ARG1 I-ARG1 O
+True,2 see baby bear . ||| O B-ARG1 B-V O
+False,1 yeah see baby bear . ||| B-ARGM-DIS B-V B-ARG1 I-ARG1 O
+True,3 yeah see baby bear . ||| B-ARGM-DIS O B-ARG1 B-V O
+False,3 and then who 's this . ||| O O B-ARG2 B-V B-ARG1 O
+True,1 who 's picture is that ||| B-ARG0 B-V O O O
+True,3 who 's picture is that ||| B-ARG1 I-ARG1 I-ARG1 B-V B-ARG2
+False,0 do you see yourself in the mirror . ||| B-V O O O O O O O
+False,2 do you see yourself in the mirror . ||| O B-ARG0 B-V B-ARG1 B-ARGM-LOC I-ARGM-LOC I-ARGM-LOC O
+False,1 that 's [NAME] . ||| B-ARG1 B-V B-ARG2 O
+False,1 still want to see if it fits in your mouth . ||| B-ARGM-TMP B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,3 still want to see if it fits in your mouth . ||| O O O B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,6 still want to see if it fits in your mouth . ||| O O O O O B-ARG1 B-V B-ARGM-LOC I-ARGM-LOC I-ARGM-LOC O
+False,2 oh what do you think . ||| O O B-V O O O
+False,4 oh what do you think . ||| O B-ARG1 O B-ARG0 B-V O
+False,0 does it fit nice . ||| B-V O O O O
+False,2 does it fit nice . ||| O B-ARG1 B-V B-ARGM-MNR O
+False,1 that 's such a pretty red . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,0 can you see ? ||| B-V O O O
+False,1 I think the horse piece might go there . ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,6 hm so you wanna help me make some brownies ? ||| O O O O O B-ARG0 B-V B-ARG1 I-ARG1 O
+False,2 let me see it ? ||| O B-ARG0 B-V B-ARG1 O
+False,7 I 'm sure she ate before she went to work . ||| O O O O O O B-ARG0 B-V B-ARG4 I-ARG4 O
+True,1 z is for zither and zebra . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,4 oh I could really spend the day not watching tv . ||| B-ARGM-DIS B-ARG0 B-ARGM-MOD B-ARGM-ADV B-V B-ARG1 I-ARG1 B-ARG2 I-ARG2 I-ARG2 O
+False,2 do you know why we ca n't get helium now [NAME] ? ||| O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,0 do you know it [NAME] . ||| B-V O O O O O
+False,0 show me the scales . ||| B-V B-ARG2 B-ARG1 I-ARG1 O
+False,3 I think that 's the one we lost . ||| O O B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,1 see look look ? ||| O B-V O O
+False,0 put it in the closet ? ||| B-V B-ARG1 B-ARG2 I-ARG2 I-ARG2 O
+False,0 wait a minute . ||| B-V B-ARGM-TMP I-ARGM-TMP O
+False,3 I had I want ||| O O B-ARG0 B-V
+True,3 hm well there 's the ball and we 're gon na get rid of the big spider . ||| O B-ARGM-DIS O B-V B-ARG1 I-ARG1 O O O O O O O O O O O O
+False,1 where 's the big truck [NAME] . ||| B-ARG2 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,0 is n't that silly ? ||| B-V B-ARGM-NEG B-ARG1 B-ARG2 O
+False,4 looks kinda like one do n't it . ||| O O O O B-V O O O
+False,4 gee [NAME] I 've got a lot of work to do ? ||| B-ARGM-DIS I-ARGM-DIS B-ARG0 O B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,1 you want juice ||| B-ARG0 B-V B-ARG1
+False,5 well it 's gon na be kind of messy . ||| O B-ARG1 O O O B-V B-ARG2 I-ARG2 I-ARG2 O
+False,4 I do n't even know where the book is . ||| B-ARG0 O B-ARGM-NEG B-ARGM-ADV B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,3 hm ca n't find your rooster . ||| B-ARGM-DIS B-ARGM-MOD B-ARGM-NEG B-V B-ARG1 I-ARG1 O
+True,3 would you like spinach salad girls ? ||| O O O B-V O O O
+False,2 fine that 's good [NAME] . ||| B-ARGM-DIS B-ARG1 B-V B-ARG2 O O
+False,1 it 's so nice . ||| B-ARG1 B-V B-ARG2 I-ARG2 O
+False,5 the daddies and mommies will sit on that bench ? ||| B-ARG1 I-ARG1 I-ARG1 I-ARG1 B-ARGM-MOD B-V B-ARG2 I-ARG2 I-ARG2 O
+False,0 let 's see . ||| B-V B-ARG1 I-ARG1 O
+False,0 would you like to pick it out or would you like [NAME] to pick it out . ||| B-V O O O O O O O O O O O O O O O O
+False,1 that 's why they were best friends . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,7 ask your ask your [NAME] if she 's a boy or a girl ? ||| O O O O O O B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,1 oh thank you now ||| B-ARGM-DIS B-V B-ARG1 B-ARGM-TMP
+True,7 if I 've got ta talk you know I get all confused . ||| O O O O O O B-ARG0 B-V O O O O O
+False,1 that 's very good ? ||| B-ARG1 B-V B-ARG2 I-ARG2 O
+False,5 okay why do n't you crawl in your bed and I 'll give you some ginger ale ? ||| O B-ARGM-CAU O B-ARGM-NEG B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 O O O O O O O O O
+True,1 I hold [NAME] too ? ||| B-ARG0 B-V O B-ARGM-DIS O
+False,2 no it 's different meet from what we eat ? ||| B-ARGM-DIS B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,4 in_case you want to carry it with you . ||| O B-ARG0 O O B-V B-ARG1 B-ARG3 I-ARG3 O
+False,4 one day my mother took me and [NAME] to the circus . ||| B-ARGM-TMP I-ARGM-TMP B-ARG0 I-ARG0 B-V B-ARG1 O O B-ARG2 I-ARG2 I-ARG2 O
+False,1 that 's right . ||| B-ARG1 B-V B-ARG2 O
+True,0 let 's fix the straps huh ? ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,1 I bet that rabbit turned on the water too high so there 's too much water coming out . ||| B-ARG0 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,1 it 's like the oreo of pop tarts ? ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,2 and you were the engineer . ||| B-ARGM-DIS B-ARG1 B-V B-ARG2 I-ARG2 O
+False,1 you have bells on in that picture ? ||| B-ARG0 B-V B-ARG1 B-ARGM-LOC B-ARGM-LOC I-ARGM-LOC I-ARGM-LOC O
+False,8 well you know what why do not you go over by the table where your back+pack is . ||| O O O O B-ARGM-CAU O B-ARGM-NEG B-ARG0 B-V B-ARG4 I-ARG4 I-ARG4 I-ARG4 I-ARG4 I-ARG4 I-ARG4 I-ARG4 O
+False,2 I 'm trying to think of what we 've been doing since we saw [NAME] last time . ||| B-ARG0 O B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,1 what do you get when you fly on the airplane ? ||| O B-V O O O O O O O O O
+False,1 what is this ! ||| B-ARG2 B-V B-ARG1 O
+False,4 very quiet did n't say much of anything . ||| B-ARG0 I-ARG0 O B-ARGM-NEG B-V B-ARG1 I-ARG1 I-ARG1 O
+False,1 what 're you doing . ||| O B-V O O O
+False,0 make yourself at home . ||| B-V B-ARG1 I-ARG1 I-ARG1 O
+False,1 where 's [NAME] . ||| B-ARG2 B-V O O
+False,8 I do n't think they were made to go together ! ||| O O O O B-ARG1 O O O B-V B-ARGM-MNR O
+True,9 I do n't know is that all that 's left remember some broke last time when we were playing with them . ||| O O O O O O B-ARG1 B-R-ARG0 O B-V O O O O O O O O O O O O
+False,6 I 'm gon na take you listen I 'll take you to the bed+room and talk to you too ||| O O O O O O B-V O O O O O O O O O O O O
+False,7 we do n't have to if you do n't want to . ||| O O O O O O O B-V O O O O
+False,13 oh goodness you better read me a good story or I 'm not going to stay asleep . ||| O O O O O O O O O O O O B-ARGM-NEG B-V O O O O
+True,1 who gave it to you before [NAME] ? ||| B-ARG0 B-V B-ARG1 B-ARG2 I-ARG2 B-ARGM-TMP I-ARGM-TMP O
+False,5 alright I 'll have to go . ||| O B-ARG0 O O O B-V O
+False,1 I ca n't give you the weekend ? ||| O B-V O O O O O O
+False,0 open the whole thing ? ||| B-V B-ARG1 I-ARG1 I-ARG1 O
+False,5 you 're not supposed to step on the mats . ||| B-ARG1 O O O O B-V B-ARG2 I-ARG2 I-ARG2 O
+False,2 if you get angry and start crying like if you wanna do something like pull my thing you just pick it up and it accidentally tears . ||| O B-ARG1 B-V B-ARG2 O O O O O O O O O O O O O O O O O O O O O O O
+False,5 do you want me to tear it ? ||| O O O B-ARG0 O B-V B-ARG1 O
+True,7 does this make a noise when you pour it ? ||| O O O O O B-ARGM-TMP B-ARG0 B-V B-ARG1 O
+False,1 she was more excited over that jump rope than she was over Christmas . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,0 do you want to tell us the story . ||| B-V O O O O O O O O
+False,1 I want to finish some rice . ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,4 were you gon na spit peaches on my white shirt ? ||| O B-ARG0 O O B-V B-ARG1 B-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,1 that 's apple ||| B-ARG1 B-V B-ARG2
+True,3 okay [NAME] will get you green olives . ||| B-ARG0 O B-ARGM-MOD B-V B-ARG4 B-ARG1 I-ARG1 O
+True,1 who 's baby is the lil chick ? ||| B-ARG1 B-V B-ARG2 O O O O O
+False,5 now well need someone to turn off the tape recorder . ||| O O O B-ARG0 O B-V O B-ARG1 I-ARG1 I-ARG1 O
+False,1 to do what . ||| O B-V B-ARG1 O
+False,1 I 'll go upstairs later . ||| O B-V O O O O
+False,2 oh I see it did . ||| B-ARGM-DIS B-ARG0 B-V B-ARG1 I-ARG1 O
+False,0 is Tigger_Egger in there . ||| B-V B-ARG1 B-ARG2 I-ARG2 O
+False,2 the train is going around in a circle . ||| O O B-V O O O O O O
+False,0 've been going shopping ||| B-V O O O
+False,2 I 'd like just a taste . ||| B-ARG0 B-ARGM-MOD B-V B-ARG1 I-ARG1 I-ARG1 O
+False,2 should he go bye bye too . ||| B-ARGM-MOD B-ARG0 B-V B-ARG1 I-ARG1 B-ARGM-ADV O
+False,2 she 's doing fine thank_you . ||| B-ARG0 O B-V B-ARGM-MNR B-ARGM-DIS O
+False,5 it 's a dragon you 're really close it 's called a what 's the other name it 's a . ||| O O O O B-ARG1 B-V B-ARG2 I-ARG2 O O O O O O O O O O O O O
+False,0 did you make baseball hats at school ? ||| B-V O O O O O O O
+True,4 do n't say hi say bye . ||| O O O B-ARGM-DIS B-V B-ARG1 O
+False,6 over there where all your books are ? ||| B-ARG2 I-ARG2 B-ARG2 B-ARG1 I-ARG1 I-ARG1 B-V O
+False,5 do you know what mehetsz means ? ||| O O O B-ARG1 B-ARG0 B-V O
+False,1 that 's another one yes . ||| B-ARG1 B-V B-ARG2 I-ARG2 B-ARGM-DIS O
+True,1 those are um that 's an opossum ? ||| B-ARG1 B-V B-ARGM-DIS B-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,4 let 's see what 's in the next box . ||| O O O B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,4 you want me to smack your fingers ? ||| O O B-ARG0 O B-V B-ARG1 I-ARG1 O
+False,4 which one do you want to play . ||| O O O B-ARG0 B-V B-ARG1 I-ARG1 O
+False,0 do you hear anything downstairs ? ||| B-V O O O O O
+False,2 do n't try to land on [NAME] . ||| O B-ARGM-NEG B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,3 what 's he doing . ||| B-ARG1 O B-ARG0 B-V O
+False,1 I did n't eat all day exercised for an hour and a half and then I ate two helpings of rice ? ||| O B-V O O O O O O O O O O O O O O O O O O O O
+False,1 we were but now she wants to play with some frog . ||| B-ARG1 B-V O O O O O O O O O O
+False,2 you can play with those . ||| B-ARG0 B-ARGM-MOD B-V B-ARG2 I-ARG2 O
+False,4 I 'm gon na lie on the floor . ||| B-ARG1 O O O B-V B-ARG2 I-ARG2 I-ARG2 O
+False,0 do you wanna play the store first ? ||| B-V O O O O O O O
+False,10 this is May twenty five and [NAME] and I are reading looking at a Creative Playthings catalogue . ||| O O O O O O B-ARG0 I-ARG0 I-ARG0 O B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,5 you do n't have to shout . ||| B-ARG0 O O O O B-V O
+False,0 do you wanna touch it ? ||| B-V O O O O O
+False,2 do you want to do it ? ||| O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 O
+False,1 what 're you making ? ||| O B-V O O O
+False,3 well you can fix it now well you know how ||| O B-ARG0 B-ARGM-MOD B-V B-ARG1 B-ARGM-TMP O O O O
+False,1 elbow is right there . ||| B-ARG1 B-V B-ARG2 I-ARG2 O
+False,0 can you turn the light on for me ||| B-V O O O O O O O
+False,2 little guy runs away so fast . ||| B-ARG0 I-ARG0 B-V B-ARGM-DIR B-ARGM-MNR I-ARGM-MNR O
+False,3 we could just sit there and eat on the stools if you want or at a table . ||| B-ARG1 B-ARGM-MOD B-ARGM-ADV B-V B-ARG2 O O O O O O O O O O O O O
+False,1 what are these ? ||| B-ARG2 B-V B-ARG1 O
+False,0 does the plug go up or down or sideways ? ||| B-V O O O O O O O O O
+False,0 do you see anything . ||| B-V O O O O
+False,1 I bet we will . ||| B-ARG0 B-V B-ARG2 I-ARG2 O
+False,3 oh good I wanted to play at school ? ||| B-ARGM-DIS O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,0 have a little more of your hummus while you 're waiting . ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 B-ARGM-TMP I-ARGM-TMP I-ARGM-TMP I-ARGM-TMP O
+False,2 [NAME] why do n't you draw on the other side of the board where [NAME] 's not . ||| O O B-V O O O O O O O O O O O O O O O
+False,2 Auntie_Shirley 's gon na bring home candy for trick or treat tonight . ||| O O B-V O O O O O O O O O O
+False,1 what does it taste like . ||| O B-V O O O O
+False,4 just because I always give you one of these tiny bowls . ||| O O B-ARG0 B-ARGM-TMP B-V B-ARG2 B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,1 where 'd the bug go ? ||| O B-V O O O O
+False,1 what 's his name . ||| B-ARG2 B-V B-ARG1 I-ARG1 O
+False,1 I will do that ? ||| O B-V O O O
+False,1 oh is that what she does . ||| B-ARGM-DIS B-V B-ARG1 B-ARG2 I-ARG2 I-ARG2 O
+False,1 I said this morning that Mandy was the only one that the teacher yelled at at school . ||| B-ARG0 B-V B-ARGM-TMP I-ARGM-TMP B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,11 this morning you 're going to go to school and you 're going to go see some Christmas trees . ||| O O O O O O O O O O O B-V O O O O O O O O
+False,1 I do n't know where do n't put that in your mouth [NAME] . ||| O B-V O O O O O O O O O O O O
+False,1 he 's wearing a red ||| O B-V O O O
+False,11 [NAME] I 'm gon na put this right down because I need to get you a tissue . ||| O O O O O O O O O O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,2 no you do n't want the people . ||| O O B-V O O O O O
+False,6 what do you want me to do ? ||| B-ARG1 O O O B-ARG0 O B-V O
+False,1 I need a witch 's hat though . ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 B-ARGM-ADV O
+False,9 the [PLACE] children 's museum while [NAME] and [NAME] went to the movies ? ||| O O O O O O B-ARG0 I-ARG0 I-ARG0 B-V B-ARG4 I-ARG4 I-ARG4 O
+False,1 who 's that ? ||| B-ARG2 B-V B-ARG1 O
+False,2 no I think I 'll let you go okay ? ||| B-ARGM-DIS B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,1 they did what ? ||| B-ARG0 B-V B-ARG1 O
+False,6 I could n't be bothered to come because the people of Feria are so lazy they do not deserve my beautiful springs . ||| B-ARG1 O O O O O B-V O O O O O O O O O O O O O O O O
+False,5 what do you have to eat . ||| B-ARG1 O B-ARG0 O O B-V O
+False,3 and you definitely do n't use these any more ? ||| O O O B-V O O O O O O
+False,6 can you show me the girl shows the dog to the cat ? ||| O O O O B-ARG0 I-ARG0 B-V B-ARG1 I-ARG1 B-ARG2 I-ARG2 I-ARG2 O
+False,7 and then it has to have what 's this shape . ||| O O O O O O B-ARG2 B-V B-ARG1 I-ARG1 O
+False,4 and I need to put a diaper on you . ||| O B-ARG0 O O B-V B-ARG1 I-ARG1 B-ARG2 I-ARG2 O
+False,8 do you want to find a word that has the letter j in it . ||| O O O O O B-ARG0 I-ARG0 B-R-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+True,4 mm who 're you talking to . ||| O O O B-ARG0 B-V B-ARG2 O
+False,3 I do n't think that that 's picking up the play_doh ? ||| B-ARG0 O B-ARGM-NEG B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,1 you 're playing musics ? ||| O B-V O O O
+False,0 would you like to write in the back . ||| B-V O O O O O O O O
+True,0 's some good apple butter and almond butter on that piece of Kamut ? ||| B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,2 and she has a cat ? ||| B-ARGM-DIS B-ARG0 B-V B-ARG1 I-ARG1 O
+False,3 what did they do here ? ||| B-ARG1 O B-ARG0 B-V B-ARGM-LOC O
+False,0 did you dream last night ? ||| B-V O O O O O
+True,3 Gita have to say about it ! ||| B-ARG0 O O B-V B-ARG3 I-ARG3 O
+False,0 put this man back on the truck too ? ||| B-V B-ARG1 I-ARG1 B-ARG2 I-ARG2 I-ARG2 I-ARG2 B-ARGM-ADV O
+True,2 what what happen . ||| B-ARG1 B-ARG1 B-V O
+False,0 did you find it . ||| B-V O O O O
+False,3 oh it 's going [NAME] . ||| B-ARGM-DIS B-ARG1 O B-V O O
+False,1 where 'd you get it . ||| O B-V O O O O
+True,1 he 's drinking water with his trunk . ||| B-ARG1 B-V O O O O O O
+False,0 would you like to take your bat and ball . ||| B-V O O O O O O O O O
+False,5 and maybe I do n't know . ||| B-ARGM-DIS B-ARGM-ADV B-ARG0 O B-ARGM-NEG B-V O
+False,1 what do you do with the cradle . ||| O B-V O O O O O O
+False,1 well come on ? ||| B-ARGM-DIS B-V O O
+False,1 what would he say ? ||| O B-V O O O
+False,1 it 's pretty sticky stuff . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 O
+True,2 would you help me close the door . ||| B-ARGM-MOD B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,1 they 're going for a ride ! ||| O B-V O O O O O
+False,7 get me the schedule and I 'll see what 's on ? ||| O O O O O B-ARG0 B-ARGM-MOD B-V B-ARG1 I-ARG1 I-ARG1 O
+True,1 what 's [NAME] like ? ||| O B-V O B-ARG2 O
+False,2 two can play at that game ||| B-ARG0 B-ARGM-MOD B-V B-ARG1 I-ARG1 I-ARG1
+False,6 I do n't know who 's driving honey . ||| O O O O B-ARG0 O B-V B-ARGM-DIS O
+False,1 you 're kind of a dope little boo . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 O
+False,1 that 's the bunny book . ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 O
+True,3 why did [NAME] become angry though ? ||| B-ARGM-CAU O O B-V B-ARG2 B-ARGM-ADV O
+False,3 what do you think ? ||| B-ARG1 O B-ARG0 B-V O
+False,1 I got that lip . ||| B-ARG0 B-V B-ARG1 I-ARG1 O
+False,0 pick you up . ||| B-V B-ARG1 O O
+False,1 what is that animal . ||| B-ARG2 B-V B-ARG1 I-ARG1 O
+False,2 no I do n't think that one 's broken ? ||| O O B-V O O O O O O O
+False,1 I think the battery 's not working on that phone ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1
+False,1 what 's in his hand ? ||| B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 O
+False,2 well you can close it ? ||| O O B-V O O O
+False,0 leave em there ||| B-V B-ARG1 B-ARGM-LOC
+False,2 aha he 's in his underwear . ||| B-ARGM-DIS B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 O
+False,0 did you squeezed it . ||| B-V O O O O
+False,1 you can touch them but gentle . ||| O B-V O O O O O
+False,0 did the slide go fast or slow . ||| B-V O O O O O O O
+False,0 try this one . ||| B-V B-ARG1 I-ARG1 O
+False,3 no do n't jump down . ||| B-ARGM-DIS O B-ARGM-NEG B-V B-ARGM-DIR O
+False,1 what happened to it . ||| B-ARG1 B-V B-ARG2 I-ARG2 O
+False,4 oh I do n't know where the lady will be back soon ? ||| B-ARGM-DIS B-ARG0 O B-ARGM-NEG B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,2 I 'll find . ||| B-ARG0 B-ARGM-MOD B-V O
+False,1 he 's doing what ? ||| O B-V O O O
+False,3 what do you see ? ||| B-ARG1 O B-ARG0 B-V O
+True,0 let me help you . ||| B-V B-ARG1 I-ARG1 I-ARG1 O
+False,3 what 's he riding ! ||| B-ARG1 O B-ARG0 B-V O
+True,5 [NAME] 's at home he 's with [NAME] ? ||| O O O O B-ARG1 B-V B-ARG2 O O
+False,0 shut them . ||| B-V B-ARG1 O
+False,6 then what does she have to do . ||| O B-ARG1 O B-ARG0 O O B-V O
+False,1 why do n't you get your highchair out . ||| O B-V O O O O O O O
+False,2 would that be fun . ||| B-ARGM-MOD B-ARG1 B-V B-ARG2 O
+False,2 did you hurt yourself ? ||| O B-ARG0 B-V B-ARG1 O
+False,8 you know another thing that we did that was fun ||| O O B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 B-R-ARG1 B-V B-ARG2
+False,0 is he on the swing ? ||| B-V B-ARG1 B-ARG2 I-ARG2 I-ARG2 O
+False,6 oh that 's a boat you 're right ? ||| O O O O O B-ARG1 B-V B-ARG2 O
+False,1 they made it just right . ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 O
+False,1 okay want me to pitch . ||| B-ARGM-DIS B-V B-ARG1 I-ARG1 I-ARG1 O
+False,0 do you have any cookies ? ||| B-V O O O O O
+False,3 what do you want to hear . ||| O O B-ARG0 B-V B-ARG1 I-ARG1 O
+False,0 did you tell ||| B-V O O
+False,7 and talk about the reasons we 're gon na do things one way or the other . ||| O O O O O O O B-V O O O O O O O O O
+False,3 okay let 's see here look ? ||| O O B-ARG0 B-V B-ARGM-LOC B-ARGM-DIS O
+False,3 you do not know what 's that ? ||| B-ARG0 O B-ARGM-NEG B-V B-ARG1 I-ARG1 I-ARG1 O
+False,3 I wish I could keep it ? ||| O O O B-V O O O
+False,2 do you think it feels good to have bugs ||| O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1
+False,2 oh what happened to you ? ||| O B-ARG1 B-V B-ARG2 I-ARG2 O
+False,1 you 're liking . ||| O B-V O O
+False,1 never saw anybody eat like that . ||| B-ARGM-NEG B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,1 he 's eating ? ||| O B-V O O
+False,1 to make matters worse it began to rain in ? ||| O B-V B-ARG1 I-ARG1 O O O O O O
+False,1 that 's good . ||| B-ARG1 B-V B-ARG2 O
+False,2 we 're missing a trapezoid ? ||| B-ARG0 O B-V B-ARG1 I-ARG1 O
+True,3 and then we chug chug stop and play . ||| O O B-ARG0 B-V B-ARG1 O O O O
+False,4 okay and then what happened ? ||| O O O B-ARG1 B-V O
+False,3 we do n't need that one . ||| B-ARG0 O B-ARGM-NEG B-V B-ARG1 I-ARG1 O
+False,1 he put an apple in the plant . ||| B-ARG0 B-V B-ARG1 I-ARG1 B-ARG2 I-ARG2 I-ARG2 O
+False,3 can you do do more . ||| B-ARGM-MOD B-ARG0 O B-V B-ARGM-EXT O
+False,3 oh he 's gon na have some food ? ||| O O O B-V O O O O O
+False,0 do you think you like the glitter ones better ? ||| B-V O O O O O O O O O
+False,6 oh there 's your star you were looking for that yesterday . ||| O O O O O O B-V O O O O O
+True,4 was she willing to marry [NAME] ? ||| O B-ARG1 O O B-V O O
+False,6 I do n't know what she did with it . ||| O O O O B-ARG1 B-ARG0 B-V B-ARG2 I-ARG2 O
+False,2 can you say [NAME] . ||| B-ARGM-MOD B-ARG0 B-V B-ARG1 O
+False,5 well I guess we 'll find out . ||| O O O B-ARG0 B-ARGM-MOD B-V O O
+False,1 they put cones in the road to keep the cars from driving too close to the fire cause the fire 's very hot . ||| B-ARG0 B-V B-ARG1 B-ARG2 I-ARG2 I-ARG2 B-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP I-ARGM-PRP O
+False,2 do you want me to read it to you again ? ||| O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,2 cause he can cause he can do this . ||| O O B-V O O O O O O
+False,1 I bought this sometime later . ||| B-ARG0 B-V B-ARG1 B-ARGM-TMP I-ARGM-TMP O
+False,2 no they were n't . ||| O O B-V O O
+False,2 time to clean you a little bit more ? ||| B-ARGM-TMP O B-V B-ARG1 B-ARGM-EXT I-ARGM-EXT I-ARGM-EXT I-ARGM-EXT O
+False,7 now put that in this hole now push . ||| B-ARGM-DIS O O O O O B-ARGM-TMP B-V O
+False,1 hum is it back here . ||| B-ARGM-DIS B-V B-ARG1 B-ARGM-LOC I-ARGM-LOC O
+True,3 do you like babysitting ? ||| O B-ARG0 O B-V O
+False,0 is that [NAME] ? ||| B-V B-ARG1 B-ARG2 O
+False,4 are we gon na go to the supermarket later ? ||| O B-ARG0 O O B-V B-ARG4 I-ARG4 I-ARG4 B-ARGM-TMP O
+False,2 yeah [NAME] 's working . ||| O O B-V O O
+False,2 are they going back to the store . ||| O B-ARG0 B-V B-ARG4 I-ARG4 I-ARG4 I-ARG4 O
+False,1 that is right ? ||| B-ARG1 B-V B-ARG2 O
+False,1 down came the rain and washed the spider out . ||| B-ARGM-DIR B-V B-ARG1 I-ARG1 O O O O O O
+True,1 I 'll bring you something tonight . ||| B-ARG0 B-V O O O O O
+False,2 and it was the longest half an hour ||| B-ARGM-DIS B-ARG1 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2
+False,2 do n't see any more books . ||| O B-ARGM-NEG B-V B-ARG1 I-ARG1 I-ARG1 O
+False,2 nah you get a spanking if you turn it on huh . ||| B-ARGM-DIS B-ARG0 B-V B-ARG1 I-ARG1 B-ARGM-ADV I-ARGM-ADV I-ARGM-ADV I-ARGM-ADV I-ARGM-ADV I-ARGM-ADV O
+False,3 well sleepy I do n't really have very much money with me . ||| O O O B-V O O O O O O O O O
+False,13 did you hear [NAME] 's got this one book where it says something is awesome ? ||| O O O O O O O O O O O O B-ARG1 B-V B-ARG2 O
+False,3 how is she going to go shopping . ||| O O O B-V O O O O
+False,6 I think you know what you 're doing ? ||| O O O O O O B-V O O
+False,1 what 's over here . ||| B-ARG1 B-V B-ARG2 I-ARG2 O
+False,1 what are you got . ||| O B-V O O O
+False,1 wanna go back to the car ? ||| O B-V B-ARG4 I-ARG4 I-ARG4 I-ARG4 O
+False,2 you can put it down but do n't throw . ||| B-ARG0 B-ARGM-MOD B-V B-ARG1 B-ARG2 O O O O O
+False,2 you 're gon na get all the dirt all over the place . ||| O O B-V O O O O O O O O O O
+False,1 where 's the bottom ? ||| B-ARG2 B-V B-ARG1 I-ARG1 O
+False,2 you can take him there . ||| B-ARG0 B-ARGM-MOD B-V B-ARG1 B-ARG2 O
+False,1 you like butter . ||| B-ARG0 B-V B-ARG1 O
+False,2 yeh you 're right ? ||| B-ARGM-DIS B-ARG1 B-V B-ARG2 O
+False,2 you can fall over you get hurt . ||| B-ARG1 B-ARGM-MOD B-V B-ARGM-DIR O O O O
+False,2 ooh ooh sit down Laura . ||| B-ARGM-DIS I-ARGM-DIS B-V O B-ARGM-DIS O
+False,4 that 's yucky you 're gon na make germs in the icing ! ||| O O O O B-V O O O O O O O O
+False,7 because you can pull them on and pull them off . ||| O B-ARG0 B-ARGM-MOD O O O O B-V B-ARG1 O O
+False,0 will it fit ? ||| B-V O O O
+True,3 a little turtle named Squirt ? ||| B-ARG1 I-ARG1 I-ARG1 B-V B-ARG2 O
+False,3 they do n't have any balloons do they . ||| B-ARG0 O B-ARGM-NEG B-V B-ARG1 I-ARG1 O O O
+True,1 [NAME] said [NAME] into the trash bucket ||| O B-V O B-ARGM-DIR I-ARGM-DIR I-ARGM-DIR I-ARGM-DIR
+True,1 there 's the cake in the bakery window . ||| O B-V B-ARG1 I-ARG1 B-ARGM-LOC I-ARGM-LOC I-ARGM-LOC I-ARGM-LOC O
+False,2 the conductor leads the orchestra by waving his baton . ||| B-ARG0 I-ARG0 B-V B-ARG1 I-ARG1 B-ARGM-MNR I-ARGM-MNR I-ARGM-MNR I-ARGM-MNR O
+False,1 I think I can ||| B-ARG0 B-V B-ARG1 I-ARG1
+False,1 what does the doggie say . ||| O B-V O O O O
+False,3 stethoscope [NAME] was looking for his stethoscope . ||| B-ARG0 I-ARG0 O B-V B-ARG1 I-ARG1 I-ARG1 O
+False,0 did you fall down the stairs ? ||| B-V O O O O O O
+False,2 you 're sitting on it . ||| B-ARG1 O B-V B-ARG2 I-ARG2 O
+False,4 you want me to peel it . ||| O O B-ARG0 O B-V B-ARG1 O
+False,3 and so what happened and so we it was so funny we borrowed it from ||| O O B-ARG1 B-V O O O O O O O O O O O
+False,1 what does he give you ? ||| O B-V O O O O
+False,7 turn it this way and you can see it . ||| O O O O O B-ARG0 B-ARGM-MOD B-V B-ARG1 O
+False,3 they loved to play tag and algae in the middle before school started . ||| B-ARG0 O O B-V B-ARG1 I-ARG1 I-ARG1 B-ARGM-LOC I-ARGM-LOC I-ARGM-LOC B-ARGM-TMP I-ARGM-TMP I-ARGM-TMP O
+False,2 do you think we can fix it . ||| O B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 O
+False,3 see what he 's got . ||| O O O B-V O O
+False,1 [NAME] did you take this Roger Dodger d_v_d out ? ||| O B-V O O O O O O O O
+False,3 oh you 'd like some cauliflower . ||| B-ARGM-DIS B-ARG0 B-ARGM-MOD B-V B-ARG1 I-ARG1 O
+False,0 did it take a real long time to get there ? ||| B-V O O O O O O O O O O

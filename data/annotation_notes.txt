@@ -1,0 +1,107 @@
+Notes while checking acceptability of model-based SRL tags.
+Philip Huebner.
+Feb 1, 2020.
+
+srl_check.csv ahas a column "is_bad" which is True if the SRl labels are:
+- incorrectly labeled, or
+- important arguments are missing
+but not if:
+- there could be a more precise labeling or splitting of arguments into more precisely labeled arguments
+- unimportant arguments are missing (those not essential for understanding the meaning of the utterance)
+
+For example, the following
+[ARG1: he] [V: 's] drinking water with his trunk .
+is incorrect, because it is missing an important argument without which the meaning would be incomplete.
+
+###############################################
+Are these correct?
+###############################################
+
+I 'm sure she ate before [ARG0: she] [V: went] [ARG4: to work] .
+[V: let] [ARG1: 's fix the straps huh] ?
+[ARG0: you] [V: have] [ARG1: bells] [ARGM-LOC: on] [ARGM-LOC: in that picture] ?
+if [ARG1: you] [V: get] [ARG2: angry] and start crying like if you wanna do something like pull my thing you just pick it up and it accidentally tears .
+does this make a noise [ARGM-TMP: when] [ARG0: you] [V: pour] [ARG1: it] ?
+[ARG1: who] [V: 's] [ARG2: baby] is the lil chick ?
+[ARG2: over there] [ARG2: where] [ARG1: all your books] [V: are] ?
+do you want to find [ARG0: a word] [R-ARG0: that] [V: has] [ARG1: the letter j in it] .
+[ARG1: what] [V: 's] [ARG2: in his hand] ?
+you know [ARG1: another thing that we did] [R-ARG1: that] [V: was] [ARG2: fun]
+[ARGM-DIS: okay] [V: want] [ARG1: me to pitch] .
+well I guess [ARG0: we] [ARGM-MOD: 'll] [V: find] out .
+
+###############################################
+Errors involving [NAME]:
+###############################################
+
+[ARG2: where] [V: 's] [ARG1: the big truck [NAME]] .
+[ARGM-TMP: one day] [ARG0: my mother] [V: took] [ARG1: me] and [NAME] [ARG2: to the circus] .
+[ARG2: where] [V: 's] [NAME] .
+[ARG0: who] [V: gave] [ARG1: it] [ARG2: to you] [ARGM-TMP: before [NAME]] ?
+[ARG0: okay] [NAME] [ARGM-MOD: will] [V: get] [ARG4: you] [ARG1: green olives] .
+what [V: 's] [NAME] [ARG2: like] ?
+[ARGM-CAU: why] did [NAME] [V: become] [ARG2: angry] [ARGM-ADV: though] ?
+[NAME] 's at home [ARG1: he] [V: 's] [ARG2: with] [NAME] ?
+was [ARG1: she] willing to [V: marry] [NAME] ?
+
+###############################################
+Interesting successes:
+###############################################
+
+[ARG0: very quiet] did [ARGM-NEG: n't] [V: say] [ARG1: much of anything] .
+[ARGM-MOD: should] [ARG0: he] [V: go] [ARG1: bye bye] [ARGM-ADV: too] .
+can you show me [ARG0: the girl] [V: shows] [ARG1: the dog] [ARG2: to the cat] ?
+I do n't know [ARG0: who] 's [V: driving] [ARGM-DIS: honey] .
+
+###############################################
+Verb identification errors:
+###############################################
+
+would you like [V: spinach] salad girls ?
+I do n't know is that [ARG1: all] [R-ARG0: that] 's [V: left] remember some broke last time when we were playing with them .
+do [ARG0: you] like [V: babysitting] ?
+[ARG1: a little turtle] [V: named] [ARG2: Squirt]
+
+###############################################
+noun conjunctions:
+###############################################
+
+[ARG1: the daddies and mommies] [ARGM-MOD: will] [V: sit] [ARG2: on that bench] ?
+[ARGM-TMP: one day] [ARG0: my mother] [V: took] [ARG1: me] and [NAME] [ARG2: to the circus] .
+this is May twenty five and [ARG0: [NAME] and I] are [V: reading] [ARG1: looking at a Creative Playthings catalogue] .
+the [PLACE] children 's museum while [ARG0: [NAME] and [NAME]] [V: went] [ARG4: to the movies] ?
+[ARG0: they] loved to [V: play] [ARG1: tag and algae] [ARGM-LOC: in the middle] [ARGM-TMP: before school started] .
+
+###############################################
+Problems with CHILDES or sentence segmentation tool (e.g no utterance boundaries):
+###############################################
+
+[ARGM-DIS: no] [ARG1: it] [V: 's] [ARG2: different meet from what we eat] ?
+I 'm gon na take you [V: listen] I 'll take you to the bed+room and talk to you too
+do n't say [ARGM-DIS: hi] [V: say] [ARG1: bye] .
+[ARG1: those] [V: are] [ARGM-DIS: um] [ARG2: that 's an opossum] ?
+this is May twenty five and [ARG0: [NAME] and I] are [V: reading] [ARG1: looking at a Creative Playthings catalogue] .
+[ARG0: Gita] have to [V: say] [ARG3: about it] !
+[ARG1: what] [ARG1: what] [V: happen] .
+and then [ARG0: we] [V: chug] [ARG1: chug] stop and play .
+[ARGM-DIS: now] put that in this hole [ARGM-TMP: now] [V: push] .
+[NAME] [V: said] [NAME] [ARGM-DIR: into the trash bucket
+there [V: 's] [ARG1: the cake] [ARGM-LOC: in the bakery window] .
+
+
+
+
+
+Feb 8, 2020
+
+human-based 2008 data stats:
+num good              =14,772
+num no arguments      =766
+num no predicate      =75
+num bad head location =0
+num bad arg location  =41
+acceptability = 0.95
+
+model-based data stats:
+num total = 819,949
+acceptability = 0.88

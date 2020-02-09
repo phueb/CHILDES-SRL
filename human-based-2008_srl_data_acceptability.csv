@@ -1,0 +1,63 @@
+is_bad,line
+False,2 you 're pushing it with the racket . ||| B-ARG0 0 B-V B-ARG1 B-ARGM-MNR I-ARGM-MNR I-ARGM-MNR 0
+False,3 Cromer is n't taking any out . ||| B-ARG0 0 B-ARGM-NEG B-V B-ARG1 B-ARG2 0
+False,2 can you sing it for me ? ||| B-ARGM-MOD B-ARG0 B-V B-ARG1 B-ARG2 I-ARG2 0
+False,4 tell Santa_Claus what ya want . ||| 0 0 B-ARG1 B-ARG0 B-V 0
+False,0 let 's put it on the big table . ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,4 because ya want to do kicks ? ||| 0 B-ARG0 0 0 B-V B-ARG1 0
+False,3 turn the tv off . ||| 0 B-ARG1 I-ARG1 B-V 0
+False,1 you squeeze clay and make things . ||| B-ARG0 B-V B-ARG1 0 0 0 0
+False,3 you 're not doing very good . ||| B-ARG0 0 B-ARGM-NEG B-V B-ARGM-MNR I-ARGM-MNR 0
+False,2 you 're supposed to keep all the color on here . ||| B-ARG1 0 B-V B-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 I-ARG2 0
+False,6 let me see if I can fix this . ||| 0 0 0 0 B-ARG0 B-ARGM-MOD B-V B-ARG1 0
+False,4 what happened when they took your picture ? ||| 0 0 0 B-ARG0 B-V B-ARG1 I-ARG1 0
+True,2 you 'll have to take it off . ||| 0 B-ARGM-MOD B-V 0 0 0 0 0
+False,6 he 's dirty and you 're changing his diaper ? ||| 0 0 0 0 B-ARG0 0 B-V B-ARG1 I-ARG1 0
+False,1 I had plenty . ||| B-ARG0 B-V B-ARG1 0
+False,2 I just told ya . ||| B-ARG0 B-ARGM-TMP B-V B-ARG2 0
+False,2 did you buy any for Uncle_Tommy ? ||| 0 B-ARG0 B-V B-ARG1 B-ARG4 I-ARG4 0
+False,4 where else did you go ? ||| B-ARG4 I-ARG4 0 B-ARG0 B-V 0
+False,0 get the napkin . ||| B-V B-ARG1 I-ARG1 0
+False,0 bump his head . ||| B-V B-ARG1 I-ARG1 0
+False,2 do n't let it fall . ||| 0 B-ARGM-NEG B-V B-ARG1 I-ARG1 0
+False,1 I think they should have a movie camera instead of a tape recorder . ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,9 it did n't have holes in it when I gave it to you . ||| B-ARG1 0 0 0 0 0 0 0 B-ARG0 B-V 0 B-ARG2 I-ARG2 0
+False,3 I do n't want you to take my nose . ||| B-ARG0 0 B-ARGM-NEG B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,2 I just put the driver in the back . ||| B-ARG0 B-ARGM-TMP B-V B-ARG1 I-ARG1 B-ARG2 I-ARG2 I-ARG2 0
+False,5 well take it over and show it to him . ||| B-ARGM-DIS 0 B-ARG1 0 0 B-V 0 B-ARG2 I-ARG2 0
+False,10 but he 'll never go to you like if ya hurt him . ||| 0 0 0 0 0 0 0 0 0 B-ARG0 B-V B-ARG1 0
+False,4 you 're going to ride that ? ||| B-ARG0 0 B-ARGM-MOD 0 B-V B-ARG1 0
+False,3 just Eve 's having soup . ||| B-ARG0 I-ARG0 0 B-V B-ARG1 0
+False,2 do you like Bugs best ? ||| 0 B-ARG0 B-V B-ARG1 B-ARGM-EXT 0
+False,8 you do n't want to go out and play ? ||| B-ARG0 0 0 0 0 0 0 0 B-V 0
+False,0 look at her . ||| B-V B-ARG1 I-ARG1 0
+False,2 do n't spill it . ||| 0 B-ARGM-NEG B-V B-ARG1 0
+False,0 take it easy . ||| B-V B-ARG1 B-ARGM-MNR 0
+False,1 I want to talk to you . ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,0 put some of your letters in it . ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 B-ARG2 I-ARG2 0
+False,2 when you got sick ? ||| 0 B-ARG1 B-V B-ARG2 0
+False,0 look in that way and it 's hollow . ||| B-V B-ARGM-MNR I-ARGM-MNR I-ARGM-MNR 0 0 0 0 0
+False,1 ya want to help him ? ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 0
+False,4 tell Courtney you go dancing now ? ||| 0 0 B-ARG0 0 B-V B-ARGM-TMP 0
+False,9 I told you you 'd find it if you looked . ||| 0 0 B-ARG0 0 0 0 0 0 0 B-V 0
+False,3 what do we talk about ? ||| B-ARG1 0 B-ARG0 B-V B-ARG1 0
+False,2 do you have a comb ? ||| 0 B-ARG0 B-V B-ARG1 I-ARG1 0
+False,0 want to get dressed here ? ||| B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,6 how could there be a fish named Adam ? ||| 0 0 0 0 B-ARG1 I-ARG1 B-V B-ARG2 0
+False,3 Kathy ca n't fix it . ||| B-ARG0 B-ARGM-MOD B-ARGM-NEG B-V B-ARG1 0
+False,1 you want me to help ? ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 0
+True,5 you pick the road grader up . ||| B-ARG0 0 B-ARG1 I-ARG1 I-ARG1 B-V 0
+False,4 tell Melissa where ya went the other night . ||| 0 0 B-ARG4 B-ARG0 B-V B-ARGM-TMP I-ARGM-TMP I-ARGM-TMP 0
+False,1 you got a little piano . ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 0
+True,5 you know the airplanes that go over the beach ? ||| 0 0 B-ARG1 I-ARG1 B-ARG1 B-V B-ARGM-LOC I-ARGM-LOC I-ARGM-LOC 0
+False,3 do n't you remember that trick ? ||| 0 B-ARGM-NEG B-ARG0 B-V B-ARG1 I-ARG1 0
+False,3 what 's he doing ? ||| B-ARG1 0 B-ARG0 B-V 0
+False,4 you ask somebody to play with you . ||| 0 0 B-ARG0 0 B-V B-ARGM-MNR I-ARGM-MNR 0
+False,2 that one goes on the wagon . ||| B-ARG1 I-ARG1 B-V B-ARG4 I-ARG4 I-ARG4 0
+False,4 you want me to make him sit down ? ||| 0 0 B-ARG0 0 B-V B-ARG1 I-ARG1 I-ARG1 0
+False,1 Celia wears sneakers . ||| B-ARG0 B-V B-ARG1 0
+False,1 I thought you were only going to have one . ||| B-ARG0 B-V B-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 I-ARG1 0
+False,1 what happens when he climbs up on the couch ? ||| B-ARG1 B-V B-ARGM-TMP I-ARGM-TMP I-ARGM-TMP I-ARGM-TMP I-ARGM-TMP I-ARGM-TMP I-ARGM-TMP 0
+False,0 come here . ||| B-V B-ARG4 0
+False,3 what did that come from ? ||| B-ARG3 0 B-ARG1 B-V B-ARG3 0
+False,3 what 're you making ? ||| B-ARG1 0 B-ARG0 B-V 0
