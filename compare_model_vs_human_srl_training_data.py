@@ -50,16 +50,15 @@ for line_h, line_m in itertools.product(set_lines_h, set_lines_m):
     if ws_m == ws_h and vi_m == vi_h:
         num_shared += 1
 
-        print(ws_m, ls_m)
-        print(ws_h, ls_h)
+        print(''.join([f'{l:<12}' for l in ws_m.split()]))
+        print(''.join([f'{l:<12}' for l in ls_m.split()]))
+        print(''.join([f'{l:<12}' for l in ls_h.split()]))
+        print()
 
         if ls_m == ls_h:
             num_identical += 1
 
-    pbar.update()
-
-    if num_shared % 100 == 0:
-        print(num_shared, f'accuracy={num_identical/(num_shared + 10e-9):.4f}')
+    # pbar.update()
 
 
 prop = num_identical / num_shared

@@ -103,3 +103,65 @@ acceptability=0.95
 model-based data stats:
 num total = 819,949
 acceptability = 0.88
+
+###############################################
+Comparing human-based 2008 vs model-based (AllenNLP) SRL accuracy
+Philip Huebner
+Feb 13, 2020
+###############################################
+
+The number of model-based SRL utterances that are also in the 2008 human SRL data is 5,500.
+Of those 5,500, 72% have identical labels.
+This is a worst-case scenario, because any label sequences that are only incorrect at one position, are counted as incorrect.
+For example, the following are label sequences from the model, and humans, respectively:
+you may put it away if you like .   O      O O O O O B-ARG0 B-V O
+you may put it away if you like .   B-ARG0 O O O O O O      B-V O
+It seems the model is actually "more correct", because it has labeled the correct "you".
+Another example of this:
+do          n't         you         think       you         have        enough      ?
+O           O           O           O           B-ARG0      B-V         B-ARG1      O
+O           O           B-ARG0      O           O           B-V         B-ARG1      O
+
+Another example, where the model-based annotation - in the first line - is better:
+go see the circus next year .   O B-V B-ARG1 I-ARG1 B-ARGM-TMP I-ARGM-TMP O
+go see the circus next year .   O B-V B-ARG1 I-ARG1 O          O          O
+Another, similar case:
+I       just    took    a       nap     before  I       came    .
+O       O       O       O       O       O       B-ARG1  B-V     O
+B-ARG1  O       O       O       O       O       O       B-V     O
+
+Cases in which the model and human disagree, but both are acceptable:
+shall       I           put         this        back        there       ?
+B-ARGM-MOD  B-ARG0      B-V         B-ARG1      B-ARG2      I-ARG2      O
+B-ARGM-MOD  B-ARG0      B-V         B-ARG1      B-ARGM-DIR  B-ARGM-LOC  O
+now         go          back        this        way         .
+B-ARGM-DIS  B-V         B-ARGM-DIR  I-ARGM-DIR  I-ARGM-DIR  O
+B-ARGM-TMP  B-V         B-ARGM-DIR  B-ARGM-MNR  I-ARGM-MNR  O
+I           'll         come        in          .
+B-ARG1      B-ARGM-MOD  B-V         B-ARGM-DIR  O
+B-ARG1      B-ARGM-MOD  B-V         B-ARG4      O
+you         lug         it          around      all         day         long        .
+B-ARG0      B-V         B-ARG1      B-ARG2      B-ARGM-TMP  I-ARGM-TMP  I-ARGM-TMP  O
+B-ARG0      B-V         B-ARG1      B-ARGM-DIR  B-ARGM-TMP  I-ARGM-TMP  I-ARGM-TMP  O
+and         then        what        do          you         do          ?
+O           O           B-ARG1      O           B-ARG0      B-V         O
+B-ARGM-DIS  B-ARGM-TMP  B-ARG1      O           B-ARG0      B-V         O
+
+Cases where the model forgets ARGM:
+what        're         you         putting     everything  in          your        mouth       for         ?
+O           O           B-ARG0      B-V         B-ARG1      B-ARG2      I-ARG2      I-ARG2      B-ARGM-PRP  O
+B-ARGM-PRP  O           B-ARG0      B-V         B-ARG1      B-ARG2      I-ARG2      I-ARG2      B-ARGM-PRP  O
+you         have        to          get         them        .
+B-ARG0      O           O           B-V         B-ARG1      O
+B-ARG0      B-ARGM-MOD  O           B-V         B-ARG1      O
+what        're         you         going       to          get         now         ?
+B-ARG1      O           B-ARG0      O           O           B-V         B-ARGM-TMP  O
+B-ARG1      O           B-ARG0      B-ARGM-MOD  O           B-V         B-ARGM-TMP  O
+
+More severe mismatches, where the model incorrectly labels an argument role:
+what        do          you         do          with        those       ?
+B-ARG1      O           B-ARG0      B-V         B-ARG2      I-ARG2      O
+B-ARG1      O           B-ARG0      B-V         B-ARG3      I-ARG3      O
+they        were        meant       to          go          on          your        finger      .
+O           O           B-V         B-ARG1      I-ARG1      I-ARG1      I-ARG1      I-ARG1      O
+B-ARG1      O           B-V         B-ARG2      I-ARG2      I-ARG2      I-ARG2      I-ARG2      O
