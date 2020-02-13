@@ -12,7 +12,7 @@ NAME = 'human-based-2018'
 XML_PATH = Path(f'data/srl_{NAME}/xml')
 VERBOSE = False
 EXCLUDE_CHILD = True
-OUTSIDE_LABEL = '0'
+OUTSIDE_LABEL = 'O'
 
 
 def has_props(e):

@@ -133,5 +133,8 @@ print(f'Writing {len(lines)} lines to file...')
 srl_path = config.Dirs.data / 'training' / f'{CORPUS_NAME}_srl.txt'
 with srl_path.open('w') as f:
     for line in lines:
-        f.write(line + '\n')
+
+        f.write(line + '\n')  # TODO exclude duplicate lines - this ensures that final count is number of unique lines
+
+        # TODO do not write '\n' at end of file
 
