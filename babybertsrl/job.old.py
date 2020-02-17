@@ -36,8 +36,6 @@ class Params(object):
     intermediate_size = attr.ib(validator=attr.validators.instance_of(int))
     num_mlm_epochs = attr.ib(validator=attr.validators.instance_of(int))
     num_srl_epochs = attr.ib(validator=attr.validators.instance_of(int))
-    srl_task_ramp = attr.ib(validator=attr.validators.instance_of(int))
-    srl_task_delay = attr.ib(validator=attr.validators.instance_of(int))
     num_masked = attr.ib(validator=attr.validators.instance_of(int))
     vocab_size = attr.ib(validator=attr.validators.instance_of(int))
     corpus_name = attr.ib(validator=attr.validators.instance_of(str))

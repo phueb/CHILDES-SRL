@@ -42,13 +42,12 @@ class MLMBert(Model):
         self.embedding_dropout = Dropout(p=embedding_dropout)
         initializer(self)
 
-    def forward(self,  # type: ignore
+    def forward(self,
                 tokens: Dict[str, torch.Tensor],
                 mask_indicator: torch.Tensor,
-                metadata: List[Any],
+                metadata: List[Dict[str, Any]],
                 mlm_tags: torch.LongTensor = None,
                 ) -> Dict[str, torch.Tensor]:
-        # pylint: disable=arguments-differ
         """
         Parameters
         ----------
@@ -95,7 +94,7 @@ class MLMBert(Model):
         batch_size, sequence_length, _ = embedded_text_input.size()
 
         logits = self.projection_layer(embedded_text_input)
-        reshaped_log_probs = logits.view(-1, self.num_out)
+        reshaped_log_probs = logits.view(-1, self.num_out)  # collapse time steps and batches
         class_probabilities = F.softmax(reshaped_log_probs, dim=-1).view([batch_size,
                                                                           sequence_length,
                                                                           self.num_out])
@@ -108,6 +107,7 @@ class MLMBert(Model):
                        'gold_mlm_tags': [],
                        }
 
+        # add meta data to output
         for d in metadata:
             output_dict['mlm_in'].append(d['mlm_in'])
             output_dict['gold_mlm_tags'].append(d['gold_mlm_tags'])
@@ -141,7 +141,10 @@ class MLMBert(Model):
         sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict['mask']).data.tolist()
 
         # ph: transition matrices contain only ones (and no -inf, which would signal illegal transition)
-        transition_matrix = torch.zeros([self.num_out, self.num_out])
+        all_labels = self.vocab.get_index_to_token_vocabulary("labels")
+        num_labels = len(all_labels)
+        assert self.num_out == num_labels
+        transition_matrix = torch.zeros([num_labels, num_labels])
 
         # decode
         mlm_tags = []
@@ -160,9 +163,9 @@ class MLMBert(Model):
 
     def train_on_batch(self, batch, optimizer):
         # to cuda
-        batch['tokens']['tokens'] = batch['tokens']['tokens'].cuda()
-        batch['mask_indicator'] = batch['mask_indicator'].cuda()
-        batch['mlm_tags'] = batch['mlm_tags'].cuda()
+        # batch['tokens']['tokens'] = batch['tokens']['tokens'].cuda()
+        # batch['mask_indicator'] = batch['mask_indicator'].cuda()
+        # batch['mlm_tags'] = batch['mlm_tags'].cuda()
 
         # forward + loss
         optimizer.zero_grad()

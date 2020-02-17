@@ -1,12 +1,9 @@
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Any
 import torch
 from torch.nn import Linear, Dropout, functional as F
 from pytorch_pretrained_bert.modeling import BertModel
-from overrides import overrides
 
 from allennlp.data import Vocabulary
-from allennlp.models import Model
-from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
 from allennlp.nn.util import sequence_cross_entropy_with_logits
 from allennlp.nn.util import get_lengths_from_binary_sequence_mask
@@ -14,36 +11,42 @@ from allennlp.nn.util import viterbi_decode
 from allennlp.training.util import rescale_gradients
 
 
-class SrlBert(Model):
+class MTBert(torch.nn.Module):
     """
-    custom model built on top of un-trained Bert to train bert on srl labeling
+    Multi-task BERT.
+    It is trained jointly on SRL and MLM tasks, without pre-training.
     """
 
     def __init__(self,
-                 vocab: Vocabulary,
+                 vocab_mlm: Vocabulary,
+                 vocab_srl: Vocabulary,
                  bert_model: BertModel,
                  embedding_dropout: float = 0.0,
-                 initializer: InitializerApplicator = InitializerApplicator(),
-                 regularizer: Optional[RegularizerApplicator] = None,
                  ) -> None:
-        super(SrlBert, self).__init__(vocab, regularizer)
 
+        super().__init__()
         self.bert_model = bert_model
 
+        self.vocab_mlm = vocab_mlm
+        self.vocab_srl = vocab_srl
+
         # labels namespace is 2 elements shorter than tokens because it does not have PADDING and UNKNOWN
-        self.num_out = self.vocab.get_vocab_size('labels')                    # 4099
-        self.projection_layer = Linear(self.bert_model.config.hidden_size, self.num_out)
+        self.num_out_mlm = vocab_mlm.get_vocab_size('labels')
+        self.num_out_srl = vocab_srl.get_vocab_size('labels')
+
+        # make one projection layer for each task
+        self.projection_layer_mlm = Linear(self.bert_model.config.hidden_size, self.num_out_mlm)
+        self.projection_layer_srl = Linear(self.bert_model.config.hidden_size, self.num_out_srl)
 
         self.embedding_dropout = Dropout(p=embedding_dropout)
-        initializer(self)
 
-    def forward(self,  # type: ignore
+    def forward(self,
                 tokens: Dict[str, torch.Tensor],
-                verb_indicator: torch.Tensor,
-                metadata: List[Any],
-                srl_tags: torch.LongTensor = None,
+                indicator: torch.Tensor,  # indicates either masked word, or predicate
+                metadata: List[Dict[str, Any]],
+                task: str,
+                tags: torch.LongTensor = None,
                 ) -> Dict[str, torch.Tensor]:
-        # pylint: disable=arguments-differ
         """
         Parameters
         ----------
@@ -51,17 +54,17 @@ class SrlBert(Model):
             The output of ``TextField.as_array()``, which should typically be passed directly to a
             ``TextFieldEmbedder``. For this model, this must be a `SingleIdTokenIndexer` which
             indexes wordpieces from the BERT vocabulary.
-        verb_indicator: torch.LongTensor, required.
-            An integer ``SequenceFeatureField`` representation of the position of the verb
+        indicator: torch.LongTensor, required.
+            An integer ``SequenceFeatureField`` representation of the position of the masked token or predicate
             in the sentence. This should have shape (batch_size, num_tokens) and importantly, can be
-            all zeros, in the case that the sentence has no verbal predicate.
-        srl_tags : torch.LongTensor, optional (default = None)
+            all zeros, in the case that the sentence has no mask.
+        tags : torch.LongTensor, optional (default = None)
             A torch tensor representing the sequence of integer gold class labels
             of shape ``(batch_size, num_tokens)``
         metadata : ``List[Dict[str, Any]]``, optional, (default = None)
-            metadata containg the original words in the sentence, the verb to compute the
-            frame for, and start offsets for converting wordpieces back to a sequence of srl_in,
-            under 'srl_in', 'verb' and 'start_offsets' keys, respectively.
+            metadata contains the original words in the sentence, the masked word or predicate,
+             and start offsets for converting wordpieces back to a sequence of words.
+        task: string indicating which projection layer to use: either "srl" or "mlm"
         Returns
         -------
         An output dictionary consisting of:
@@ -75,54 +78,64 @@ class SrlBert(Model):
             A scalar loss to be optimised.
         """
 
-        # added by ph
+        # move to GPU
         tokens['tokens'] = tokens['tokens'].cuda()
-        verb_indicator = verb_indicator.cuda()
-        if srl_tags is not None:
-            srl_tags = srl_tags.cuda()
+        indicator = indicator.cuda()
+        if tags is not None:
+            tags = tags.cuda()
 
+        # get BERT contextualized embeddings
         mask = get_text_field_mask(tokens)
         bert_embeddings, _ = self.bert_model(input_ids=tokens['tokens'],
-                                             token_type_ids=verb_indicator,
+                                             token_type_ids=indicator,
                                              attention_mask=mask,
                                              output_all_encoded_layers=False)
         embedded_text_input = self.embedding_dropout(bert_embeddings)
         batch_size, sequence_length, _ = embedded_text_input.size()
 
-        logits = self.projection_layer(embedded_text_input)
-        reshaped_log_probs = logits.view(-1, self.num_out)  # collapse time steps and batches
-        class_probabilities = F.softmax(reshaped_log_probs, dim=-1).view([batch_size,
-                                                                          sequence_length,
-                                                                          self.num_out])
+        # use correct head for task
+        if task == 'mlm':
+            logits = self.projection_layer_mlm(embedded_text_input)
+            num_out = self.num_out_mlm
+        elif task == 'srl':
+            logits = self.projection_layer_srl(embedded_text_input)
+            num_out = self.num_out_srl
+        else:
+            raise AttributeError('Invalid arg to "task"')
+
+        # compute output
+        reshaped_logits = logits.view(-1, num_out)  # collapse time steps and batches
+        class_probabilities = F.softmax(reshaped_logits, dim=-1).view([batch_size,
+                                                                       sequence_length,
+                                                                       num_out])
 
         output_dict = {"logits": logits,
                        "class_probabilities": class_probabilities,  # defined over word-pieces
                        "mask": mask,         # for decoding
                        'start_offsets': [],  # for decoding
-                       'srl_in': [],
-                       'verb': [],
-                       'gold_srl_tags': [],
+                       'in': [],
+                       'gold_tags': [],
                        }
 
         # add meta data to output
         for d in metadata:
-            output_dict['srl_in'].append(d['srl_in'])
-            output_dict['verb'].append(d['verb'])
-            output_dict['gold_srl_tags'].append(d['gold_srl_tags'])
+            output_dict['in'].append(d['in'])
+            output_dict['gold_tags'].append(d['gold_tags'])
             output_dict['start_offsets'].append(d['start_offsets'])
 
-        if srl_tags is not None:
+        if tags is not None:
             loss = sequence_cross_entropy_with_logits(logits,
-                                                      srl_tags,
+                                                      tags,
                                                       mask)
             output_dict['loss'] = loss
         return output_dict
 
-    @overrides
-    def decode(self, output_dict: Dict[str, Any],
+    def decode(self,
+               output_dict: Dict[str, Any],
+               task: str,
                ) -> List[List[str]]:
         """
-        ph: Do NOT use decoding constraints - transition matrix has zeros only
+        Do NOT use decoding constraints - transition matrix has zeros only
         we are interested in learning dynamics, not best performance.
         Note: decoding is performed on word-pieces, and word-pieces are then converted to whole words
         """
@@ -132,37 +145,42 @@ class SrlBert(Model):
         predictions_list = [all_predictions[i].detach().cpu() for i in range(all_predictions.size(0))]
         sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict['mask']).data.tolist()
 
+        # vocab
+        if task == 'mlm':
+            vocab = self.vocab_mlm
+            num_out = self.num_out_mlm
+        elif task == 'srl':
+            vocab = self.vocab_srl
+            num_out = self.num_out_srl
+        else:
+            raise AttributeError('Invalid arg to "task"')
+
         # ph: transition matrices contain only ones (and no -inf, which would signal illegal transition)
-        all_labels = self.vocab.get_index_to_token_vocabulary("labels")
+        all_labels = vocab.get_index_to_token_vocabulary("labels")
         num_labels = len(all_labels)
-        assert self.num_out == num_labels
+        assert num_out == num_labels
         transition_matrix = torch.zeros([num_labels, num_labels])
 
         # decode
-        srl_tags = []
-        for predictions, length, offsets, gold_srl_tags, in zip(predictions_list,
-                                                                sequence_lengths,
-                                                                output_dict['start_offsets'],
-                                                                output_dict['gold_srl_tags']):
+        tags = []
+        for predictions, length, offsets, gold_tags in zip(predictions_list,
+                                                           sequence_lengths,
+                                                           output_dict['start_offsets'],
+                                                           output_dict['gold_tags']):
             tag_probabilities = predictions[:length]
             max_likelihood_tag_ids, _ = viterbi_decode(tag_probabilities,
                                                        transition_matrix)
-            srl_tags_word_pieces = [self.vocab.get_token_from_index(x, namespace="labels")
-                                    for x in max_likelihood_tag_ids]
-            srl_tags.append([srl_tags_word_pieces[i] for i in offsets])
+            tags_word_pieces = [vocab.get_token_from_index(x, namespace="labels")
+                                for x in max_likelihood_tag_ids]
+            tags.append([tags_word_pieces[i] for i in offsets])
 
-        return srl_tags
+        return tags
 
     def train_on_batch(self, batch, optimizer):
-        # to cuda
-        # batch['tokens']['tokens'] = batch['tokens']['tokens'].cuda()
-        # batch['verb_indicator'] = batch['verb_indicator'].cuda()
-        # batch['srl_tags'] = batch['srl_tags'].cuda()
-
         # forward + loss
         optimizer.zero_grad()
         output_dict = self(**batch)  # input is dict[str, tensor]
-        loss = output_dict['loss'] + self.get_regularization_penalty()
+        loss = output_dict['loss']
         if torch.isnan(loss):
             raise ValueError("nan loss encountered")
 

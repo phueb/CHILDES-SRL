@@ -117,18 +117,23 @@ For example, the following are label sequences from the model, and humans, respe
 you may put it away if you like .   O      O O O O O B-ARG0 B-V O
 you may put it away if you like .   B-ARG0 O O O O O O      B-V O
 It seems the model is actually "more correct", because it has labeled the correct "you".
-Another example of this:
+More examples of this:
 do          n't         you         think       you         have        enough      ?
 O           O           O           O           B-ARG0      B-V         B-ARG1      O
 O           O           B-ARG0      O           O           B-V         B-ARG1      O
-
-Another example, where the model-based annotation - in the first line - is better:
-go see the circus next year .   O B-V B-ARG1 I-ARG1 B-ARGM-TMP I-ARGM-TMP O
-go see the circus next year .   O B-V B-ARG1 I-ARG1 O          O          O
-Another, similar case:
 I       just    took    a       nap     before  I       came    .
 O       O       O       O       O       O       B-ARG1  B-V     O
 B-ARG1  O       O       O       O       O       O       B-V     O
+what        does        she         look        like        when        she         puts        this        on          ?
+O           O           O           O           O           B-ARGM-TMP  B-ARG0      B-V         B-ARG1      B-ARG2      O
+O           O           B-ARG0      O           O           O           O           B-V         B-ARG1      O           O
+
+Cases where the model-based annotation is more "complete":
+go see the circus next year .   O B-V B-ARG1 I-ARG1 B-ARGM-TMP I-ARGM-TMP O
+go see the circus next year .   O B-V B-ARG1 I-ARG1 O          O          O
+I           like        a           baby        that        works       .
+O           O           B-ARG0      I-ARG0      B-R-ARG0    B-V         O
+O           O           B-ARG0      I-ARG0      O           B-V         O
 
 Cases in which the model and human disagree, but both are acceptable:
 shall       I           put         this        back        there       ?
@@ -146,6 +151,15 @@ B-ARG0      B-V         B-ARG1      B-ARGM-DIR  B-ARGM-TMP  I-ARGM-TMP  I-ARGM-T
 and         then        what        do          you         do          ?
 O           O           B-ARG1      O           B-ARG0      B-V         O
 B-ARGM-DIS  B-ARGM-TMP  B-ARG1      O           B-ARG0      B-V         O
+you         got         enough      on          ?
+B-ARG0      B-V         B-ARG1      I-ARG1      O
+B-ARG0      B-V         B-ARG1      O           O
+you         going       to          draw        a           picture     for         me          .
+B-ARG0      O           O           B-V         B-ARG1      I-ARG1      B-ARGM-GOL  I-ARGM-GOL  O
+B-ARG0      B-ARGM-MOD  O           B-V         B-ARG1      I-ARG1      B-ARG2      I-ARG2      O
+you         want        ribbons     on          yours       ?
+B-ARG0      B-V         B-ARG1      I-ARG1      I-ARG1      O
+B-ARG0      B-V         B-ARG1      B-ARGM-MNR  I-ARGM-MNR  O
 
 Cases where the model forgets ARGM:
 what        're         you         putting     everything  in          your        mouth       for         ?
@@ -157,11 +171,31 @@ B-ARG0      B-ARGM-MOD  O           B-V         B-ARG1      O
 what        're         you         going       to          get         now         ?
 B-ARG1      O           B-ARG0      O           O           B-V         B-ARGM-TMP  O
 B-ARG1      O           B-ARG0      B-ARGM-MOD  O           B-V         B-ARGM-TMP  O
+because     you         'll         ruin        her         hair        .
+O           B-ARG0      B-ARGM-MOD  B-V         B-ARG1      I-ARG1      O
+B-ARGM-CAU  B-ARG0      B-ARGM-MOD  B-V         B-ARG1      I-ARG1      O
 
-More severe mismatches, where the model incorrectly labels an argument role:
+More severe mismatches, where the model incorrectly labels core arguments:
 what        do          you         do          with        those       ?
 B-ARG1      O           B-ARG0      B-V         B-ARG2      I-ARG2      O
 B-ARG1      O           B-ARG0      B-V         B-ARG3      I-ARG3      O
 they        were        meant       to          go          on          your        finger      .
 O           O           B-V         B-ARG1      I-ARG1      I-ARG1      I-ARG1      I-ARG1      O
 B-ARG1      O           B-V         B-ARG2      I-ARG2      I-ARG2      I-ARG2      I-ARG2      O
+are         you         going       away        ?
+O           B-ARG0      B-V         B-ARGM-DIR  O
+O           B-ARG0      B-V         B-ARG4      O
+
+More severe mismatches, where the model misses core arguments:
+you         take        them        out         and         you         'll         lose        them        .
+B-ARG0      B-V         B-ARG1      O           O           O           O           O           O           O
+B-ARG0      B-V         B-ARG1      B-ARG2      O           O           O           O           O           O
+I           know        it          does        n't         come        out         .
+O           O           B-ARG1      O           B-ARGM-NEG  B-V         O           O
+O           O           B-ARG1      O           B-ARGM-NEG  B-V         B-ARG4      O
+do          n't         pull        that        out         .
+O           B-ARGM-NEG  B-V         B-ARG1      O           O
+O           B-ARGM-NEG  B-V         B-ARG1      B-ARG2      O
+I           got         ta          take        this        out         first       .
+B-ARG0      O           O           B-V         B-ARG1      O           B-ARGM-TMP  O
+B-ARG0      O           O           B-V         B-ARG1      B-ARG2      B-ARGM-TMP  O
