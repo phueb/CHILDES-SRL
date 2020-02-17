@@ -4,6 +4,7 @@ from pathlib import Path
 class Dirs:
     root = Path(__file__).parent.parent
     data = root / 'data'
+    data_tools = root / 'data_tools'
 
 
 class Global:

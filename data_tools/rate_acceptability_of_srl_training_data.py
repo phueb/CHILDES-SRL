@@ -14,7 +14,7 @@ text = srl_path.read_text()
 lines = text.split('\n')
 
 # load previously checked annotations
-path = config.Dirs.root / f'{NAME}_srl_data_acceptability.csv'
+path = config.Dirs.data_tools / f'{NAME}_srl_data_acceptability.csv'
 df = pd.read_csv(path, index_col=False)
 
 print(f'Checked {len(df):,}/{len(lines):,} lines')

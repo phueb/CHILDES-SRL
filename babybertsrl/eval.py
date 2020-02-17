@@ -18,7 +18,7 @@ def predict_masked_sentences(model: Model,
 
     # get predictions
     with torch.no_grad():
-        output_dict = model(**batch)  # input is dict[str, tensor]
+        output_dict = model(task='mlm', **batch)  # input is dict[str, tensor]
 
     # show results only for whole-words
     mlm_in = output_dict['mlm_in']
@@ -45,7 +45,7 @@ def evaluate_model_on_pp(model, instances_generator):
 
         # get predictions
         with torch.no_grad():
-            output_dict = model(**batch)  # input is dict[str, tensor]
+            output_dict = model(task='mlm', **batch)  # input is dict[str, tensor]
 
         pp = torch.exp(output_dict['loss'])
         pp_sum += pp
@@ -63,7 +63,7 @@ def evaluate_model_on_f1(model, srl_eval_path, instances_generator):
     for step, batch in enumerate(instances_generator):
 
         # get predictions
-        output_dict = model(**batch)  # input is dict[str, tensor]
+        output_dict = model(task='srl', **batch)  # input is dict[str, tensor]
 
         # metadata
         metadata = batch['metadata']

@@ -191,7 +191,7 @@ def main(param2val):
             mt_bert.train()
 
             # masked language modeling task
-            loss_mlm = mt_bert.train_on_batch(batch_mlm, optimizer_mlm)
+            loss_mlm = mt_bert.train_on_batch('mlm', batch_mlm, optimizer_mlm)
             step += 1  # only increment step once in each iteration of the loop, otherwise evaluation may never happen
 
             # semantic role labeling task
@@ -204,7 +204,7 @@ def main(param2val):
                     except StopIteration:
                         print('No more SRL batches. Exiting training')
                         break
-                    loss_srl = mt_bert.train_on_batch(batch_srl, optimizer_srl)
+                    loss_srl = mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
                     print(f'Performed SRL step with loss={loss_srl}')
 
         # EVALUATION

@@ -60,9 +60,9 @@ class ConverterMLM:
         # meta data only has whole words
         metadata_dict = dict()
         metadata_dict['start_offsets'] = start_offsets
-        metadata_dict['mlm_in'] = mlm_in
+        metadata_dict['in'] = mlm_in
         metadata_dict['masked_indices'] = mlm_mask  # mask is list containing zeros and ones
-        metadata_dict['gold_mlm_tags'] = mlm_tags  # is just a copy of the input without the mask
+        metadata_dict['gold_tags'] = mlm_tags  # is just a copy of the input without the mask
 
         # fields
         tokens = [Token(t, text_id=self.wordpiece_tokenizer.vocab[t]) for t in mlm_in_word_pieces]
@@ -76,8 +76,8 @@ class ConverterMLM:
             raise UserWarning('A word-piece split word was masked. Word pieces are not supported')
 
         fields = {'tokens': text_field,
-                  'mask_indicator': SequenceLabelField(mlm_mask_word_pieces, text_field),
-                  'mlm_tags': SequenceLabelField(mlm_tags_word_pieces, text_field),
+                  'indicator': SequenceLabelField(mlm_mask_word_pieces, text_field),
+                  'tags': SequenceLabelField(mlm_tags_word_pieces, text_field),
                   'metadata': MetadataField(metadata_dict)}
 
         return Instance(fields)
@@ -166,18 +166,18 @@ class ConverterSRL:
         # metadata only has whole words
         metadata_dict = dict()
         metadata_dict['start_offsets'] = start_offsets
-        metadata_dict['srl_in'] = srl_in   # previously called "words"
+        metadata_dict['in'] = srl_in   # previously called "words"
         metadata_dict['verb'] = verb
         metadata_dict['verb_index'] = verb_index  # must be an integer
-        metadata_dict['gold_srl_tags'] = srl_tags  # non word-piece tags
+        metadata_dict['gold_tags'] = srl_tags  # non word-piece tags
 
         # fields
         tokens = [Token(t, text_id=self.wordpiece_tokenizer.vocab[t]) for t in srl_in_word_pieces]
         text_field = TextField(tokens, self.token_indexers)
 
         fields = {'tokens': text_field,
-                  'verb_indicator': SequenceLabelField(verb_indices_word_pieces, text_field),
-                  'srl_tags': SequenceLabelField(srl_tags_word_pieces, text_field),
+                  'indicator': SequenceLabelField(verb_indices_word_pieces, text_field),
+                  'tags': SequenceLabelField(srl_tags_word_pieces, text_field),
                   'metadata': MetadataField(metadata_dict)}
 
         return Instance(fields)

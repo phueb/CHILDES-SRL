@@ -141,7 +141,7 @@ def load_propositions_from_file(file_path):
     print(f'WARNING: Skipped {num_too_large} propositions which are larger than {config.Data.max_utterance_length}.')
 
     lengths = [len(p[0]) for p in res]
-    print('Found {:,} utterances'.format(len(res)))
+    print('Found {:,} propositions'.format(len(res)))
     print(f'Max    proposition length: {np.max(lengths):.2f}')
     print(f'Mean   proposition length: {np.mean(lengths):.2f}')
     print(f'Median proposition length: {np.median(lengths):.2f}')
