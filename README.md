@@ -18,6 +18,8 @@ The goal of this research project is to test theories of how children learn to u
 - 2019: The current work is an extension of the previous, leveraging the powerful deep-learning model BERT. Investigation into the inner workings of the model began in in September 2019 while under the supervision of [Cynthia Fisher](https://psychology.illinois.edu/directory/profile/clfishe)
 at the Department of Psychology at [UIUC](https://psychology.illinois.edu/). 
 
+- 2020: Experimentation with with joint training BERT on SRL and MLM began. The joint training procedure is similar to what is proposed in [https://arxiv.org/pdf/1901.11504.pdf](https://arxiv.org/pdf/1901.11504.pdf)
+
 ## BERT
  
 Due to the limited size of child-directed speech data, 

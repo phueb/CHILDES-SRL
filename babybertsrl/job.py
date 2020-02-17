@@ -4,6 +4,7 @@ import pandas as pd
 import attr
 from pathlib import Path
 import torch
+import random
 from itertools import chain
 
 from allennlp.data.vocabulary import Vocabulary
@@ -22,8 +23,7 @@ from babybertsrl.io import split
 from babybertsrl.converter import ConverterMLM, ConverterSRL
 from babybertsrl.eval import evaluate_model_on_pp
 from babybertsrl.eval import predict_masked_sentences
-from babybertsrl.model_mlm import MLMBert
-from babybertsrl.model_srl import SrlBert
+from babybertsrl.model_mt import MTBert
 from babybertsrl.eval import evaluate_model_on_f1
 
 
@@ -111,8 +111,8 @@ def main(param2val):
     index_vocab_srl = Vocabulary.from_instances(all_instances_srl)
     # index_vocab_srl.print_statistics()
 
-    # BERT  # TODO original implementation used slanted_triangular learning rate scheduler
-    print('Preparing BERT for pre-training...')
+    # BERT
+    print('Preparing Multi-task BERT...')
     input_vocab_size = len(converter_mlm.wordpiece_tokenizer.vocab)
     bert_config = BertConfig(vocab_size_or_config_json_file=input_vocab_size,  # was 32K
                              hidden_size=params.hidden_size,  # was 768
@@ -125,137 +125,124 @@ def main(param2val):
     print(index_vocab_srl.get_vocab_size('tokens'), len(wordpiece_tokenizer.vocab))
     assert index_vocab_mlm.get_vocab_size('tokens') == index_vocab_srl.get_vocab_size('tokens')
 
-    # BERT + LM head
-    bert_mlm = MLMBert(vocab=index_vocab_mlm,
-                       bert_model=bert_model,
-                       embedding_dropout=0.1)
-    bert_mlm.cuda()
-    num_params = sum(p.numel() for p in bert_mlm.parameters() if p.requires_grad)
+    # BERT
+    mt_bert = MTBert(vocab_mlm=index_vocab_mlm,
+                     vocab_srl=index_vocab_srl,
+                     bert_model=bert_model,
+                     embedding_dropout=0.1)
+    mt_bert.cuda()
+    num_params = sum(p.numel() for p in mt_bert.parameters() if p.requires_grad)
     print('Number of model parameters: {:,}'.format(num_params), flush=True)
-    optimizer_mlm = BertAdam(params=bert_mlm.parameters(),
-                             lr=5e-5,
-                             max_grad_norm=1.0,
-                             t_total=-1,
-                             weight_decay=0.01)
+
+    # optimizers
+    optimizer_mlm = BertAdam(params=mt_bert.parameters(), lr=5e-5, max_grad_norm=1.0, t_total=-1,weight_decay=0.01)
+    optimizer_srl = BertAdam(params=mt_bert.parameters(), lr=5e-5, max_grad_norm=1.0, t_total=-1,weight_decay=0.01)
     move_optimizer_to_cuda(optimizer_mlm)
+    move_optimizer_to_cuda(optimizer_srl)
 
-    # ///////////////////////////////////////////
-    # pre train
-    # ///////////////////////////////////////////
-
-    # batcher
-    bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher.index_with(index_vocab_mlm)
+    # batching
+    bucket_batcher_mlm = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
+    bucket_batcher_mlm.index_with(index_vocab_mlm)
+    bucket_batcher_srl = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
+    bucket_batcher_srl.index_with(index_vocab_srl)
 
     # test sentences
-    test_generator_mlm = bucket_batcher(converter_mlm.make_instances(test_utterances), num_epochs=1)
-    predict_masked_sentences(bert_mlm, test_generator_mlm)
+    test_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(test_utterances), num_epochs=1)
+    predict_masked_sentences(mt_bert, test_generator_mlm)
 
+    # max steps (used in console only as rough estimate of progress)
+    num_mlm_steps = converter_mlm.num_instances(train_utterances) // params.batch_size
+    num_srl_steps = len(train_propositions) // params.batch_size
+    max_step = num_mlm_steps + num_srl_steps
+
+    # generators
+    train_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(train_utterances),
+                                             num_epochs=params.num_mlm_epochs)
+    train_generator_srl = bucket_batcher_srl(converter_srl.make_instances(train_propositions),
+                                             num_epochs=params.num_srl_epochs)
+
+    # init performance collection
     devel_pps = []
     train_pps = []
-    eval_steps = []
-    train_start = time.time()
-    loss = None
-    max_step = converter_mlm.num_instances(train_utterances) // params.batch_size
-    for epoch in range(params.num_mlm_epochs):
-        print(f'\nEpoch: {epoch}', flush=True)
-
-        # evaluate train perplexity
-        train_generator_mlm = bucket_batcher(converter_mlm.make_instances(train_utterances), num_epochs=1)
-        train_pp = evaluate_model_on_pp(bert_mlm, train_generator_mlm)
-        train_pps.append(train_pp)
-        print(f'train-pp={train_pp}', flush=True)
-
-        # train
-        for step, batch in enumerate(train_generator_mlm):
-
-            if step != 0:  # otherwise evaluation at step 0 is influenced by training on one batch
-                bert_mlm.train()
-                loss = bert_mlm.train_on_batch(batch, optimizer_mlm)
-
-            if step % config.Eval.loss_interval == 0:
-
-                # evaluate perplexity
-                devel_generator_mlm = bucket_batcher(converter_mlm.make_instances(devel_utterances), num_epochs=1)
-                devel_pp = evaluate_model_on_pp(bert_mlm, devel_generator_mlm)
-                devel_pps.append(devel_pp)
-                eval_steps.append(step)
-                print(f'devel-pp={devel_pp}', flush=True)
-
-                # test sentences
-                test_generator_mlm = bucket_batcher(converter_mlm.make_instances(test_utterances), num_epochs=1)
-                predict_masked_sentences(bert_mlm, test_generator_mlm)
-
-                # console
-                min_elapsed = (time.time() - train_start) // 60
-                pp = torch.exp(loss) if loss is not None else np.nan
-                print(f'step {step:<6,}/{max_step:,}: pp={pp :2.4f} total minutes elapsed={min_elapsed:<3}',
-                      flush=True)
-
-    # to pandas
-    s1 = pd.Series(train_pps, index=np.arange(params.num_mlm_epochs))
-    s1.name = 'train_pp'
-    s2 = pd.Series(devel_pps, index=eval_steps)
-    s2.name = 'devel_pp'
-
-    # ///////////////////////////////////////////
-    # fine-tune
-    # ///////////////////////////////////////////
-
-    # batcher
-    bucket_batcher = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher.index_with(index_vocab_srl)
-
-    print('Preparing BERT for fine-tuning...')
-    bert_srl = SrlBert(vocab=index_vocab_srl,
-                       bert_model=bert_model,  # bert_model is reused
-                       embedding_dropout=0.1)
-    bert_srl.cuda()
-
-    num_params = sum(p.numel() for p in bert_srl.parameters() if p.requires_grad)
-    print('Number of model parameters: {:,}'.format(num_params), flush=True)
-    optimizer_srl = BertAdam(params=bert_srl.parameters(),
-                             lr=5e-5,
-                             max_grad_norm=1.0,
-                             t_total=-1,
-                             weight_decay=0.01)
-
     devel_f1s = []
     train_f1s = []
     eval_steps = []
     train_start = time.time()
-    max_step = len(train_propositions) // params.batch_size
-    loss = np.nan
-    for epoch in range(params.num_srl_epochs):
-        print(f'\nEpoch: {epoch}', flush=True)
+    loss_mlm = None
+    loss_srl = None
+    step = 0
 
-        # evaluate train f1
-        train_generator_srl = bucket_batcher(converter_srl.make_instances(train_propositions), num_epochs=1)
-        train_f1 = evaluate_model_on_f1(bert_srl, srl_eval_path, train_generator_srl)
-        train_f1s.append(train_f1)
-        print(f'train-f1={train_f1}', flush=True)
+    # evaluate train perplexity
+    train_pp = evaluate_model_on_pp(mt_bert, train_generator_mlm)
+    train_pps.append(train_pp)
+    print(f'train-pp={train_pp}', flush=True)
 
-        # train
-        for step, batch in enumerate(train_generator_srl):
+    # evaluate train f1
+    train_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, train_generator_srl)
+    train_f1s.append(train_f1)
+    print(f'train-f1={train_f1}', flush=True)
 
-            if step != 0:  # otherwise evaluation at step 0 is influenced by training on one batch
-                bert_srl.train()
-                loss = bert_srl.train_on_batch(batch, optimizer_srl)
+    while True:
 
-            if step % config.Eval.loss_interval == 0:
-                # evaluate devel f1
-                devel_generator_srl = bucket_batcher(converter_srl.make_instances(devel_propositions),  num_epochs=1)
-                devel_f1 = evaluate_model_on_f1(bert_srl, srl_eval_path, devel_generator_srl)
-                devel_f1s.append(devel_f1)
-                eval_steps.append(step)
-                print(f'devel-f1={devel_f1}', flush=True)
+        batch_mlm = next(train_generator_mlm)
 
-                # console
-                min_elapsed = (time.time() - train_start) // 60
-                print(f'step {step:<6,}/{max_step:,}: loss={loss:2.4f} total minutes elapsed={min_elapsed:<3}',
-                      flush=True)
+        # TRAINING
+        if step != 0:  # otherwise evaluation at step 0 is influenced by training on one batch
+            mt_bert.train()
 
-    # to pandas
+            # masked language modeling task
+            loss_mlm = mt_bert.train_on_batch(batch_mlm, optimizer_mlm)
+            step += 1  # only increment step once in each iteration of the loop, otherwise evaluation may never happen
+
+            # semantic role labeling task
+            if step > params.srl_task_delay:
+                steps_past_delay = step - params.srl_task_delay
+                prob = params.srl_task_ramp / steps_past_delay
+                if random.random() > prob:
+                    try:
+                        batch_srl = next(train_generator_srl)
+                    except StopIteration:
+                        print('No more SRL batches. Exiting training')
+                        break
+                    loss_srl = mt_bert.train_on_batch(batch_srl, optimizer_srl)
+                    print(f'Performed SRL step with loss={loss_srl}')
+
+        # EVALUATION
+        if step % config.Eval.loss_interval == 0:
+            mt_bert.eval()
+
+            # evaluate perplexity
+            devel_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(devel_utterances),
+                                                     num_epochs=1)
+            devel_pp = evaluate_model_on_pp(mt_bert, devel_generator_mlm)
+            devel_pps.append(devel_pp)
+            eval_steps.append(step)
+            print(f'devel-pp={devel_pp}', flush=True)
+
+            # test sentences
+            test_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(test_utterances),
+                                                    num_epochs=1)
+            predict_masked_sentences(mt_bert, test_generator_mlm)
+
+            # evaluate devel f1
+            devel_generator_srl = bucket_batcher_srl(converter_srl.make_instances(devel_propositions),
+                                                     num_epochs=1)
+            devel_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, devel_generator_srl)
+            devel_f1s.append(devel_f1)
+            eval_steps.append(step)
+            print(f'devel-f1={devel_f1}', flush=True)
+
+            # console
+            min_elapsed = (time.time() - train_start) // 60
+            pp = torch.exp(loss_mlm) if loss_mlm is not None else np.nan
+            print(f'step {step:<6,}/{max_step:,}: pp={pp :2.4f} total minutes elapsed={min_elapsed:<3}',
+                  flush=True)
+
+    # save performance
+    s1 = pd.Series(train_pps, index=np.arange(params.num_mlm_epochs))
+    s1.name = 'train_pp'
+    s2 = pd.Series(devel_pps, index=eval_steps)
+    s2.name = 'devel_pp'
     s3 = pd.Series(train_f1s, index=np.arange(params.num_srl_epochs))
     s3.name = 'train_f1'
     s4 = pd.Series(devel_f1s, index=eval_steps)

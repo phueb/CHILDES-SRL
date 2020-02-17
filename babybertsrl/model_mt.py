@@ -41,15 +41,16 @@ class MTBert(torch.nn.Module):
         self.embedding_dropout = Dropout(p=embedding_dropout)
 
     def forward(self,
+                task: str,
                 tokens: Dict[str, torch.Tensor],
                 indicator: torch.Tensor,  # indicates either masked word, or predicate
                 metadata: List[Dict[str, Any]],
-                task: str,
                 tags: torch.LongTensor = None,
                 ) -> Dict[str, torch.Tensor]:
         """
         Parameters
         ----------
+        task: string indicating which projection layer to use: either "srl" or "mlm"
         tokens : Dict[str, torch.LongTensor], required
             The output of ``TextField.as_array()``, which should typically be passed directly to a
             ``TextFieldEmbedder``. For this model, this must be a `SingleIdTokenIndexer` which
@@ -64,7 +65,6 @@ class MTBert(torch.nn.Module):
         metadata : ``List[Dict[str, Any]]``, optional, (default = None)
             metadata contains the original words in the sentence, the masked word or predicate,
              and start offsets for converting wordpieces back to a sequence of words.
-        task: string indicating which projection layer to use: either "srl" or "mlm"
         Returns
         -------
         An output dictionary consisting of:
@@ -176,10 +176,10 @@ class MTBert(torch.nn.Module):
 
         return tags
 
-    def train_on_batch(self, batch, optimizer):
+    def train_on_batch(self, task, batch, optimizer):
         # forward + loss
         optimizer.zero_grad()
-        output_dict = self(**batch)  # input is dict[str, tensor]
+        output_dict = self(task, **batch)  # input is dict[str, tensor]
         loss = output_dict['loss']
         if torch.isnan(loss):
             raise ValueError("nan loss encountered")
