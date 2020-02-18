@@ -184,15 +184,17 @@ def main(param2val):
 
     while True:
 
-        batch_mlm = next(train_generator_mlm)
-
         # TRAINING
         if step != 0:  # otherwise evaluation at step 0 is influenced by training on one batch
             mt_bert.train()
 
+            try:
+                batch_mlm = next(train_generator_mlm)
+            except StopIteration:
+                print('WARNING: No more MLM batches', flush=True)
+
             # masked language modeling task
             loss_mlm = mt_bert.train_on_batch('mlm', batch_mlm, optimizer_mlm)
-            step += 1  # only increment step once in each iteration of the loop, otherwise evaluation may never happen
 
             # semantic role labeling task
             if step > params.srl_task_delay:
@@ -202,10 +204,10 @@ def main(param2val):
                     try:
                         batch_srl = next(train_generator_srl)
                     except StopIteration:
-                        print('No more SRL batches. Exiting training')
+                        print('No more SRL batches. Exiting training', flush=True)
                         break
                     loss_srl = mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
-                    print(f'Performed SRL step with loss={loss_srl}')
+                    print(f'Performed SRL step with loss={loss_srl}', flush=True)
 
         # EVALUATION
         if step % config.Eval.loss_interval == 0:
@@ -237,6 +239,9 @@ def main(param2val):
             pp = torch.exp(loss_mlm) if loss_mlm is not None else np.nan
             print(f'step {step:<6,}/{max_step:,}: pp={pp :2.4f} total minutes elapsed={min_elapsed:<3}',
                   flush=True)
+
+        # only increment step once in each iteration of the loop, otherwise evaluation may never happen
+        step += 1
 
     # save performance
     s1 = pd.Series(train_pps, index=np.arange(params.num_mlm_epochs))

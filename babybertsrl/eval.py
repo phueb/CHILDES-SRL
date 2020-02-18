@@ -1,12 +1,12 @@
 import torch
 from typing import Iterator
-
-from allennlp.models import Model
+from pathlib import Path
 
 from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
+from babybertsrl.model_mt import MTBert
 
 
-def predict_masked_sentences(model: Model,
+def predict_masked_sentences(model: MTBert,
                              instances_generator: Iterator,
                              verbose: bool = False):
     model.eval()
@@ -21,9 +21,9 @@ def predict_masked_sentences(model: Model,
         output_dict = model(task='mlm', **batch)  # input is dict[str, tensor]
 
     # show results only for whole-words
-    mlm_in = output_dict['mlm_in']
-    predicted_mlm_tags = model.decode(output_dict)
-    gold_mlm_tags = output_dict['gold_mlm_tags']
+    mlm_in = output_dict['in']
+    predicted_mlm_tags = model.decode(output_dict, task='mlm')
+    gold_mlm_tags = output_dict['gold_tags']
     assert len(mlm_in) == len(predicted_mlm_tags) == len(gold_mlm_tags)
 
     # TODO save to file
@@ -36,7 +36,9 @@ def predict_masked_sentences(model: Model,
         print(flush=True)
 
 
-def evaluate_model_on_pp(model, instances_generator):
+def evaluate_model_on_pp(model: MTBert,
+                         instances_generator: Iterator,
+                         ) -> float:
     model.eval()
 
     pp_sum = torch.zeros(size=(1,)).cuda()
@@ -54,7 +56,10 @@ def evaluate_model_on_pp(model, instances_generator):
     return pp_sum.cpu().numpy().item() / num_steps
 
 
-def evaluate_model_on_f1(model, srl_eval_path, instances_generator):
+def evaluate_model_on_f1(model: MTBert,
+                         srl_eval_path: Path,
+                         instances_generator: Iterator,
+                         ) -> float:
 
     span_metric = SrlEvalScorer(srl_eval_path,
                                 ignore_classes=['V'])
@@ -68,13 +73,13 @@ def evaluate_model_on_f1(model, srl_eval_path, instances_generator):
         # metadata
         metadata = batch['metadata']
         batch_verb_indices = [example_metadata['verb_index'] for example_metadata in metadata]
-        batch_sentences = [example_metadata['srl_in'] for example_metadata in metadata]
+        batch_sentences = [example_metadata['in'] for example_metadata in metadata]
 
         # Get the BIO tags from decode()
         batch_bio_predicted_tags = model.decode(output_dict, task='srl')
         batch_conll_predicted_tags = [convert_bio_tags_to_conll_format(tags) for
                                       tags in batch_bio_predicted_tags]
-        batch_bio_gold_tags = [example_metadata['gold_srl_tags'] for example_metadata in metadata]
+        batch_bio_gold_tags = [example_metadata['gold_tags'] for example_metadata in metadata]
         batch_conll_gold_tags = [convert_bio_tags_to_conll_format(tags) for
                                  tags in batch_bio_gold_tags]
 

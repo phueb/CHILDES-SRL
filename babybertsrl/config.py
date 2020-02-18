@@ -18,7 +18,7 @@ class Data:
 
 
 class Eval:
-    loss_interval = 100
+    loss_interval = 10
 
 
 

@@ -1,8 +1,9 @@
 
 
 param2requests = {
-    'srl_task_delay': [0, 20_000],  # TODO
-    'srl_task_ramp': [20_000],  # TODO
+    'srl_task_delay': [0, 10_000, 20_000],  # TODO
+    'srl_task_ramp': [0, 20_000],  # TODO
+    'num_masked': [7],
 }
 
 param2debug = {
