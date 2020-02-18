@@ -1,9 +1,9 @@
 
 
 param2requests = {
-    'srl_task_delay': [0, 10_000, 20_000],  # TODO
-    'srl_task_ramp': [0, 20_000],  # TODO
-    'num_masked': [7],
+    'srl_task_delay': [0, 1_000, 2_000],  # TODO
+    'srl_task_ramp': [0, 1_000],  # TODO
+    'num_masked': [1],  # 7 results in 30K steps, 1 results in 1K steps
 }
 
 param2debug = {
@@ -19,7 +19,7 @@ param2default = {
     'num_attention_heads': 8,
     'intermediate_size': 256,
     'srl_task_delay': 0,  # number of steps to wait before training on srl task
-    'srl_task_ramp': 1_000_000,  # number of steps during which probability of srl training increases
+    'srl_task_ramp': 0,  # number of steps during which probability of srl training increases
     'num_srl_epochs': 1,
     'num_mlm_epochs': 1,
     'num_masked': 7,

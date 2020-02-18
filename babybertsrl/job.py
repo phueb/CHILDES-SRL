@@ -216,26 +216,26 @@ def main(param2val):
         # EVALUATION
         if step % config.Eval.loss_interval == 0:
             mt_bert.eval()
+            eval_steps.append(step)
 
             # evaluate perplexity
             devel_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(devel_utterances),
                                                      num_epochs=1)
             devel_pp = evaluate_model_on_pp(mt_bert, devel_generator_mlm)
             devel_pps.append(devel_pp)
-            eval_steps.append(step)
             print(f'devel-pp={devel_pp}', flush=True)
 
             # test sentences
-            test_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(test_utterances),
-                                                    num_epochs=1)
-            predict_masked_sentences(mt_bert, test_generator_mlm)
+            if config.Eval.test_sentences:
+                test_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(test_utterances),
+                                                        num_epochs=1)
+                predict_masked_sentences(mt_bert, test_generator_mlm)
 
             # evaluate devel f1
             devel_generator_srl = bucket_batcher_srl(converter_srl.make_instances(devel_propositions),
                                                      num_epochs=1)
             devel_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, devel_generator_srl)
             devel_f1s.append(devel_f1)
-            eval_steps.append(step)
             print(f'devel-f1={devel_f1}', flush=True)
 
             # console
@@ -246,7 +246,6 @@ def main(param2val):
 
         # only increment step once in each iteration of the loop, otherwise evaluation may never happen
         step += 1
-        print('completed step', step, flush=True)
 
     # save performance
     s1 = pd.Series(train_pps, index=np.arange(params.num_mlm_epochs))

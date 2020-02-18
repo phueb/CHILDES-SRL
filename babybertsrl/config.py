@@ -18,7 +18,8 @@ class Data:
 
 
 class Eval:
-    loss_interval = 10
+    loss_interval = 100
+    test_sentences = False
 
 
 
