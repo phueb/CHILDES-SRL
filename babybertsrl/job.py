@@ -156,10 +156,6 @@ def main(param2val):
     max_step = num_mlm_steps + num_srl_steps
 
     # generators
-    train_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(train_utterances),
-                                             num_epochs=params.num_mlm_epochs)
-    train_generator_srl = bucket_batcher_srl(converter_srl.make_instances(train_propositions),
-                                             num_epochs=params.num_srl_epochs)
 
     # init performance collection
     devel_pps = []
@@ -173,14 +169,22 @@ def main(param2val):
     step = 0
 
     # evaluate train perplexity
-    train_pp = evaluate_model_on_pp(mt_bert, train_generator_mlm)
+    generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(train_utterances), num_epochs=1)
+    train_pp = evaluate_model_on_pp(mt_bert, generator_mlm)
     train_pps.append(train_pp)
     print(f'train-pp={train_pp}', flush=True)
 
     # evaluate train f1
-    train_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, train_generator_srl)
+    generator_srl = bucket_batcher_srl(converter_srl.make_instances(train_propositions), num_epochs=1)
+    train_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, generator_srl)
     train_f1s.append(train_f1)
     print(f'train-f1={train_f1}', flush=True)
+
+    # generators
+    train_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(train_utterances),
+                                             num_epochs=params.num_mlm_epochs)
+    train_generator_srl = bucket_batcher_srl(converter_srl.make_instances(train_propositions),
+                                             num_epochs=params.num_srl_epochs)
 
     while True:
 
@@ -242,6 +246,7 @@ def main(param2val):
 
         # only increment step once in each iteration of the loop, otherwise evaluation may never happen
         step += 1
+        print('completed step', step, flush=True)
 
     # save performance
     s1 = pd.Series(train_pps, index=np.arange(params.num_mlm_epochs))
