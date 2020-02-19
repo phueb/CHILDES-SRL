@@ -166,6 +166,7 @@ def main(param2val):
     train_start = time.time()
     loss_mlm = None
     loss_srl = None
+    no_mlm_batches = False
     step = 0
 
     # evaluate train perplexity
@@ -192,26 +193,27 @@ def main(param2val):
         if step != 0:  # otherwise evaluation at step 0 is influenced by training on one batch
             mt_bert.train()
 
+            # masked language modeling task
             try:
                 batch_mlm = next(train_generator_mlm)
             except StopIteration:
                 print('WARNING: No more MLM batches', flush=True)
-
-            # masked language modeling task
-            loss_mlm = mt_bert.train_on_batch('mlm', batch_mlm, optimizer_mlm)
+                no_mlm_batches = True
+            else:
+                loss_mlm = mt_bert.train_on_batch('mlm', batch_mlm, optimizer_mlm)
 
             # semantic role labeling task
-            if step > params.srl_task_delay:
+            if step > params.srl_task_delay or no_mlm_batches:
                 steps_past_delay = step - params.srl_task_delay
-                prob = params.srl_task_ramp / steps_past_delay
-                if random.random() > prob:
+                prob = steps_past_delay / params.srl_task_ramp
+                if random.random() < prob or no_mlm_batches:  # "<" is correct
                     try:
                         batch_srl = next(train_generator_srl)
                     except StopIteration:
                         print('No more SRL batches. Exiting training', flush=True)
                         break
-                    loss_srl = mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
-                    print(f'Performed SRL step with loss={loss_srl}', flush=True)
+                    else:
+                        loss_srl = mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
 
         # EVALUATION
         if step % config.Eval.loss_interval == 0:
