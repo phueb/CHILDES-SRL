@@ -101,19 +101,6 @@ class ConverterMLM:
 
                 yield instance
 
-    def num_instances(self, utterances:  List[List[str]],
-                      ) -> int:
-        """
-        must mirror logic in make_instances() to provide accurate result.
-        """
-        res = 0
-        for utterance in utterances:
-
-            utterance_length = len(utterance)
-            num_masked = min(utterance_length, self.params.num_masked)
-            res += num_masked
-        return res
-
 
 class ConverterSRL:
 

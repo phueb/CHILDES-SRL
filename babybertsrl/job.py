@@ -150,13 +150,6 @@ def main(param2val):
     test_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(test_utterances), num_epochs=1)
     predict_masked_sentences(mt_bert, test_generator_mlm)
 
-    # max steps (used in console only as rough estimate of progress)
-    num_mlm_steps = converter_mlm.num_instances(train_utterances) // params.batch_size
-    num_srl_steps = len(train_propositions) // params.batch_size
-    max_step = num_mlm_steps + num_srl_steps
-
-    # generators
-
     # init performance collection
     devel_pps = []
     train_pps = []
@@ -243,7 +236,7 @@ def main(param2val):
             # console
             min_elapsed = (time.time() - train_start) // 60
             pp = torch.exp(loss_mlm) if loss_mlm is not None else np.nan
-            print(f'step {step:<6,}/{max_step:,}: pp={pp :2.4f} total minutes elapsed={min_elapsed:<3}',
+            print(f'step {step:<6,}: pp={pp :2.4f} total minutes elapsed={min_elapsed:<3}',
                   flush=True)
 
         # only increment step once in each iteration of the loop, otherwise evaluation may never happen
