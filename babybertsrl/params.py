@@ -3,7 +3,7 @@
 param2requests = {
     'srl_task_delay': [0, 1_000, 2_000, 3_000],  # TODO
     'srl_task_ramp': [0],  # TODO
-    'num_masked': [3],  # 3 results in 5K steps when delay=0, ramp=0
+    'num_masked': [7],  # 3 results in 5K steps when delay=0, ramp=0
 }
 
 param2debug = {

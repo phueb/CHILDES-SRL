@@ -76,11 +76,11 @@ def main(param2val):
     assert vocab['[MASK]'] == 4
     wordpiece_tokenizer = WordpieceTokenizer(vocab)
 
-    # load utterances for pre-training
+    # load utterances for MLM task
     utterances = load_utterances_from_file(data_path_mlm)
     train_utterances, devel_utterances, test_utterances = split(utterances)
 
-    # load propositions for fine-tuning
+    # load propositions for SLR task
     propositions = load_propositions_from_file(data_path_srl)
     train_propositions, devel_propositions, test_propositions = split(propositions)
 
@@ -93,6 +93,7 @@ def main(param2val):
     # what from_instances() does:
     # 1. it iterates over all instances, and all fields, and all token indexers
     # 2. the token indexer is used to update vocabulary count, skipping words whose text_id is already set
+    # 4. a PADDING and MASK symbol are added to 'tokens' namespace resulting in vocab size of 2
     # input tokens are not indexed, as they are already indexed by bert tokenizer vocab.
     # this ensures that the model is built with inputs for all vocab words,
     # such that words that occur only in LM or SRL task can still be input
@@ -101,15 +102,17 @@ def main(param2val):
                               converter_mlm.make_instances(devel_utterances),
                               converter_mlm.make_instances(test_utterances),
                               )
-    index_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)
-    # index_vocab_mlm.print_statistics()
+    output_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)
+    # output_vocab_mlm.print_statistics()
 
     all_instances_srl = chain(converter_srl.make_instances(train_propositions),
                               converter_srl.make_instances(devel_propositions),
                               converter_srl.make_instances(test_propositions),
                               )
-    index_vocab_srl = Vocabulary.from_instances(all_instances_srl)
-    # index_vocab_srl.print_statistics()
+    output_vocab_srl = Vocabulary.from_instances(all_instances_srl)
+    # output_vocab_srl.print_statistics()
+
+    assert output_vocab_mlm.get_vocab_size('tokens') == output_vocab_srl.get_vocab_size('tokens')
 
     # BERT
     print('Preparing Multi-task BERT...')
@@ -120,14 +123,9 @@ def main(param2val):
                              num_attention_heads=params.num_attention_heads,  # was 12
                              intermediate_size=params.intermediate_size)  # was 3072
     bert_model = BertModel(config=bert_config)
-
-    print(index_vocab_mlm.get_vocab_size('tokens'), len(wordpiece_tokenizer.vocab))
-    print(index_vocab_srl.get_vocab_size('tokens'), len(wordpiece_tokenizer.vocab))
-    assert index_vocab_mlm.get_vocab_size('tokens') == index_vocab_srl.get_vocab_size('tokens')
-
-    # BERT
-    mt_bert = MTBert(vocab_mlm=index_vocab_mlm,
-                     vocab_srl=index_vocab_srl,
+    # Multi-tasking BERT
+    mt_bert = MTBert(vocab_mlm=output_vocab_mlm,
+                     vocab_srl=output_vocab_srl,
                      bert_model=bert_model,
                      embedding_dropout=0.1)
     mt_bert.cuda()
@@ -142,9 +140,9 @@ def main(param2val):
 
     # batching
     bucket_batcher_mlm = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher_mlm.index_with(index_vocab_mlm)
+    bucket_batcher_mlm.index_with(output_vocab_mlm)
     bucket_batcher_srl = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher_srl.index_with(index_vocab_srl)
+    bucket_batcher_srl.index_with(output_vocab_srl)
 
     # test sentences
     test_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(test_utterances), num_epochs=1)
@@ -198,7 +196,7 @@ def main(param2val):
             # semantic role labeling task
             if step > params.srl_task_delay or no_mlm_batches:
                 steps_past_delay = step - params.srl_task_delay
-                prob = steps_past_delay / params.srl_task_ramp
+                prob = (steps_past_delay + 1) / (params.srl_task_ramp + 1)
                 if random.random() < prob or no_mlm_batches:  # "<" is correct
                     try:
                         batch_srl = next(train_generator_srl)
