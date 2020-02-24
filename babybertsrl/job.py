@@ -64,7 +64,9 @@ def main(param2val):
     project_path = Path(param2val['project_path'])
     srl_eval_path = project_path / 'perl' / 'srl-eval.pl'
     data_path_mlm = project_path / 'data' / 'training' / f'{params.corpus_name}_mlm.txt'
-    data_path_srl = project_path / 'data' / 'training' / f'{params.corpus_name}_srl.txt'
+    data_path_train_srl = project_path / 'data' / 'training' / f'{params.corpus_name}_srl.txt'
+    data_path_devel_srl = project_path / 'data' / 'training' / f'human-based-2018_srl.txt'
+    data_path_test_srl = project_path / 'data' / 'training' / f'human-based-2008_srl.txt'
     vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab.txt'
 
     # Wordpiece tokenizer - defines input vocabulary
@@ -81,8 +83,14 @@ def main(param2val):
     train_utterances, devel_utterances, test_utterances = split(utterances)
 
     # load propositions for SLR task
-    propositions = load_propositions_from_file(data_path_srl)
+    propositions = load_propositions_from_file(data_path_train_srl)
     train_propositions, devel_propositions, test_propositions = split(propositions)
+    if data_path_devel_srl.is_file():  # use human-annotated data as devel split
+        print(f'Using {data_path_devel_srl.name} as SRL devel split')
+        devel_propositions = load_propositions_from_file(data_path_devel_srl)  # TODO test
+    if data_path_test_srl.is_file():  # use human-annotated data as test split
+        print(f'Using {data_path_test_srl.name} as SRL test split')
+        test_propositions = load_propositions_from_file(data_path_test_srl)  # TODO test
 
     # converters handle conversion from text to instances
     converter_mlm = ConverterMLM(params, wordpiece_tokenizer)
@@ -100,16 +108,14 @@ def main(param2val):
 
     all_instances_mlm = chain(converter_mlm.make_instances(train_utterances),
                               converter_mlm.make_instances(devel_utterances),
-                              converter_mlm.make_instances(test_utterances),
-                              )
-    output_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)
-    # output_vocab_mlm.print_statistics()
-
+                              converter_mlm.make_instances(test_utterances))
     all_instances_srl = chain(converter_srl.make_instances(train_propositions),
                               converter_srl.make_instances(devel_propositions),
-                              converter_srl.make_instances(test_propositions),
-                              )
+                              converter_srl.make_instances(test_propositions))
+
+    output_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)
     output_vocab_srl = Vocabulary.from_instances(all_instances_srl)
+    # output_vocab_mlm.print_statistics()
     # output_vocab_srl.print_statistics()
 
     assert output_vocab_mlm.get_vocab_size('tokens') == output_vocab_srl.get_vocab_size('tokens')
