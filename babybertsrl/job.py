@@ -166,18 +166,6 @@ def main(param2val):
     no_mlm_batches = False
     step = 0
 
-    # evaluate train perplexity
-    generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(train_utterances), num_epochs=1)
-    train_pp = evaluate_model_on_pp(mt_bert, generator_mlm)
-    train_pps.append(train_pp)
-    print(f'train-pp={train_pp}', flush=True)
-
-    # evaluate train f1
-    generator_srl = bucket_batcher_srl(converter_srl.make_instances(train_propositions), num_epochs=1)
-    train_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, generator_srl)
-    train_f1s.append(train_f1)
-    print(f'train-f1={train_f1}', flush=True)
-
     # generators
     train_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(train_utterances),
                                              num_epochs=params.num_mlm_epochs)
@@ -194,7 +182,6 @@ def main(param2val):
             try:
                 batch_mlm = next(train_generator_mlm)
             except StopIteration:
-                print('WARNING: No more MLM batches', flush=True)
                 no_mlm_batches = True
             else:
                 loss_mlm = mt_bert.train_on_batch('mlm', batch_mlm, optimizer_mlm)
@@ -213,7 +200,7 @@ def main(param2val):
                         loss_srl = mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
 
         # EVALUATION
-        if step % config.Eval.loss_interval == 0:
+        if step % config.Eval.interval == 0:
             mt_bert.eval()
             eval_steps.append(step)
 
@@ -246,12 +233,28 @@ def main(param2val):
         # only increment step once in each iteration of the loop, otherwise evaluation may never happen
         step += 1
 
+    # evaluate train perplexity
+    if config.Eval.train_split:
+        generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(train_utterances), num_epochs=1)
+        train_pp = evaluate_model_on_pp(mt_bert, generator_mlm)
+    else:
+        train_pp = np.nan
+    print(f'train-pp={train_pp}', flush=True)
+
+    # evaluate train f1
+    if config.Eval.train_split:
+        generator_srl = bucket_batcher_srl(converter_srl.make_instances(train_propositions), num_epochs=1)
+        train_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, generator_srl)
+    else:
+        train_f1 = np.nan
+    print(f'train-f1={train_f1}', flush=True)
+
     # save performance
-    s1 = pd.Series(train_pps, index=np.arange(params.num_mlm_epochs))
+    s1 = pd.Series([train_pp], index=[eval_steps[-1]])
     s1.name = 'train_pp'
     s2 = pd.Series(devel_pps, index=eval_steps)
     s2.name = 'devel_pp'
-    s3 = pd.Series(train_f1s, index=np.arange(params.num_srl_epochs))
+    s3 = pd.Series([train_f1], index=[eval_steps[-1]])
     s3.name = 'train_f1'
     s4 = pd.Series(devel_f1s, index=eval_steps)
     s4.name = 'devel_f1'

@@ -79,17 +79,17 @@ def load_utterances_from_file(file_path: Path,
             for utterance in utterances:
 
                 # check  length
-                if len(utterance) <= config.Data.min_utterance_length:
+                if len(utterance) < config.Data.min_input_length:
                     num_too_small += 1
                     continue
-                if len(utterance) > config.Data.max_utterance_length:
+                if len(utterance) > config.Data.max_input_length:
                     num_too_large += 1
                     continue
 
                 res.append(utterance)
 
-    print(f'WARNING: Skipped {num_too_small} utterances which are shorter than {config.Data.min_utterance_length}.')
-    print(f'WARNING: Skipped {num_too_large} utterances which are larger than {config.Data.max_utterance_length}.')
+    print(f'WARNING: Skipped {num_too_small} utterances which are shorter than {config.Data.min_input_length}.')
+    print(f'WARNING: Skipped {num_too_large} utterances which are larger than {config.Data.max_input_length}.')
 
     lengths = [len(u) for u in res]
     print('Found {:,} utterances'.format(len(res)))
@@ -128,17 +128,17 @@ def load_propositions_from_file(file_path):
             labels = right_input
 
             # check  length
-            if len(words) <= config.Data.min_utterance_length:
+            if len(words) <= config.Data.min_input_length:
                 num_too_small += 1
                 continue
-            if len(words) > config.Data.max_utterance_length:
+            if len(words) > config.Data.max_input_length:
                 num_too_large += 1
                 continue
 
             res.append((words, predicate_index, labels))
 
-    print(f'WARNING: Skipped {num_too_small} propositions which are shorter than {config.Data.min_utterance_length}.')
-    print(f'WARNING: Skipped {num_too_large} propositions which are larger than {config.Data.max_utterance_length}.')
+    print(f'WARNING: Skipped {num_too_small} propositions which are shorter than {config.Data.min_input_length}.')
+    print(f'WARNING: Skipped {num_too_large} propositions which are larger than {config.Data.max_input_length}.')
 
     lengths = [len(p[0]) for p in res]
     print('Found {:,} propositions'.format(len(res)))

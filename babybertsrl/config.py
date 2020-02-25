@@ -12,14 +12,15 @@ class Global:
 
 
 class Data:
-    min_utterance_length = 3  # used during language modeling task
-    max_utterance_length = 128  # used during language modeling task
+    min_input_length = 3
+    max_input_length = 128
     train_prob = 0.8  # probability that utterance is train utterance
 
 
 class Eval:
-    loss_interval = 100
+    interval = 1000
     test_sentences = False
+    train_split = True
 
 
 
