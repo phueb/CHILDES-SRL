@@ -83,11 +83,12 @@ class ConverterMLM:
         return Instance(fields)
 
     def make_instances(self, utterances:  List[List[str]],
-                       ) -> Iterator[Instance]:
+                       ) -> List[Instance]:
         """
         convert on utterance into possibly multiple Allen NLP instances
 
         """
+        res = []
         for utterance in utterances:
 
             # collect each multiple times, each time with a different masked word
@@ -98,8 +99,9 @@ class ConverterMLM:
                 # collect instance
                 mlm_in, mlm_mask, mlm_tags = prepare_utterance_for_instance(utterance, masked_id)
                 instance = self._text_to_instance(mlm_in, mlm_mask, mlm_tags)
+                res.append(instance)
 
-                yield instance
+        return res
 
 
 class ConverterSRL:
@@ -170,11 +172,14 @@ class ConverterSRL:
         return Instance(fields)
 
     def make_instances(self, propositions: List[Tuple[List[str], int, List[str]]],
-                       ) -> Iterator[Instance]:
+                       ) -> List[Instance]:
         """
-        roughly equivalent to Allen NLP toolkit dataset.read()
+        roughly equivalent to Allen NLP toolkit dataset.read().
+        return a list rather than a generator,
+         because DataIterator requires being able to iterate multiple times to implement multiple epochs.
 
         """
+        res = []
         for proposition in propositions:
             srl_in = proposition[0]
             srl_verb_indices = self.make_verb_indices(proposition)
@@ -184,4 +189,5 @@ class ConverterSRL:
             instance = self._text_to_instance(srl_in,
                                               srl_verb_indices,
                                               srl_tags)
-            yield instance
+            res.append(instance)
+        return res

@@ -87,10 +87,10 @@ def main(param2val):
     train_propositions, devel_propositions, test_propositions = split(propositions)
     if data_path_devel_srl.is_file():  # use human-annotated data as devel split
         print(f'Using {data_path_devel_srl.name} as SRL devel split')
-        devel_propositions = load_propositions_from_file(data_path_devel_srl)  # TODO test
+        devel_propositions = load_propositions_from_file(data_path_devel_srl)
     if data_path_test_srl.is_file():  # use human-annotated data as test split
         print(f'Using {data_path_test_srl.name} as SRL test split')
-        test_propositions = load_propositions_from_file(data_path_test_srl)  # TODO test
+        test_propositions = load_propositions_from_file(data_path_test_srl)
 
     # converters handle conversion from text to instances
     converter_mlm = ConverterMLM(params, wordpiece_tokenizer)
@@ -106,18 +106,21 @@ def main(param2val):
     # this ensures that the model is built with inputs for all vocab words,
     # such that words that occur only in LM or SRL task can still be input
 
-    all_instances_mlm = chain(converter_mlm.make_instances(train_utterances),
-                              converter_mlm.make_instances(devel_utterances),
-                              converter_mlm.make_instances(test_utterances))
-    all_instances_srl = chain(converter_srl.make_instances(train_propositions),
-                              converter_srl.make_instances(devel_propositions),
-                              converter_srl.make_instances(test_propositions))
+    # make instances once - this allows iterating multiple times (required when num_epochs > 1)
+    train_instances_mlm = converter_mlm.make_instances(train_utterances)
+    devel_instances_mlm = converter_mlm.make_instances(devel_utterances)
+    test_instances_mlm = converter_mlm.make_instances(test_utterances)
+    train_instances_srl = converter_srl.make_instances(train_propositions)
+    devel_instances_srl = converter_srl.make_instances(devel_propositions)
+    test_instances_srl = converter_srl.make_instances(test_propositions)
+    all_instances_mlm = chain(train_instances_mlm, devel_instances_mlm, test_instances_mlm)
+    all_instances_srl = chain(train_instances_srl, devel_instances_srl, test_instances_srl)
 
+    # make vocab from all instances
     output_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)
     output_vocab_srl = Vocabulary.from_instances(all_instances_srl)
-    # output_vocab_mlm.print_statistics()
-    # output_vocab_srl.print_statistics()
-
+    output_vocab_mlm.print_statistics()
+    output_vocab_srl.print_statistics()
     assert output_vocab_mlm.get_vocab_size('tokens') == output_vocab_srl.get_vocab_size('tokens')
 
     # BERT
@@ -150,15 +153,15 @@ def main(param2val):
     bucket_batcher_srl = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher_srl.index_with(output_vocab_srl)
 
-    # test sentences
-    test_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(test_utterances), num_epochs=1)
-    predict_masked_sentences(mt_bert, test_generator_mlm)
-
     # init performance collection
-    devel_pps = []
-    train_pps = []
-    devel_f1s = []
-    train_f1s = []
+    name2col = {
+        'devel_pps': [],
+        'devel_f1s': [],
+        'srl_losses': [],
+        'mlm_losses': [],
+    }
+
+    # init
     eval_steps = []
     train_start = time.time()
     loss_mlm = None
@@ -167,10 +170,8 @@ def main(param2val):
     step = 0
 
     # generators
-    train_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(train_utterances),
-                                             num_epochs=params.num_mlm_epochs)
-    train_generator_srl = bucket_batcher_srl(converter_srl.make_instances(train_propositions),
-                                             num_epochs=params.num_srl_epochs)
+    train_generator_mlm = bucket_batcher_mlm(train_instances_mlm, num_epochs=params.num_mlm_epochs)
+    train_generator_srl = bucket_batcher_srl(train_instances_srl, num_epochs=params.num_srl_epochs)
 
     while True:
 
@@ -204,24 +205,25 @@ def main(param2val):
             mt_bert.eval()
             eval_steps.append(step)
 
+            # keep track of current batch loss
+            name2col['srl_losses'].append(loss_srl)
+            name2col['mlm_losses'].append(loss_mlm)
+
             # evaluate perplexity
-            devel_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(devel_utterances),
-                                                     num_epochs=1)
+            devel_generator_mlm = bucket_batcher_mlm(devel_instances_mlm, num_epochs=1)
             devel_pp = evaluate_model_on_pp(mt_bert, devel_generator_mlm)
-            devel_pps.append(devel_pp)
+            name2col['devel_pps'].append(devel_pp)
             print(f'devel-pp={devel_pp}', flush=True)
 
             # test sentences
             if config.Eval.test_sentences:
-                test_generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(test_utterances),
-                                                        num_epochs=1)
+                test_generator_mlm = bucket_batcher_mlm(test_instances_mlm, num_epochs=1)
                 predict_masked_sentences(mt_bert, test_generator_mlm)
 
             # evaluate devel f1
-            devel_generator_srl = bucket_batcher_srl(converter_srl.make_instances(devel_propositions),
-                                                     num_epochs=1)
+            devel_generator_srl = bucket_batcher_srl(devel_instances_srl, num_epochs=1)
             devel_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, devel_generator_srl)
-            devel_f1s.append(devel_f1)
+            name2col['devel_f1s'].append(devel_f1)
             print(f'devel-f1={devel_f1}', flush=True)
 
             # console
@@ -235,7 +237,7 @@ def main(param2val):
 
     # evaluate train perplexity
     if config.Eval.train_split:
-        generator_mlm = bucket_batcher_mlm(converter_mlm.make_instances(train_utterances), num_epochs=1)
+        generator_mlm = bucket_batcher_mlm(train_instances_mlm, num_epochs=1)
         train_pp = evaluate_model_on_pp(mt_bert, generator_mlm)
     else:
         train_pp = np.nan
@@ -243,20 +245,28 @@ def main(param2val):
 
     # evaluate train f1
     if config.Eval.train_split:
-        generator_srl = bucket_batcher_srl(converter_srl.make_instances(train_propositions), num_epochs=1)
+        generator_srl = bucket_batcher_srl(train_instances_srl, num_epochs=1)
         train_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, generator_srl)
     else:
         train_f1 = np.nan
     print(f'train-f1={train_f1}', flush=True)
 
-    # save performance
+    # test sentences
+    test_generator_mlm = bucket_batcher_mlm(test_instances_mlm, num_epochs=1)
+    predict_masked_sentences(mt_bert, test_generator_mlm)
+
+    # put train-pp and train-f1 into pandas Series
     s1 = pd.Series([train_pp], index=[eval_steps[-1]])
     s1.name = 'train_pp'
-    s2 = pd.Series(devel_pps, index=eval_steps)
-    s2.name = 'devel_pp'
-    s3 = pd.Series([train_f1], index=[eval_steps[-1]])
-    s3.name = 'train_f1'
-    s4 = pd.Series(devel_f1s, index=eval_steps)
-    s4.name = 'devel_f1'
+    s2 = pd.Series([train_f1], index=[eval_steps[-1]])
+    s2.name = 'devel_f1'
 
-    return [s1, s2, s3, s4]
+    # return performance as pandas Series
+    series_list = [s1, s2]
+    for name, col in name2col.items():
+        print(f'Making pandas series with name={name} and length={len(col)}')
+        s = pd.Series(col, index=eval_steps)
+        s.name = name
+        series_list.append(s)
+
+    return series_list

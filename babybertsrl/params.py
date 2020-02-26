@@ -15,7 +15,7 @@ param2requests = {
     'srl_task_delay': [2_000],  # TODO
     'srl_task_ramp': [0],  # TODO
     'num_masked': [1],  # it seems, the lower the better dev-pp, surprisingly
-    'num_srl_epochs': [1, 2, 3, 4],  # TODO test 2
+    'num_srl_epochs': [4, 3, 2, 1],  # TODO this doesn't affect max num eval steps in results
 }
 
 param2debug = {
