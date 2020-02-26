@@ -9,13 +9,18 @@ Why ? Do same-utterance MLM examples get grouped into same batch, and reduce bat
 batch_size=16 gives better devel-pp compared to 32,
 and batch_size 32 gives better devel-f1 compared to 128
 
+
+so far the best f1 on human-based_2018 is 0.77, which happens around step 60K,
+corresponding to no more than 2 SRL training epochs
+
 """
 
 param2requests = {
-    'srl_task_delay': [2_000],  # TODO
+    'srl_task_delay': [2_000, 20_000],  # TODO
     'srl_task_ramp': [0],  # TODO
     'num_masked': [1],  # it seems, the lower the better dev-pp, surprisingly
-    'num_srl_epochs': [4, 3, 2, 1],  # TODO this doesn't affect max num eval steps in results
+    'num_srl_epochs': [1],
+    'num_mlm_epochs': [2],
 }
 
 param2debug = {

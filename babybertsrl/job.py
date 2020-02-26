@@ -157,8 +157,6 @@ def main(param2val):
     name2col = {
         'devel_pps': [],
         'devel_f1s': [],
-        'srl_losses': [],
-        'mlm_losses': [],
     }
 
     # init
@@ -204,10 +202,6 @@ def main(param2val):
         if step % config.Eval.interval == 0:
             mt_bert.eval()
             eval_steps.append(step)
-
-            # keep track of current batch loss
-            name2col['srl_losses'].append(loss_srl)
-            name2col['mlm_losses'].append(loss_mlm)
 
             # evaluate perplexity
             devel_generator_mlm = bucket_batcher_mlm(devel_instances_mlm, num_epochs=1)
@@ -259,7 +253,7 @@ def main(param2val):
     s1 = pd.Series([train_pp], index=[eval_steps[-1]])
     s1.name = 'train_pp'
     s2 = pd.Series([train_f1], index=[eval_steps[-1]])
-    s2.name = 'devel_f1'
+    s2.name = 'train_f1'
 
     # return performance as pandas Series
     series_list = [s1, s2]
