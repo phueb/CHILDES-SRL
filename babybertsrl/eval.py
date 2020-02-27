@@ -59,6 +59,7 @@ def evaluate_model_on_pp(model: MTBert,
 def evaluate_model_on_f1(model: MTBert,
                          srl_eval_path: Path,
                          instances_generator: Iterator,
+                         print_tag_metrics: bool = False,
                          ) -> float:
 
     span_metric = SrlEvalScorer(srl_eval_path,
@@ -91,4 +92,14 @@ def evaluate_model_on_f1(model: MTBert,
 
     # compute f1 on accumulated signal detection metrics and reset
     metric_dict = span_metric.get_metric(reset=True)
+
+    # TODO write the by-tag summary to a text or csv file
+
+    # print f1 summary by tag
+    if print_tag_metrics:
+        for k, v in sorted(metric_dict.items()):
+
+            tag = k.lstrip('precision-').lstrip('recall-').lstrip('f1-measure-')
+            print(f"{tag:>16} {v: .2f}")
+
     return metric_dict['f1-measure-overall']

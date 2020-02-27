@@ -21,7 +21,7 @@ class Eval:
     interval = 1000
     test_sentences = False
     train_split = True
-    print_perl_script_output = True
+    print_perl_script_output = False  # happens at every batch so not very useful
 
 
 

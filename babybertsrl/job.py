@@ -153,6 +153,10 @@ def main(param2val):
     bucket_batcher_srl = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher_srl.index_with(output_vocab_srl)
 
+    # TODO
+    bucket_batcher_srl_large = BucketIterator(batch_size=1024, sorting_keys=[('tokens', "num_tokens")])
+    bucket_batcher_srl_large.index_with(output_vocab_srl)
+
     # init performance collection
     name2col = {
         'devel_pps': [],
@@ -215,8 +219,9 @@ def main(param2val):
                 predict_masked_sentences(mt_bert, test_generator_mlm)
 
             # evaluate devel f1
-            devel_generator_srl = bucket_batcher_srl(devel_instances_srl, num_epochs=1)
+            devel_generator_srl = bucket_batcher_srl_large(devel_instances_srl, num_epochs=1)
             devel_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, devel_generator_srl)
+
             name2col['devel_f1s'].append(devel_f1)
             print(f'devel-f1={devel_f1}', flush=True)
 
@@ -240,7 +245,7 @@ def main(param2val):
     # evaluate train f1
     if config.Eval.train_split:
         generator_srl = bucket_batcher_srl(train_instances_srl, num_epochs=1)
-        train_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, generator_srl)
+        train_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, generator_srl, print_tag_metrics=True)
     else:
         train_f1 = np.nan
     print(f'train-f1={train_f1}', flush=True)
