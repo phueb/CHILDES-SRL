@@ -169,6 +169,7 @@ def main(param2val):
     loss_mlm = None
     loss_srl = None
     no_mlm_batches = False
+    no_srl_batches = False
     step = 0
 
     # generators
@@ -186,6 +187,8 @@ def main(param2val):
                 batch_mlm = next(train_generator_mlm)
             except StopIteration:
                 no_mlm_batches = True
+                if no_srl_batches:
+                    break
             else:
                 loss_mlm = mt_bert.train_on_batch('mlm', batch_mlm, optimizer_mlm)
 
@@ -197,8 +200,9 @@ def main(param2val):
                     try:
                         batch_srl = next(train_generator_srl)
                     except StopIteration:
-                        print('No more SRL batches. Exiting training', flush=True)
-                        break
+                        no_srl_batches = True
+                        if no_mlm_batches:
+                            break
                     else:
                         loss_srl = mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
 

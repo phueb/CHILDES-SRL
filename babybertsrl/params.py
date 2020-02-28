@@ -29,12 +29,15 @@ TODO:
 """
 
 param2requests = {
-    'srl_task_delay': [2_000],  # TODO
+    'srl_task_delay': [2_000],
     'srl_task_ramp': [0],
-    'num_masked': [5, 6, 7, 8],  # it seems, the lower the better dev-pp, surprisingly
+    'num_masked': [5, 6, 7, 8],
     'num_srl_epochs': [2],
     'num_mlm_epochs': [2],
 }
+
+# With num_masked=1, made 0,575,465 utterances -> 035,966 train MLM batches (when batch-size=16)
+# With num_masked=6, made 2,976,614 utterances -> 186,038 train MLM batches (when batch-size=16)
 
 param2debug = {
     "num_srl_epochs": 1,
