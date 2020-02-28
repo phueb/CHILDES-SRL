@@ -101,6 +101,8 @@ class ConverterMLM:
                 instance = self._text_to_instance(mlm_in, mlm_mask, mlm_tags)
                 res.append(instance)
 
+        print(f'With num_masked={self.params.num_masked}, made {len(res)} utterances')
+
         return res
 
 

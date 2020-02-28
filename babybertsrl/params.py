@@ -1,10 +1,7 @@
 """
 Parameter exploration notes:
 
-Counter-intuitively, it appears that using lower "num_masked", resulting in fewer MLM train examples,
-results in higher dev-pp.
-Why ? Do same-utterance MLM examples get grouped into same batch, and reduce batch-diversity,
- and therefore  reduce generalization performance? - this may be due to a bug in an since-removed batching logic
+Increasing num_masked doesn't improve dev-f1, but does slightly improve dev-pp.
 
 batch_size=16 gives better devel-pp compared to 32,
 and batch_size 32 gives better devel-f1 compared to 128
@@ -16,6 +13,9 @@ while delaying SRL to 20K compared to 2K doesn't help development-f1,
 it does help development-pp, which is unintuitive, but not impossible
 
 2 MLM epochs are better than 1.
+
+2 SRL epochs improve dev-pp, but only with a small SRL delay (no more than 2K0,
+otherwise there is too much SRL training at end, and MLM knowledge is forgotten (increase in dev-pp)
 
 
 TODO:
@@ -29,10 +29,10 @@ TODO:
 """
 
 param2requests = {
-    'srl_task_delay': [2_000, 20_000],  # TODO
+    'srl_task_delay': [2_000],  # TODO
     'srl_task_ramp': [0],
-    'num_masked': [1],  # it seems, the lower the better dev-pp, surprisingly
-    'num_srl_epochs': [1, 2],
+    'num_masked': [5, 6, 7, 8],  # it seems, the lower the better dev-pp, surprisingly
+    'num_srl_epochs': [2],
     'num_mlm_epochs': [2],
 }
 
