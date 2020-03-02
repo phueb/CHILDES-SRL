@@ -35,9 +35,8 @@ class Params(object):
     num_attention_heads = attr.ib(validator=attr.validators.instance_of(int))
     intermediate_size = attr.ib(validator=attr.validators.instance_of(int))
     num_mlm_epochs = attr.ib(validator=attr.validators.instance_of(int))
-    num_srl_epochs = attr.ib(validator=attr.validators.instance_of(int))
-    srl_task_ramp = attr.ib(validator=attr.validators.instance_of(int))
-    srl_task_delay = attr.ib(validator=attr.validators.instance_of(int))
+    srl_probability = attr.ib(validator=attr.validators.instance_of(float))
+    srl_interleaved = attr.ib(validator=attr.validators.instance_of(bool))
     num_masked = attr.ib(validator=attr.validators.instance_of(int))
     vocab_size = attr.ib(validator=attr.validators.instance_of(int))
     corpus_name = attr.ib(validator=attr.validators.instance_of(str))
@@ -142,8 +141,8 @@ def main(param2val):
     print('Number of model parameters: {:,}'.format(num_params), flush=True)
 
     # optimizers
-    optimizer_mlm = BertAdam(params=mt_bert.parameters(), lr=5e-5, max_grad_norm=1.0, t_total=-1,weight_decay=0.01)
-    optimizer_srl = BertAdam(params=mt_bert.parameters(), lr=5e-5, max_grad_norm=1.0, t_total=-1,weight_decay=0.01)
+    optimizer_mlm = BertAdam(params=mt_bert.parameters(), lr=5e-5, max_grad_norm=1.0, t_total=-1, weight_decay=0.01)
+    optimizer_srl = BertAdam(params=mt_bert.parameters(), lr=5e-5, max_grad_norm=1.0, t_total=-1, weight_decay=0.01)
     move_optimizer_to_cuda(optimizer_mlm)
     move_optimizer_to_cuda(optimizer_srl)
 
@@ -153,7 +152,7 @@ def main(param2val):
     bucket_batcher_srl = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher_srl.index_with(output_vocab_srl)
 
-    # TODO
+    # big batcher to speed evaluation
     bucket_batcher_srl_large = BucketIterator(batch_size=1024, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher_srl_large.index_with(output_vocab_srl)
 
@@ -167,16 +166,20 @@ def main(param2val):
     eval_steps = []
     train_start = time.time()
     loss_mlm = None
-    loss_srl = None
     no_mlm_batches = False
-    no_srl_batches = False
     step = 0
 
     # generators
     train_generator_mlm = bucket_batcher_mlm(train_instances_mlm, num_epochs=params.num_mlm_epochs)
-    train_generator_srl = bucket_batcher_srl(train_instances_srl, num_epochs=params.num_srl_epochs)
+    train_generator_srl = bucket_batcher_srl(train_instances_srl, num_epochs=None)  # infinite generator
+    num_train_mlm_batches = bucket_batcher_mlm.get_num_batches(train_instances_mlm)
+    if params.srl_interleaved:
+        max_step = num_train_mlm_batches
+    else:
+        max_step = num_train_mlm_batches * 2
+    print(f'Will stop training at step={max_step:,}')
 
-    while True:
+    while step < num_train_mlm_batches * 2:
 
         # TRAINING
         if step != 0:  # otherwise evaluation at step 0 is influenced by training on one batch
@@ -186,25 +189,21 @@ def main(param2val):
             try:
                 batch_mlm = next(train_generator_mlm)
             except StopIteration:
-                no_mlm_batches = True
-                if no_srl_batches:
+                if params.srl_interleaved:
                     break
+                else:
+                    no_mlm_batches = True
             else:
                 loss_mlm = mt_bert.train_on_batch('mlm', batch_mlm, optimizer_mlm)
 
             # semantic role labeling task
-            if step > params.srl_task_delay or no_mlm_batches:
-                steps_past_delay = step - params.srl_task_delay
-                prob = (steps_past_delay + 1) / (params.srl_task_ramp + 1)
-                if random.random() < prob or no_mlm_batches:  # "<" is correct
-                    try:
-                        batch_srl = next(train_generator_srl)
-                    except StopIteration:
-                        no_srl_batches = True
-                        if no_mlm_batches:
-                            break
-                    else:
-                        loss_srl = mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
+            if params.srl_interleaved:
+                if random.random() < params.srl_probability:
+                    batch_srl = next(train_generator_srl)
+                    mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
+            elif no_mlm_batches:
+                batch_srl = next(train_generator_srl)
+                mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
 
         # EVALUATION
         if step % config.Eval.interval == 0:
