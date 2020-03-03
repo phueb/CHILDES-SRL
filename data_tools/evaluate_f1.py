@@ -1,3 +1,41 @@
+"""
+How well does AllenNLP SRL tagger perform on CHILDES 2008 SRL data?
+
+          ARG-A1 f1= 0.00
+          ARG-A4 f1= 0.00
+         ARG-LOC f1= 0.00
+            ARG0 f1= 0.95
+            ARG1 f1= 0.93
+            ARG2 f1= 0.79
+            ARG3 f1= 0.44
+            ARG4 f1= 0.80
+        ARGM-ADV f1= 0.70
+        ARGM-CAU f1= 0.84
+        ARGM-COM f1= 0.00
+        ARGM-DIR f1= 0.48
+        ARGM-DIS f1= 0.68
+        ARGM-EXT f1= 0.38
+        ARGM-GOL f1= 0.00
+        ARGM-LOC f1= 0.68
+        ARGM-MNR f1= 0.68
+        ARGM-MOD f1= 0.78
+        ARGM-NEG f1= 0.99
+        ARGM-PNC f1= 0.03
+        ARGM-PPR f1= 0.00
+        ARGM-PRD f1= 0.15
+        ARGM-PRP f1= 0.39
+        ARGM-RCL f1= 0.00
+        ARGM-REC f1= 0.00
+        ARGM-TMP f1= 0.84
+          ARGRG1 f1= 0.00
+          R-ARG0 f1= 0.00
+          R-ARG1 f1= 0.00
+      R-ARGM-CAU f1= 0.00
+      R-ARGM-LOC f1= 0.00
+      R-ARGM-TMP f1= 0.00
+         overall f1= 0.88
+"""
+
 from spacy.tokens import Doc
 from typing import Generator, List
 from pathlib import Path
