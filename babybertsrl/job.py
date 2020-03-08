@@ -30,6 +30,7 @@ from babybertsrl.eval import evaluate_model_on_f1
 @attr.s
 class Params(object):
     batch_size = attr.ib(validator=attr.validators.instance_of(int))
+    embedding_dropout = attr.ib(validator=attr.validators.instance_of(float))
     num_layers = attr.ib(validator=attr.validators.instance_of(int))
     hidden_size = attr.ib(validator=attr.validators.instance_of(int))
     num_attention_heads = attr.ib(validator=attr.validators.instance_of(int))
@@ -135,7 +136,7 @@ def main(param2val):
     mt_bert = MTBert(vocab_mlm=output_vocab_mlm,
                      vocab_srl=output_vocab_srl,
                      bert_model=bert_model,
-                     embedding_dropout=0.1)
+                     embedding_dropout=params.embedding_dropout)
     mt_bert.cuda()
     num_params = sum(p.numel() for p in mt_bert.parameters() if p.requires_grad)
     print('Number of model parameters: {:,}'.format(num_params), flush=True)
@@ -152,8 +153,10 @@ def main(param2val):
     bucket_batcher_srl = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher_srl.index_with(output_vocab_srl)
 
-    # big batcher to speed evaluation
-    bucket_batcher_srl_large = BucketIterator(batch_size=1024, sorting_keys=[('tokens', "num_tokens")])
+    # big batcher to speed evaluation - 1024 is too big
+    bucket_batcher_mlm_large = BucketIterator(batch_size=512, sorting_keys=[('tokens', "num_tokens")])
+    bucket_batcher_srl_large = BucketIterator(batch_size=512, sorting_keys=[('tokens', "num_tokens")])
+    bucket_batcher_mlm_large.index_with(output_vocab_mlm)
     bucket_batcher_srl_large.index_with(output_vocab_srl)
 
     # init performance collection
@@ -179,7 +182,7 @@ def main(param2val):
         max_step = num_train_mlm_batches * 2
     print(f'Will stop training at step={max_step:,}')
 
-    while step < num_train_mlm_batches * 2:
+    while step < max_step:
 
         # TRAINING
         if step != 0:  # otherwise evaluation at step 0 is influenced by training on one batch
@@ -239,7 +242,7 @@ def main(param2val):
 
     # evaluate train perplexity
     if config.Eval.train_split:
-        generator_mlm = bucket_batcher_mlm(train_instances_mlm, num_epochs=1)
+        generator_mlm = bucket_batcher_mlm_large(train_instances_mlm, num_epochs=1)
         train_pp = evaluate_model_on_pp(mt_bert, generator_mlm)
     else:
         train_pp = np.nan
@@ -247,7 +250,7 @@ def main(param2val):
 
     # evaluate train f1
     if config.Eval.train_split:
-        generator_srl = bucket_batcher_srl(train_instances_srl, num_epochs=1)
+        generator_srl = bucket_batcher_srl_large(train_instances_srl, num_epochs=1)
         train_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, generator_srl, print_tag_metrics=True)
     else:
         train_f1 = np.nan
