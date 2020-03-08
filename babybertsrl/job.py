@@ -30,6 +30,7 @@ from babybertsrl.eval import evaluate_model_on_f1
 @attr.s
 class Params(object):
     batch_size = attr.ib(validator=attr.validators.instance_of(int))
+    lr = attr.ib(validator=attr.validators.instance_of(float))
     embedding_dropout = attr.ib(validator=attr.validators.instance_of(float))
     num_layers = attr.ib(validator=attr.validators.instance_of(int))
     hidden_size = attr.ib(validator=attr.validators.instance_of(int))
@@ -142,8 +143,8 @@ def main(param2val):
     print('Number of model parameters: {:,}'.format(num_params), flush=True)
 
     # optimizers
-    optimizer_mlm = BertAdam(params=mt_bert.parameters(), lr=5e-5, max_grad_norm=1.0, t_total=-1, weight_decay=0.01)
-    optimizer_srl = BertAdam(params=mt_bert.parameters(), lr=5e-5, max_grad_norm=1.0, t_total=-1, weight_decay=0.01)
+    optimizer_mlm = BertAdam(params=mt_bert.parameters(), lr=params.lr)
+    optimizer_srl = BertAdam(params=mt_bert.parameters(), lr=params.lr)
     move_optimizer_to_cuda(optimizer_mlm)
     move_optimizer_to_cuda(optimizer_srl)
 

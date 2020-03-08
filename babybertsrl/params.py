@@ -17,19 +17,23 @@ while the reduction in dev-f1 is minimal.
 srl_probability=1.0 results in best dev-f1 than any lower value when MLM epochs = 1.
 when lower than 1.0, performance degrades, suggesting strong competition between SRL and MLM tasks.
 
-vocabulary sizes 2K and 16K do not influence end-of-training dev-f1 compared to vocab_size=4K
+vocabulary sizes 2K and 16K do not influence end-of-training dev-f1 compared to vocab_size=4K.
+
+any more dropout than 0.1 worsens dev-pp but does not affect dev-f1.
+
+num_layers < 6 results in worse dev-f1.
+
+more than 0.01 weight_decay results in both worse dev-pp and dev-f1.
+
+when learning rate is 1e-4, performance is as good as but faster than 1e-5, and any lower than 1e-5 is too slow
 
 TODO:
-* dropout
-* learning rate
-* learning rate schedule
-* weight smoothing
 * regularization ?
 
 """
 
 param2requests = {
-    'embedding_dropout': [0.0, 0.1, 0.2, 0.3, 0.4],
+    'lr': [1e-7, 1e-6, 1e-5, 1e-4],
 }
 
 # With num_masked=1, made 0,575,465 utterances -> 035,966 train MLM batches (when batch-size=16)
@@ -41,16 +45,17 @@ param2debug = {
 }
 
 param2default = {
-    'batch_size': 16,  # 16 is slightly better than 32, and 32 is better than 128
-    'embedding_dropout': 0.1,  # originally 0.1
+    'batch_size': 16,
+    'embedding_dropout': 0.1,
+    'lr': 1e-4,
     'hidden_size': 128,
-    'num_layers': 8,  # 6 is better than any lower number
+    'num_layers': 8,
     'num_attention_heads': 8,
     'intermediate_size': 256,
     'srl_interleaved': True,
-    'srl_probability': 1.0,  # any less is worse, any more is unnecessary, even with 1 MLM epoch
+    'srl_probability': 1.0,
     'num_mlm_epochs': 1,
-    'num_masked': 4,
+    'num_masked': 3,
     'corpus_name': 'childes-20191206',
-    'vocab_size': 4000,  # very robust with respect to dev-f1
+    'vocab_size': 4000,
 }
