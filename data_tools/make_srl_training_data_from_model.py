@@ -73,7 +73,7 @@ it = gen_instances()
 progress_bar = pyprind.ProgBar(len(utterances) // BATCH_SIZE, stream=1)
 num_no_verb = 0
 num_only_verb = 0
-lines = []
+lines = set()
 outer_loop = True
 while outer_loop:
 
@@ -121,7 +121,7 @@ while outer_loop:
             else:
                 raise SystemExit('Quit')
 
-        lines.append(line)
+        lines.add(line)
 
     progress_bar.update()
 
@@ -132,9 +132,7 @@ print(f'Skipped {num_only_verb} utterances due to presence of only B-V tag')
 print(f'Writing {len(lines)} lines to file...')
 srl_path = config.Dirs.data / 'training' / f'{CORPUS_NAME}_srl.txt'
 with srl_path.open('w') as f:
-    for line in lines:
-
-        f.write(line + '\n')  # TODO exclude duplicate lines - this ensures that final count is number of unique lines
-
-        # TODO do not write '\n' at end of file
-
+    for n, line in enumerate(lines):
+        f.write(line)
+        if n + 1 != len(lines):  # do not write '\n' at end of file
+            f.write('\n')

@@ -65,7 +65,7 @@ def main(param2val):
     project_path = Path(param2val['project_path'])
     srl_eval_path = project_path / 'perl' / 'srl-eval.pl'
     data_path_mlm = project_path / 'data' / 'training' / f'{params.corpus_name}_mlm.txt'
-    data_path_train_srl = project_path / 'data' / 'training' / f'{params.corpus_name}_srl.txt'
+    data_path_train_srl = project_path / 'data' / 'training' / f'{params.corpus_name}_no-dev_srl.txt'
     data_path_devel_srl = project_path / 'data' / 'training' / f'human-based-2018_srl.txt'
     data_path_test_srl = project_path / 'data' / 'training' / f'human-based-2008_srl.txt'
     vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab.txt'

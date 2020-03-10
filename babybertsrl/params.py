@@ -27,8 +27,9 @@ more than 0.01 weight_decay results in both worse dev-pp and dev-f1.
 
 when learning rate is 1e-4, performance is as good as but faster than 1e-5, and any lower than 1e-5 is too slow
 
-TODO:
-* regularization ?
+Notes:
+    because best performance on both MLM and SRL are achieved when interleaved compared to sequential,
+    this suggests that hypothesis space at last layer in BERT is still very unconstrained.
 
 """
 
