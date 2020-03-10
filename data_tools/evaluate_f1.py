@@ -106,7 +106,7 @@ predictor = Predictor.from_path("https://s3-us-west-2.amazonaws.com/allennlp/mod
 
 # scorer
 srl_eval_path = config.Dirs.root / 'perl' / 'srl-eval.pl'
-span_metric = SrlEvalScorer(srl_eval_path, ignore_classes=['V'])
+scorer = SrlEvalScorer(srl_eval_path, ignore_classes=['V'])
 
 
 gold_path = config.Dirs.data / 'training' / f'{CORPUS_NAME}_srl.txt'
@@ -129,20 +129,17 @@ for n, (instance, md) in enumerate(gen_instances(gold_path)):
     print(batch_conll_gold_tags)
 
     # update signal detection metrics
-    span_metric(batch_verb_indices,
-                batch_sentences,
-                batch_conll_predicted_tags,
-                batch_conll_gold_tags)
+    scorer(batch_verb_indices,
+           batch_sentences,
+           batch_conll_predicted_tags,
+           batch_conll_gold_tags)
 
-    f1 = span_metric.get_metric(reset=False)['f1-measure-overall']
-    print(f'proposition={n:>6,} f1={f1:.4f}')
+    tag2metrics = scorer.get_tag2metrics(reset=False)
+    print(f'proposition={n:>6,} f1={tag2metrics["overall"]["f1"]:.4f}')
     print()
 
-# compute f1 on accumulated signal detection metrics and reset
-metric_dict = span_metric.get_metric(reset=True)
+# compute f1 on accumulated signal detection metrics for each tag and reset
+tag2metrics = scorer.get_tag2metrics(reset=True)
 
 # print f1 summary by tag
-for k, v in sorted(metric_dict.items()):
-    if k.startswith('f1-measure-'):
-        tag = k.lstrip('f1-measure-')
-        print(f"{tag:>16} f1={v: .2f}")
+scorer.print_summary(tag2metrics)

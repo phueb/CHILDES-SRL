@@ -34,7 +34,7 @@ Notes:
 """
 
 param2requests = {
-    'lr': [1e-7, 1e-6, 1e-5, 1e-4],
+    'intermediate_size': [32, 64, 128, 256],
 }
 
 # With num_masked=1, made 0,575,465 utterances -> 035,966 train MLM batches (when batch-size=16)

@@ -1,6 +1,7 @@
 import torch
-from typing import Iterator
+from typing import Iterator, Optional
 from pathlib import Path
+import pandas as pd
 
 from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
 from babybertsrl.model_mt import MTBert
@@ -59,11 +60,12 @@ def evaluate_model_on_pp(model: MTBert,
 def evaluate_model_on_f1(model: MTBert,
                          srl_eval_path: Path,
                          instances_generator: Iterator,
+                         save_path: Optional[Path] = None,
                          print_tag_metrics: bool = False,
                          ) -> float:
 
-    span_metric = SrlEvalScorer(srl_eval_path,
-                                ignore_classes=['V'])
+    scorer = SrlEvalScorer(srl_eval_path,
+                           ignore_classes=['V'])
 
     model.eval()
     for step, batch in enumerate(instances_generator):
@@ -85,21 +87,25 @@ def evaluate_model_on_f1(model: MTBert,
                                  tags in batch_bio_gold_tags]
 
         # update signal detection metrics
-        span_metric(batch_verb_indices,
-                    batch_sentences,
-                    batch_conll_predicted_tags,
-                    batch_conll_gold_tags)
+        scorer(batch_verb_indices,
+               batch_sentences,
+               batch_conll_predicted_tags,
+               batch_conll_gold_tags)
 
     # compute f1 on accumulated signal detection metrics and reset
-    metric_dict = span_metric.get_metric(reset=True)
-
-    # TODO write the by-tag summary to a text or csv file
+    tag2metrics = scorer.get_tag2metrics(reset=True)
 
     # print f1 summary by tag
     if print_tag_metrics:
-        for k, v in sorted(metric_dict.items()):
-            if k.startswith('f1-measure-'):
-                tag = k.lstrip('f1-measure-')
-                print(f"{tag:>16} f1={v: .2f}")
+        scorer.print_summary(tag2metrics)
 
-    return metric_dict['f1-measure-overall']
+    # save tag f1 dict to csv
+    if save_path is not None:
+        try:
+            out_path = save_path / 'f1_by_tag.csv'
+            df = pd.DataFrame(data=tag2metrics)
+            df.to_csv(out_path)
+        except:
+            print('WARNING: Failed to save data frame with f1 by tag information.')  # TODO test
+
+    return tag2metrics['overall']['f1']

@@ -110,23 +110,24 @@ class SrlEvalScorer:
                 self._false_negatives[tag] += num_missed
         shutil.rmtree(tempdir)
 
-    def get_metric(self, reset: bool = False,
-                   ) -> Dict[str, float]:
+    def get_tag2metrics(self,
+                        reset: bool = False,
+                        ) -> Dict[str, Dict[str, float]]:
         """
+        modified by PH March 2020
+
         Returns
         -------
         A Dict per label containing following the span based metrics:
         precision : float
         recall : float
         f1-measure : float
-        Additionally, an ``overall`` key is included, which provides the precision,
-        recall and f1-measure for all spans.
         """
         all_tags = set()
         all_tags.update(self._true_positives.keys())
         all_tags.update(self._false_positives.keys())
         all_tags.update(self._false_negatives.keys())
-        all_metrics = {}
+        res = {}
         for tag in all_tags:
             if tag == "overall":
                 raise ValueError("'overall' is disallowed as a tag type, "
@@ -134,23 +135,32 @@ class SrlEvalScorer:
             precision, recall, f1_measure = self._compute_metrics(self._true_positives[tag],
                                                                   self._false_positives[tag],
                                                                   self._false_negatives[tag])
-            precision_key = "precision" + "-" + tag
-            recall_key = "recall" + "-" + tag
-            f1_key = "f1-measure" + "-" + tag
-            all_metrics[precision_key] = precision
-            all_metrics[recall_key] = recall
-            all_metrics[f1_key] = f1_measure
+            res[tag] = {'precision': precision,
+                        'recall': recall,
+                        'f1': f1_measure}
 
-        # Compute the precision, recall and f1 for all spans jointly.
-        precision, recall, f1_measure = self._compute_metrics(sum(self._true_positives.values()),
-                                                              sum(self._false_positives.values()),
-                                                              sum(self._false_negatives.values()))
-        all_metrics['precision-overall'] = precision
-        all_metrics['recall-overall'] = recall
-        all_metrics['f1-measure-overall'] = f1_measure
+        # add overall metrics
+        precision, recall, f1_measure = self._compute_metrics(
+            sum(self._true_positives.values()),
+            sum(self._false_positives.values()),
+            sum(self._false_negatives.values()))
+        res['overall'] = {'precision': precision,
+                          'recall': recall,
+                          'f1': f1_measure}
+
         if reset:
             self.reset()
-        return all_metrics
+        return res
+
+    @staticmethod
+    def print_summary(tag2metrics):
+        """
+        added by PH March 2020
+        """
+        for tag, metrics in sorted(tag2metrics.items()):
+            print(tag)
+            for k, v in metrics.items():
+                print(f'\t{k:<12}={v:>.2f}')
 
     @staticmethod
     def _compute_metrics(true_positives: int, false_positives: int, false_negatives: int):
