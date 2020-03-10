@@ -143,3 +143,6 @@ tag2metrics = scorer.get_tag2metrics(reset=True)
 
 # print f1 summary by tag
 scorer.print_summary(tag2metrics)
+
+# save
+scorer.save_tag2metrics(Path(f'model_vs_{CORPUS_NAME}_f1.csv'), tag2metrics)

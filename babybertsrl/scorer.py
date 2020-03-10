@@ -1,7 +1,9 @@
 """
 Code obtained from Allen AI NLP toolkit in September 2019
+Modified by PH March 2020
 """
 
+import pandas as pd
 from typing import Optional, List, Dict, TextIO
 import os
 import shutil
@@ -153,7 +155,8 @@ class SrlEvalScorer:
         return res
 
     @staticmethod
-    def print_summary(tag2metrics):
+    def print_summary(tag2metrics: Dict[str, Dict[str, float]],
+                      ) -> None:
         """
         added by PH March 2020
         """
@@ -161,6 +164,17 @@ class SrlEvalScorer:
             print(tag)
             for k, v in metrics.items():
                 print(f'\t{k:<12}={v:>.2f}')
+
+    @staticmethod
+    def save_tag2metrics(out_path: Path,
+                         tag2metrics: Dict[str, Dict[str, float]],
+                         rounding: int = 4,
+                         ) -> None:
+        """
+        added by ph March 2020
+        """
+        df = pd.DataFrame(data=tag2metrics).round(rounding)
+        df.to_csv(out_path)
 
     @staticmethod
     def _compute_metrics(true_positives: int, false_positives: int, false_negatives: int):

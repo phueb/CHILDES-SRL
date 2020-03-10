@@ -101,11 +101,7 @@ def evaluate_model_on_f1(model: MTBert,
 
     # save tag f1 dict to csv
     if save_path is not None:
-        try:
-            out_path = save_path / 'f1_by_tag.csv'
-            df = pd.DataFrame(data=tag2metrics)
-            df.to_csv(out_path)
-        except:
-            print('WARNING: Failed to save data frame with f1 by tag information.')  # TODO test
+        out_path = save_path / 'f1_by_tag.csv'
+        scorer.save_tag2metrics(out_path, tag2metrics)
 
     return tag2metrics['overall']['f1']
