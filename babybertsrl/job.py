@@ -260,7 +260,7 @@ def main(param2val):
 
     # test sentences
     test_generator_mlm = bucket_batcher_mlm(test_instances_mlm, num_epochs=1)
-    predict_masked_sentences(mt_bert, test_generator_mlm)
+    predict_masked_sentences(mt_bert, test_generator_mlm, save_path, step)
 
     # put train-pp and train-f1 into pandas Series
     s1 = pd.Series([train_pp], index=[eval_steps[-1]])
