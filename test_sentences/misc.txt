@@ -1,0 +1,7 @@
+# verb and noun are matched semantically
+do you want to READ the book ?
+are you READING the book ?
+who is READING the book ?
+you are READING the book .
+the book you want to READ is here.
+

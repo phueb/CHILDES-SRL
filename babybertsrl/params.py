@@ -25,7 +25,12 @@ num_layers < 6 results in worse dev-f1.
 
 more than 0.01 weight_decay results in both worse dev-pp and dev-f1.
 
-when learning rate is 1e-4, performance is as good as but faster than 1e-5, and any lower than 1e-5 is too slow
+when learning rate is 1e-4, performance is as good as but faster than 1e-5, and any lower than 1e-5 is too slow.
+
+performance is very robust with respect to intermediate_size, with 32 being slightly worse than 64
+
+best dev-pp is strongly dependent on large hidden size: 256 is much better than 128 or 64,
+and larger hidden sizes speed dev-f1 but do not affect end-of training dev-f1
 
 Notes:
     because best performance on both MLM and SRL are achieved when interleaved compared to sequential,
@@ -34,7 +39,7 @@ Notes:
 """
 
 param2requests = {
-    'intermediate_size': [32, 64, 128, 256],
+    'hidden_size': [32, 64, 128, 256],
 }
 
 # With num_masked=1, made 0,575,465 utterances -> 035,966 train MLM batches (when batch-size=16)
@@ -49,10 +54,10 @@ param2default = {
     'batch_size': 16,
     'embedding_dropout': 0.1,
     'lr': 1e-4,
-    'hidden_size': 128,
+    'hidden_size': 256,
     'num_layers': 8,
     'num_attention_heads': 8,
-    'intermediate_size': 256,
+    'intermediate_size': 64,
     'srl_interleaved': True,
     'srl_probability': 1.0,
     'num_mlm_epochs': 1,

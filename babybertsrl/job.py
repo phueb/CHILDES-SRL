@@ -63,6 +63,7 @@ def main(param2val):
 
     #  paths
     project_path = Path(param2val['project_path'])
+    save_path = Path(param2val['save_path'])
     srl_eval_path = project_path / 'perl' / 'srl-eval.pl'
     data_path_mlm = project_path / 'data' / 'training' / f'{params.corpus_name}_mlm.txt'
     data_path_train_srl = project_path / 'data' / 'training' / f'{params.corpus_name}_no-dev_srl.txt'
@@ -215,15 +216,15 @@ def main(param2val):
             eval_steps.append(step)
 
             # evaluate perplexity
-            devel_generator_mlm = bucket_batcher_mlm(devel_instances_mlm, num_epochs=1)
+            devel_generator_mlm = bucket_batcher_mlm_large(devel_instances_mlm, num_epochs=1)
             devel_pp = evaluate_model_on_pp(mt_bert, devel_generator_mlm)
             name2col['devel_pps'].append(devel_pp)
             print(f'devel-pp={devel_pp}', flush=True)
 
             # test sentences
             if config.Eval.test_sentences:
-                test_generator_mlm = bucket_batcher_mlm(test_instances_mlm, num_epochs=1)
-                predict_masked_sentences(mt_bert, test_generator_mlm)
+                test_generator_mlm = bucket_batcher_mlm_large(test_instances_mlm, num_epochs=1)
+                predict_masked_sentences(mt_bert, test_generator_mlm, save_path, step)
 
             # evaluate devel f1
             devel_generator_srl = bucket_batcher_srl_large(devel_instances_srl, num_epochs=1)

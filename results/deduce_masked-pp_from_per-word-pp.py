@@ -14,3 +14,9 @@ length = 4
 per_word_pp = 3.4
 masked_pp = deduce_masked_pp(per_word_pp, length)
 assert (masked_pp + length - 1) / length == per_word_pp
+
+
+print(deduce_masked_pp(1.38, 4))
+print(deduce_masked_pp(1.38, 5))
+print(deduce_masked_pp(1.38, 6))
+print(deduce_masked_pp(1.38, 7))
