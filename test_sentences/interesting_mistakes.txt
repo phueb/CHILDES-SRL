@@ -1,0 +1,172 @@
+
+# interesting mistakes
+              [MASK]                 what                 okay
+                  do                   do                   do
+                 you                  you                  you
+                want                 want                 want
+               jelly                jelly                jelly
+                   ?                    ?                    ?
+
+                 you                  you                  you
+                want                 want                 want
+                that                 that                 that
+                 one                  one                  one
+              [MASK]                  too                  off
+                 too                  too                  too
+                   ?
+
+                your                 your                 your
+            balloons             balloons             balloons
+              [MASK]                   is                   on
+                your                 your                 your
+             peepish                [UNK]              peepish
+                   ?
+
+                that                 that                 that
+               makes                makes                makes
+                  it                   it                   it
+                   a                    a                    a
+            trombone                [UNK]             trombone
+              [MASK]                    .                    !
+
+                what                 what                 what
+              [MASK]                   's                 does
+                 the                  the                  the
+               mouse                mouse                mouse
+                 say                  say                  say
+                   ?                    ?                    ?
+
+                what                 what                 what
+              [MASK]                   's                 does
+                 the                  the                  the
+               train                train                train
+                 say                  say                  say
+                   ?                    ?                    ?
+
+              [MASK]               [NAME]            thank_you
+                 and                  and                  and
+                what                 what                 what
+               would                would                would
+                 you                  you                  you
+                like                 like                 like
+                   ?                    ?                    ?
+
+              [MASK]                   it                 that
+                  's                   's                   's
+                  at                   at                   at
+               Angel                [UNK]                Angel
+                Care                [UNK]                 Care
+                   ?                    ?                    ?
+
+              [MASK]                   it                 that
+                  's                   's                   's
+                  at                   at                   at
+               Angel                [UNK]                Angel
+                Care                [UNK]                 Care
+                   ?                    ?                    ?
+
+              [MASK]                  get                 made
+                 out                  out                  out
+                  of                   of                   of
+                 koa                [UNK]                  koa
+               seeds                seeds                seeds
+                   .                    .                    .
+
+              [MASK]               [NAME]                 Mazy
+                 has                  has                  has
+                   a                    a                    a
+           magicians                [UNK]            magicians
+                 hat                  hat                  hat
+                  on                   on                   on
+                   ?                    ?                    ?
+
+              [MASK]               [NAME]                 Mazy
+                 has                  has                  has
+                   a                    a                    a
+           magicians                [UNK]            magicians
+                 hat                  hat                  hat
+                  on                   on                   on
+                   ?                    ?                    ?
+
+                what                 what                 what
+                 are                  are                  are
+              [MASK]                  you                those
+                  on                   on                   on
+                 his                  his                  his
+              cheeks               cheeks               cheeks
+                   ?                    ?                    ?
+
+              [MASK]                there                 when
+                  he                   he                   he
+                 was                  was                  was
+              little               little               little
+              little               little               little
+                   .                    .                    .
+
+                they                 they                 they
+                  ca                   ca                   ca
+                 n't                  n't                  n't
+               carry                carry                carry
+                 you                  you                  you
+              [MASK]                 know             anyplace
+                   .                    .                    .
+
+                 you                  you                  you
+                want                 want                 want
+                  me                   me                   me
+               choke                choke                choke
+                your                 your                 your
+              [MASK]                hands                 neck
+                   ?                    ?                    ?
+
+                 you                  you                  you
+                 did                  did                  did
+                 n't                  n't                  n't
+              [MASK]                 want                shoot
+                 her                  her                  her
+            anything             anything             anything
+                   ?                    ?                    ?
+
+                yeah                 yeah                 yeah
+             spiders              spiders              spiders
+                live                 live                 live
+              [MASK]                  the                   on
+                webs                 webs                 webs
+                   .                    .                    .
+
+                does                 does                 does
+              [MASK]                   it               anyone
+                ever                 ever                 ever
+              listen               listen               listen
+                  to                   to                   to
+                 you                  you                  you
+                   .                    .                    .
+
+                 you                  you                  you
+               wanna                wanna                wanna
+                play                 play                 play
+                with                 with                 with
+              [MASK]                 what            something
+                else                 else                 else
+                   ?                    ?                    ?
+
+                look                 look                 look
+                  at                   at                   at
+               these                these                these
+               green                green                green
+              [MASK]                 book               chairs
+                   .                    .                    .
+
+              [MASK]                 pick                  sit
+                  up                   up                   up
+              before               before               before
+                 you                  you                  you
+               choke                choke                choke
+                   .                    .                    .
+
+                 the                  the                  the
+                 boy                  boy                  boy
+              [MASK]                   's                  did
+                 not                  not                  not
+               sleep                sleep                sleep
+                   .                    .                    .

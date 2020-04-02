@@ -1,0 +1,9 @@
+# VERB-SYNTACTIC
+do you want to READ>GIVE the book ?
+
+# VERB-SEMANTIC
+PICK>STEAL the apple from the tree .
+
+# VERB-SEMANTIC+SYNTACTIC
+CLEAN>THINK your room .
+
