@@ -27,7 +27,9 @@ def load_vocab(vocab_file, vocab_size):
     return vocab
 
 
-def split(data: List):
+def split(data: List, seed: int = 2):
+
+    random.seed(seed)
 
     train = []
     devel = []
