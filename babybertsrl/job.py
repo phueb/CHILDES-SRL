@@ -79,6 +79,7 @@ def main(param2val):
     assert vocab['[SEP]'] == 3
     assert vocab['[MASK]'] == 4
     wordpiece_tokenizer = WordpieceTokenizer(vocab)
+    print(f'Number of types in vocab={len(vocab)}')
 
     # load utterances for MLM task
     utterances = load_utterances_from_file(data_path_mlm)
@@ -121,8 +122,8 @@ def main(param2val):
     # make vocab from all instances
     output_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)
     output_vocab_srl = Vocabulary.from_instances(all_instances_srl)
-    output_vocab_mlm.print_statistics()
-    output_vocab_srl.print_statistics()
+    # print(f'mlm vocab size={output_vocab_mlm.get_vocab_size()}')  # contain just 2 tokens
+    # print(f'srl vocab size={output_vocab_srl.get_vocab_size()}')  # contain just 2 tokens
     assert output_vocab_mlm.get_vocab_size('tokens') == output_vocab_srl.get_vocab_size('tokens')
 
     # BERT
@@ -184,6 +185,7 @@ def main(param2val):
         max_step = num_train_mlm_batches * 2
     print(f'Will stop training at step={max_step:,}')
 
+
     while step < max_step:
 
         # TRAINING
@@ -224,7 +226,32 @@ def main(param2val):
             # test sentences
             if config.Eval.test_sentences:
                 test_generator_mlm = bucket_batcher_mlm_large(test_instances_mlm, num_epochs=1)
-                predict_masked_sentences(mt_bert, test_generator_mlm, save_path, step)
+                out_path = save_path / f'test_split_mlm_results_{step}.txt'
+                predict_masked_sentences(mt_bert, test_generator_mlm, out_path)
+
+            # probing - test sentences for specific syntactic tasks
+            for name in config.Eval.probing_names:
+                # prepare data
+                probing_data_path_mlm = project_path / 'data' / 'probing' / f'{name}.txt'
+                if not probing_data_path_mlm.exists():
+                    print(f'WARNING: {probing_data_path_mlm} does not exist')
+                    continue
+                probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
+
+                # TODO check vocab
+                for u in probing_utterances_mlm:
+                    print(u)
+                    for w in u:
+                        if w == '[MASK]':
+                            continue  # not in output vocab
+                        print(w)
+                        assert output_vocab_mlm.get_token_index(w, namespace='labels'), w
+
+                probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
+                # batch and do inference
+                probing_generator_mlm = bucket_batcher_mlm(probing_instances_mlm, num_epochs=1)
+                out_path = save_path / f'probing_{name}_results_{step}.txt'
+                predict_masked_sentences(mt_bert, probing_generator_mlm, out_path, verbose=True)
 
             # evaluate devel f1
             devel_generator_srl = bucket_batcher_srl_large(devel_instances_srl, num_epochs=1)
@@ -259,8 +286,24 @@ def main(param2val):
     print(f'train-f1={train_f1}', flush=True)
 
     # test sentences
-    test_generator_mlm = bucket_batcher_mlm(test_instances_mlm, num_epochs=1)
-    predict_masked_sentences(mt_bert, test_generator_mlm, save_path, step)
+    if config.Eval.test_sentences:
+        test_generator_mlm = bucket_batcher_mlm(test_instances_mlm, num_epochs=1)
+        out_path = save_path / f'test_split_mlm_results_{step}.txt'
+        predict_masked_sentences(mt_bert, test_generator_mlm, out_path)
+
+    # probing - test sentences for specific syntactic tasks
+    for name in config.Eval.probing_names:
+        # prepare data
+        probing_data_path_mlm = project_path / 'data' / 'probing' / f'{name}.txt'
+        if not probing_data_path_mlm.exists():
+            print(f'WARNING: {probing_data_path_mlm} does not exist')
+            continue
+        probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
+        probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
+        # batch and do inference
+        probing_generator_mlm = bucket_batcher_mlm(probing_instances_mlm, num_epochs=1)
+        out_path = save_path / f'probing_{name}_results_{step}.txt'
+        predict_masked_sentences(mt_bert, probing_generator_mlm, out_path)
 
     # put train-pp and train-f1 into pandas Series
     s1 = pd.Series([train_pp], index=[eval_steps[-1]])

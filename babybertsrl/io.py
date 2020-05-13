@@ -58,6 +58,9 @@ def load_utterances_from_file(file_path: Path,
     """
     load utterances for language modeling from text file
     """
+
+    print(f'Loading {file_path}')
+
     res = []
     punctuation = {'.', '?', '!'}
     num_too_small = 0
@@ -110,6 +113,8 @@ def load_propositions_from_file(file_path):
     Return:
         A list with elements of structure [[words], predicate position, [labels]]
     """
+
+    print(f'Loading {file_path}')
 
     num_too_small = 0
     num_too_large = 0

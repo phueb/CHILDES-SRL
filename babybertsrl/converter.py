@@ -1,4 +1,4 @@
-from typing import Iterator, List, Tuple, Optional
+from typing import Iterator, List, Tuple, Union
 import numpy as np
 
 from pytorch_pretrained_bert.tokenization import WordpieceTokenizer
@@ -17,7 +17,7 @@ def prepare_utterance_for_instance(words: List[str],
 
     mlm_in = ['[MASK]' if i == masked_id else words[i] for i in range(len(words))]
     mlm_mask = [1 if i == masked_id else 0 for i in range(len(words))]
-    mlm_tags = words
+    mlm_tags = [w if w != '[MASK]' else '[UNK]' for w in words]  # [MASK] symbol is not in output vocab
 
     if all([x == 0 for x in mlm_mask]):
         raise ValueError('Mask indicator contains zeros only. ')
@@ -82,7 +82,8 @@ class ConverterMLM:
 
         return Instance(fields)
 
-    def make_instances(self, utterances:  List[List[str]],
+    def make_instances(self,
+                       utterances:  List[List[str]],
                        ) -> List[Instance]:
         """
         convert on utterance into possibly multiple Allen NLP instances
@@ -102,6 +103,25 @@ class ConverterMLM:
                 res.append(instance)
 
         print(f'With num_masked={self.params.num_masked}, made {len(res)} utterances')
+
+        return res
+
+    def make_probing_instances(self,
+                               utterances:  List[List[str]],
+                               ) -> List[Instance]:
+        """
+        convert on utterance into exactly one Allen NLP instances - WITHOUT MASKING (assuming masking is already done)
+
+        """
+        res = []
+        for utterance in utterances:
+            # collect instance
+            masked_id = utterance.index('[MASK]')
+            mlm_in, mlm_mask, mlm_tags = prepare_utterance_for_instance(utterance, masked_id)
+            instance = self._text_to_instance(mlm_in, mlm_mask, mlm_tags)
+            res.append(instance)
+
+        print(f'Without masking, made {len(res)} utterances')
 
         return res
 

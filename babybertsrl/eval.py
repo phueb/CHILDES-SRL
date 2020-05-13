@@ -1,7 +1,6 @@
 import torch
 from typing import Iterator, Optional
 from pathlib import Path
-import pandas as pd
 
 from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
 from babybertsrl.model_mt import MTBert
@@ -9,12 +8,9 @@ from babybertsrl.model_mt import MTBert
 
 def predict_masked_sentences(model: MTBert,
                              instances_generator: Iterator,
-                             save_path: Path,
-                             step: int,
+                             out_path: Path,
                              verbose: bool = False):
     model.eval()
-
-    out_path = save_path / f'test_split_mlm_results_{step}.txt'
 
     # get batch
     batch = next(instances_generator)
@@ -32,11 +28,13 @@ def predict_masked_sentences(model: MTBert,
     assert len(mlm_in) == len(predicted_mlm_tags) == len(gold_mlm_tags)
 
     # save to file
-    print(f'Saving test MLM results to {out_path}')
+    print(f'Saving MLM prediction results to {out_path}')
     with out_path.open('w') as f:
         for a, b, c in zip(mlm_in, predicted_mlm_tags, gold_mlm_tags):
             for ai, bi, ci in zip(a, b, c):
                 f.write(f'{ai:>20} {bi:>20} {ci:>20}\n')
+                if verbose:
+                    print(f'{ai:>20} {bi:>20} {ci:>20}\n')
             f.write('\n')
     print('Done')
 

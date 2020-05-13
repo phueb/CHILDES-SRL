@@ -7,10 +7,6 @@ class Dirs:
     data_tools = root / 'data_tools'
 
 
-class Global:
-    debug = False
-
-
 class Data:
     min_input_length = 3
     max_input_length = 128
@@ -19,9 +15,16 @@ class Data:
 
 class Eval:
     interval = 1000
-    test_sentences = True
+    test_sentences = False
     train_split = False
     print_perl_script_output = False  # happens at every batch so not very useful
+
+    probing_names = [
+        'dummy',
+        'agreement_across_adjectives',
+        'agreement_across_PP',
+        'agreement_across_RC'
+    ]
 
 
 

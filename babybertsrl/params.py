@@ -32,6 +32,8 @@ performance is very robust with respect to intermediate_size, with 32 being slig
 best dev-pp is strongly dependent on large hidden size: 256 is much better than 128 or 64,
 and larger hidden sizes speed dev-f1 but do not affect end-of training dev-f1
 
+best hidden size is 256, any lower increases dev-pp
+
 Notes:
     because best performance on both MLM and SRL are achieved when interleaved compared to sequential,
     this suggests that hypothesis space at last layer in BERT is still very unconstrained.
@@ -39,7 +41,7 @@ Notes:
 """
 
 param2requests = {
-    'hidden_size': [32, 64, 128, 256],
+    'srl_interleaved': [True, False],
 }
 
 # With num_masked=1, made 0,575,465 utterances -> 035,966 train MLM batches (when batch-size=16)
@@ -63,5 +65,5 @@ param2default = {
     'num_mlm_epochs': 1,
     'num_masked': 3,
     'corpus_name': 'childes-20191206',
-    'vocab_size': 4000,
+    'vocab_size': 4096,
 }
