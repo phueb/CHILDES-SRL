@@ -237,8 +237,7 @@ def main(param2val):
                     print(f'WARNING: {probing_data_path_mlm} does not exist')
                     continue
                 probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
-
-                # TODO check vocab
+                # check that probing words are in vocab
                 for u in probing_utterances_mlm:
                     print(u)
                     for w in u:
@@ -246,12 +245,11 @@ def main(param2val):
                             continue  # not in output vocab
                         print(w)
                         assert output_vocab_mlm.get_token_index(w, namespace='labels'), w
-
+                # probing + save results to text
                 probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
-                # batch and do inference
                 probing_generator_mlm = bucket_batcher_mlm(probing_instances_mlm, num_epochs=1)
                 out_path = save_path / f'probing_{name}_results_{step}.txt'
-                predict_masked_sentences(mt_bert, probing_generator_mlm, out_path, verbose=True)
+                predict_masked_sentences(mt_bert, probing_generator_mlm, out_path, print_gold=False, verbose=True)
 
             # evaluate devel f1
             devel_generator_srl = bucket_batcher_srl_large(devel_instances_srl, num_epochs=1)

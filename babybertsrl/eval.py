@@ -9,32 +9,41 @@ from babybertsrl.model_mt import MTBert
 def predict_masked_sentences(model: MTBert,
                              instances_generator: Iterator,
                              out_path: Path,
+                             print_gold: bool = True,
                              verbose: bool = False):
     model.eval()
 
+    mlm_in = []
+    predicted_mlm_tags = []
+    gold_mlm_tags = []
+
     # get batch
-    batch = next(instances_generator)
+    for batch in instances_generator:
 
-    # TODO currently only first batch in test split is considered
+        # TODO test using all batches
 
-    # get predictions
-    with torch.no_grad():
-        output_dict = model(task='mlm', **batch)  # input is dict[str, tensor]
+        # get predictions
+        with torch.no_grad():
+            output_dict = model(task='mlm', **batch)  # input is dict[str, tensor]
 
-    # show results only for whole-words
-    mlm_in = output_dict['in']
-    predicted_mlm_tags = model.decode(output_dict, task='mlm')
-    gold_mlm_tags = output_dict['gold_tags']
-    assert len(mlm_in) == len(predicted_mlm_tags) == len(gold_mlm_tags)
+        # show results only for whole-words
+        mlm_in += output_dict['in']
+        predicted_mlm_tags += model.decode(output_dict, task='mlm')
+        gold_mlm_tags += output_dict['gold_tags']
+        assert len(mlm_in) == len(predicted_mlm_tags) == len(gold_mlm_tags)
 
     # save to file
     print(f'Saving MLM prediction results to {out_path}')
     with out_path.open('w') as f:
         for a, b, c in zip(mlm_in, predicted_mlm_tags, gold_mlm_tags):
             for ai, bi, ci in zip(a, b, c):
-                f.write(f'{ai:>20} {bi:>20} {ci:>20}\n')
+                if print_gold:
+                    line = f'{ai:>20} {bi:>20} {ci:>20}\n'
+                else:
+                    line = f'{ai:>20} {bi:>20}\n'
+                f.write(line)
                 if verbose:
-                    print(f'{ai:>20} {bi:>20} {ci:>20}\n')
+                    print(line)
             f.write('\n')
     print('Done')
 

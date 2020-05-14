@@ -42,6 +42,8 @@ Notes:
 
 param2requests = {
     'srl_interleaved': [True, False],
+    'num_masked': [3, 6],
+    'vocab_size': [8000],
 }
 
 # With num_masked=1, made 0,575,465 utterances -> 035,966 train MLM batches (when batch-size=16)
@@ -65,5 +67,5 @@ param2default = {
     'num_mlm_epochs': 1,
     'num_masked': 3,
     'corpus_name': 'childes-20191206',
-    'vocab_size': 4096,
+    'vocab_size': 4000,
 }
