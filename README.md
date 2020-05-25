@@ -28,6 +28,8 @@ a much smaller BERT than the standard BERT models is trained here.
 For example, compare the architecture specified in `params.py` to the
 architecture of the state-of-the-art BERT-based SRL tagger [here](https://github.com/allenai/allennlp/blob/master/training_config/bert_base_srl.jsonnet)
 
+Moreover, no next-sentence prediction objective is used during training, as was done in the original implementation. This reduces training time, code complexity and [learning two separate semantic spaces](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1117&context=scil).
+
 ## Working with the AllenNLP toolkit
 
 * Utterances are loaded from text file
