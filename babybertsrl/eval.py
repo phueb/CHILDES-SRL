@@ -20,8 +20,6 @@ def predict_masked_sentences(model: MTBert,
     # get batch
     for batch in instances_generator:
 
-        # TODO test using all batches
-
         # get predictions
         with torch.no_grad():
             output_dict = model(task='mlm', **batch)  # input is dict[str, tensor]

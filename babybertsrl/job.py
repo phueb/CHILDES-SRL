@@ -239,11 +239,11 @@ def main(param2val):
                 probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
                 # check that probing words are in vocab
                 for u in probing_utterances_mlm:
-                    print(u)
+                    # print(u)
                     for w in u:
                         if w == '[MASK]':
                             continue  # not in output vocab
-                        print(w)
+                        # print(w)
                         assert output_vocab_mlm.get_token_index(w, namespace='labels'), w
                 # probing + save results to text
                 probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
@@ -301,7 +301,7 @@ def main(param2val):
         # batch and do inference
         probing_generator_mlm = bucket_batcher_mlm(probing_instances_mlm, num_epochs=1)
         out_path = save_path / f'probing_{name}_results_{step}.txt'
-        predict_masked_sentences(mt_bert, probing_generator_mlm, out_path)
+        predict_masked_sentences(mt_bert, probing_generator_mlm, out_path, print_gold=False, verbose=True)
 
     # put train-pp and train-f1 into pandas Series
     s1 = pd.Series([train_pp], index=[eval_steps[-1]])

@@ -1,73 +1,18 @@
-look at this underwater [MASK] .
-look at this blown [MASK] .
-look at this smashed [MASK] .
-look at this smelly [MASK] .
-look at this friendly [MASK] .
-look at this sorta [MASK] .
-look at this kissy [MASK] .
-look at this uncomfortable [MASK] .
-look at this littlest [MASK] .
-look at this happier [MASK] .
-look at this sized [MASK] .
-look at this cranky [MASK] .
-look at this narrow [MASK] .
-look at this grey [MASK] .
-look at this vanilla [MASK] .
-look at this gray [MASK] .
-look at this bottom [MASK] .
-look at this combed [MASK] .
-look at this rotten [MASK] .
-look at this flipped [MASK] .
-look at this tippy [MASK] .
-look at this tangled [MASK] .
-look at this mad [MASK] .
-look at this covered [MASK] .
-look at this enough [MASK] .
-look at this frying [MASK] .
-look at this grownup [MASK] .
-look at this simple [MASK] .
-look at this main [MASK] .
-look at this marvelous [MASK] .
-look at this disappeared [MASK] .
-look at this tighter [MASK] .
-look at this chewy [MASK] .
-look at these sticky [MASK] .
-look at these straight [MASK] .
-look at these camel [MASK] .
-look at these little [MASK] .
-look at these more [MASK] .
-look at these big [MASK] .
-look at these alright [MASK] .
-look at these other [MASK] .
-look at these pretty [MASK] .
-look at these sure [MASK] .
-look at these ready [MASK] .
-look at these first [MASK] .
-look at these mean [MASK] .
-look at these green [MASK] .
-look at these new [MASK] .
-look at these funny [MASK] .
-look at these many [MASK] .
-look at these hard [MASK] .
-look at these great [MASK] .
-look at these careful [MASK] .
-look at these last [MASK] .
-look at these coming [MASK] .
-look at these old [MASK] .
-look at these clean [MASK] .
-look at these different [MASK] .
-look at these cold [MASK] .
-look at these nighttime [MASK] .
-look at these real [MASK] .
-look at these light [MASK] .
-look at these happy [MASK] .
-look at these white [MASK] .
-look at these bad [MASK] .
-look at these red [MASK] .
-look at these bright [MASK] .
-look at these tasty [MASK] .
-look at these tired [MASK] .
-look at these same [MASK] .
-look at these whole [MASK] .
-look at these stuck [MASK] .
-look at these black [MASK] .
+this plus [MASK] .
+this plus higher [MASK] .
+this plus higher dirty [MASK] .
+this sunny [MASK] .
+this sunny attached [MASK] .
+this sunny attached proud [MASK] .
+this whispering [MASK] .
+this whispering excellent [MASK] .
+this whispering excellent underwater [MASK] .
+this giant [MASK] .
+this giant upstairs [MASK] .
+this giant upstairs stuffy [MASK] .
+this fit [MASK] .
+this fit better [MASK] .
+this fit better bitty [MASK] .
+this first [MASK] .
+this first less [MASK] .
+this first less scared [MASK] .

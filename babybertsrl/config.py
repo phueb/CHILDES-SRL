@@ -14,7 +14,7 @@ class Data:
 
 
 class Eval:
-    interval = 1000
+    interval = 10_000
     test_sentences = False
     train_split = False
     print_perl_script_output = False  # happens at every batch so not very useful

@@ -42,11 +42,10 @@ Notes:
 
 param2requests = {
     'srl_interleaved': [True, False],
-    'num_masked': [3, 6],
-    'vocab_size': [8000],
 }
 
 # With num_masked=1, made 0,575,465 utterances -> 035,966 train MLM batches (when batch-size=16)
+# With num_masked=3, made XXXXXXXXX utterances -> 107,964 train MLM batches (when batch-size=16)
 # With num_masked=6, made 2,976,614 utterances -> 186,038 train MLM batches (when batch-size=16)
 
 param2debug = {
