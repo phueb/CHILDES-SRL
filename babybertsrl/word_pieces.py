@@ -91,35 +91,6 @@ def convert_verb_indices_to_wordpiece_indices(verb_indices: List[int],
     return [0] + new_verb_indices + [0]
 
 
-def convert_mlm_mask_to_wordpiece_mlm_mask(mlm_mask: List[int],
-                                           offsets: List[int],
-                                           ) -> List[int]:
-    """
-    written by ph
-
-    Parameters
-    ----------
-    mlm_mask : `List[int]`
-        List of ones and zeros indicating indices of words to be masked
-    offsets : `List[int]`
-        The wordpiece offsets.
-
-    Returns
-    -------
-    The new LM mask
-    """
-    j = 0
-    new_mlm_mask = []
-    for i, offset in enumerate(offsets):
-        indicator = mlm_mask[i]
-        while j < offset:
-            new_mlm_mask.append(indicator)
-            j += 1
-
-    # Add 0 indicators for cls and sep tokens.
-    return [0] + new_mlm_mask + [0]
-
-
 def convert_tags_to_wordpiece_tags(tags: List[str],
                                    offsets: List[int],
                                    ) -> List[str]:

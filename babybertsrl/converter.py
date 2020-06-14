@@ -8,12 +8,11 @@ from allennlp.data import Instance, Token
 from allennlp.data.fields import TextField, SequenceLabelField, MetadataField
 
 from babybertsrl.word_pieces import wordpiece, convert_tags_to_wordpiece_tags, convert_verb_indices_to_wordpiece_indices
-from babybertsrl.word_pieces import convert_mlm_mask_to_wordpiece_mlm_mask
 
 
-def prepare_utterance_for_instance(words: List[str],
-                                   masked_id: int,
-                                   ) -> Tuple[List[str], List[int], List[str]]:
+def mask_one_wordpiece(words: List[str],
+                       masked_id: int,
+                       ) -> Tuple[List[str], List[int], List[str]]:
 
     mlm_in = ['[MASK]' if i == masked_id else words[i] for i in range(len(words))]
     mlm_mask = [1 if i == masked_id else 0 for i in range(len(words))]
@@ -44,40 +43,28 @@ class ConverterMLM:
 
     def _text_to_instance(self,
                           mlm_in: List[str],
-                          mlm_mask: List[int],
+                          mlm_in_wp: List[str],
                           mlm_tags: List[str],
+                          mlm_tags_wp: List[str],
+                          start_offsets: List[int],
+                          mlm_mask_wp: List[int],
                           ) -> Instance:
-
-        # to word-pieces
-        mlm_in_word_pieces, offsets, start_offsets = wordpiece(mlm_in,
-                                                               self.wordpiece_tokenizer,
-                                                               lowercase_input=False)
-        mlm_tags_word_pieces, _, _ = wordpiece(mlm_tags,
-                                               self.wordpiece_tokenizer,
-                                               lowercase_input=False)
-        mlm_mask_word_pieces = convert_mlm_mask_to_wordpiece_mlm_mask(mlm_mask, offsets)
 
         # meta data only has whole words
         metadata_dict = dict()
         metadata_dict['start_offsets'] = start_offsets
         metadata_dict['in'] = mlm_in
-        metadata_dict['masked_indices'] = mlm_mask  # mask is list containing zeros and ones
         metadata_dict['gold_tags'] = mlm_tags  # is just a copy of the input without the mask
 
         # fields
-        tokens = [Token(t, text_id=self.wordpiece_tokenizer.vocab[t]) for t in mlm_in_word_pieces]
+        tokens = [Token(t, text_id=self.wordpiece_tokenizer.vocab[t]) for t in mlm_in_wp]
         text_field = TextField(tokens, self.token_indexers)
 
-        if len(mlm_in_word_pieces) != len(mlm_tags_word_pieces):
-            # the code does not yet support custom word-pieces in vocabulary,
-            # because it does not handle case when masked word is split into word-pieces.
-            # In such a case, input and output length are mismatched.
-            # The output is longer, because it contains more than 1 piece for the masked whole word in the input.
-            raise UserWarning('A word-piece split word was masked. Word pieces are not supported')
+        assert len(mlm_in_wp) == len(mlm_tags_wp)
 
         fields = {'tokens': text_field,
-                  'indicator': SequenceLabelField(mlm_mask_word_pieces, text_field),
-                  'tags': SequenceLabelField(mlm_tags_word_pieces, text_field),
+                  'indicator': SequenceLabelField(mlm_mask_wp, text_field),
+                  'tags': SequenceLabelField(mlm_tags_wp, text_field),
                   'metadata': MetadataField(metadata_dict)}
 
         return Instance(fields)
@@ -88,18 +75,37 @@ class ConverterMLM:
         """
         convert on utterance into possibly multiple Allen NLP instances
 
+
+
+        # TODO 1. convert wo wp 2. mask word in whole-word sequence 3. use offsets to compute wp sequence with [MASK]
+
         """
+
+        raise NotImplementedError
+
         res = []
-        for utterance in utterances:
+        for mlm_in in utterances:
+
+            # to word-pieces (do this BEFORE masking)  TODO test
+            mlm_in_wp, offsets, start_offsets = wordpiece(mlm_in,
+                                                          self.wordpiece_tokenizer,
+                                                          lowercase_input=False)
+            mlm_tags = mlm_in.copy()
+            mlm_tags_wp = mlm_in_wp.copy()
 
             # collect each multiple times, each time with a different masked word
-            utterance_length = len(utterance)
-            num_masked = min(utterance_length, self.params.num_masked)
-            for masked_id in np.random.choice(utterance_length, num_masked, replace=False):
-
-                # collect instance
-                mlm_in, mlm_mask, mlm_tags = prepare_utterance_for_instance(utterance, masked_id)
-                instance = self._text_to_instance(mlm_in, mlm_mask, mlm_tags)
+            num_wps = len(mlm_tags_wp)
+            num_masked = min(num_wps, self.params.num_masked)
+            for masked_id in np.random.choice(num_wps, num_masked, replace=False):
+                # mask
+                mlm_in_wp, mlm_mask_wp, mlm_tags_wp = mask_one_wordpiece(mlm_tags_wp, masked_id)
+                # to instance
+                instance = self._text_to_instance(mlm_in,
+                                                  mlm_in_wp,
+                                                  mlm_tags,
+                                                  mlm_tags_wp,
+                                                  start_offsets,
+                                                  mlm_mask_wp)
                 res.append(instance)
 
         print(f'With num_masked={self.params.num_masked}, made {len(res)} utterances')
@@ -113,12 +119,27 @@ class ConverterMLM:
         convert on utterance into exactly one Allen NLP instances - WITHOUT MASKING (assuming masking is already done)
 
         """
+
         res = []
-        for utterance in utterances:
-            # collect instance
-            masked_id = utterance.index('[MASK]')
-            mlm_in, mlm_mask, mlm_tags = prepare_utterance_for_instance(utterance, masked_id)
-            instance = self._text_to_instance(mlm_in, mlm_mask, mlm_tags)
+        for mlm_in in utterances:
+            # to word-pieces (do this BEFORE masking)  TODO test
+            mlm_in_wp, offsets, start_offsets = wordpiece(mlm_in,
+                                                          self.wordpiece_tokenizer,
+                                                          lowercase_input=False)
+
+            mlm_tags = mlm_in  # irrelevant for probing
+            mlm_tags_wp = mlm_in_wp  # irrelevant for probing
+
+            # mask
+            masked_id = mlm_in.index('[MASK]')
+            mlm_in_wp, mlm_mask_wp, mlm_tags_wp = mask_one_wordpiece(mlm_tags_wp, masked_id)
+            # to instance
+            instance = self._text_to_instance(mlm_in,
+                                              mlm_in_wp,
+                                              mlm_tags,
+                                              mlm_tags_wp,
+                                              start_offsets,
+                                              mlm_mask_wp)
             res.append(instance)
 
         print(f'Without masking, made {len(res)} utterances')
@@ -164,15 +185,15 @@ class ConverterSRL:
                           ) -> Instance:
 
         # to word-pieces
-        srl_in_word_pieces, offsets, start_offsets = wordpiece(srl_in,
-                                                               self.wordpiece_tokenizer,
-                                                               lowercase_input=False)
-        srl_tags_word_pieces = convert_tags_to_wordpiece_tags(srl_tags, offsets)
-        verb_indices_word_pieces = convert_verb_indices_to_wordpiece_indices(srl_verb_indices, offsets)
+        srl_in_wp, offsets, start_offsets = wordpiece(srl_in,
+                                                      self.wordpiece_tokenizer,
+                                                      lowercase_input=False)
+        srl_tags_wp = convert_tags_to_wordpiece_tags(srl_tags, offsets)
+        verb_indices_wp = convert_verb_indices_to_wordpiece_indices(srl_verb_indices, offsets)
 
         # compute verb
         verb_index = srl_verb_indices.index(1)
-        verb = srl_in_word_pieces[verb_index]
+        verb = srl_in_wp[verb_index]
 
         # metadata only has whole words
         metadata_dict = dict()
@@ -183,12 +204,12 @@ class ConverterSRL:
         metadata_dict['gold_tags'] = srl_tags  # non word-piece tags
 
         # fields
-        tokens = [Token(t, text_id=self.wordpiece_tokenizer.vocab[t]) for t in srl_in_word_pieces]
+        tokens = [Token(t, text_id=self.wordpiece_tokenizer.vocab[t]) for t in srl_in_wp]
         text_field = TextField(tokens, self.token_indexers)
 
         fields = {'tokens': text_field,
-                  'indicator': SequenceLabelField(verb_indices_word_pieces, text_field),
-                  'tags': SequenceLabelField(srl_tags_word_pieces, text_field),
+                  'indicator': SequenceLabelField(verb_indices_wp, text_field),
+                  'tags': SequenceLabelField(srl_tags_wp, text_field),
                   'metadata': MetadataField(metadata_dict)}
 
         return Instance(fields)

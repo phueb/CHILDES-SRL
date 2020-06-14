@@ -69,17 +69,20 @@ def main(param2val):
     data_path_train_srl = project_path / 'data' / 'training' / f'{params.corpus_name}_no-dev_srl.txt'
     data_path_devel_srl = project_path / 'data' / 'training' / f'human-based-2018_srl.txt'
     data_path_test_srl = project_path / 'data' / 'training' / f'human-based-2008_srl.txt'
-    vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab.txt'
+    childes_vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab.txt'
+    google_vocab_path = project_path / 'data' / 'bert-base-cased.txt'  # to get word pieces
 
-    # Wordpiece tokenizer - defines input vocabulary
-    vocab = load_vocab(vocab_path, params.vocab_size)
+    # word-piece tokenizer - defines input vocabulary
+    vocab = load_vocab(childes_vocab_path, google_vocab_path, params.vocab_size)
+    # TODO testing google vocab with wordpieces
+
     assert vocab['[PAD]'] == 0  # AllenNLP expects this
     assert vocab['[UNK]'] == 1  # AllenNLP expects this
     assert vocab['[CLS]'] == 2
     assert vocab['[SEP]'] == 3
     assert vocab['[MASK]'] == 4
     wordpiece_tokenizer = WordpieceTokenizer(vocab)
-    print(f'Number of types in vocab={len(vocab)}')
+    print(f'Number of types in vocab={len(vocab):,}')
 
     # load utterances for MLM task
     utterances = load_utterances_from_file(data_path_mlm)

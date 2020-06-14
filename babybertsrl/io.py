@@ -7,8 +7,8 @@ from collections import OrderedDict
 from babybertsrl import config
 
 
-def load_vocab(vocab_file, vocab_size):
-    """Loads a vocabulary file into a dictionary."""
+def load_childes_vocab(vocab_file, vocab_size):
+
     vocab = OrderedDict()
     vocab['[PAD]'] = 0
     vocab['[UNK]'] = 1
@@ -18,12 +18,36 @@ def load_vocab(vocab_file, vocab_size):
     index = 5
     with open(vocab_file, "r", encoding="utf-8") as reader:
         while len(vocab) < vocab_size + 5:
+            line = reader.readline()
+            if not line:
+                break
+            token = line.split()[1]
+            vocab[token] = index
+            index += 1
+    return vocab
+
+
+def load_vocab(childes_vocab_file, google_vocab_file, vocab_size):
+
+    childes_vocab = set([w for w, i in load_childes_vocab(childes_vocab_file, vocab_size).items()])
+    print(childes_vocab)
+
+    vocab = OrderedDict()
+    index = 0
+    with open(google_vocab_file, "r", encoding="utf-8") as reader:
+        while True:
             token = reader.readline()
             if not token:
                 break
-            token = token.split()[1]
+            if token not in childes_vocab:
+                # print(token)
+                continue
+            token = token.strip()
             vocab[token] = index
             index += 1
+
+    print(vocab)
+
     return vocab
 
 

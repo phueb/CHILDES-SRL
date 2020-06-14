@@ -41,7 +41,7 @@ Notes:
 """
 
 param2requests = {
-    'srl_interleaved': [True, False],
+    'srl_interleaved': [False, True],
 }
 
 # With num_masked=1, made 0,575,465 utterances -> 035,966 train MLM batches (when batch-size=16)

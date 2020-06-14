@@ -20,7 +20,6 @@ class Eval:
     print_perl_script_output = False  # happens at every batch so not very useful
 
     probing_names = [
-        'dummy',
         'agreement_across_adjectives',
         'agreement_across_PP',
         'agreement_across_RC'
