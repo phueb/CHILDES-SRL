@@ -175,7 +175,9 @@ def main(param2val):
     }
 
     # init
-    eval_steps = []
+    steps_eval = []
+    evaluated_steps_srl = []
+    evaluated_steps_mlm = []
     train_start = time.time()
     loss_mlm = None
     no_mlm_batches = False
@@ -249,7 +251,8 @@ def main(param2val):
         # ####################################################################### EVALUATION
 
         # eval MLM
-        if step_mlm % configs.Eval.interval == 0 and not no_mlm_batches:
+        if step_mlm % configs.Eval.interval == 0 and step_mlm not in evaluated_steps_mlm:
+            evaluated_steps_mlm.append(step_mlm)
             is_evaluated_at_current_step = True
             mt_bert.eval()
 
@@ -257,7 +260,7 @@ def main(param2val):
             devel_generator_mlm = bucket_batcher_mlm_large(devel_instances_mlm, num_epochs=1)
             devel_pp = evaluate_model_on_pp(mt_bert, devel_generator_mlm)
 
-            eval_steps.append(step_global)
+            steps_eval.append(step_global)
             name2col['devel_pps'].append(devel_pp)
             print(f'devel-pp={devel_pp}', flush=True)
 
@@ -274,7 +277,8 @@ def main(param2val):
                 do_probing(step_mlm)
 
         # eval SRL
-        if step_srl % configs.Eval.interval == 0:
+        if step_srl % configs.Eval.interval == 0 and step_srl not in evaluated_steps_srl:
+            evaluated_steps_srl.append(step_srl)
             is_evaluated_at_current_step = True
             mt_bert.eval()
 
@@ -282,7 +286,7 @@ def main(param2val):
             devel_generator_srl = bucket_batcher_srl_large(devel_instances_srl, num_epochs=1)
             devel_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, devel_generator_srl)
 
-            eval_steps.append(step_global)
+            steps_eval.append(step_global)
             name2col['devel_f1s'].append(devel_f1)
             print(f'devel-f1={devel_f1}', flush=True)
 
@@ -290,7 +294,7 @@ def main(param2val):
         if is_evaluated_at_current_step or step_global % configs.Training.feedback_interval == 0:
             min_elapsed = (time.time() - train_start) // 60
             pp = torch.exp(loss_mlm) if loss_mlm is not None else np.nan
-            print(f'step MLM={step_mlm:<6,} | step SRL={step_srl:<6,} | pp={pp :2.4f} \n'
+            print(f'step MLM={step_mlm:>9,} | step SRL={step_srl:>9,} | pp={pp :2.4f} \n'
                   f'total minutes elapsed={min_elapsed:<3}\n', flush=True)
             is_evaluated_at_current_step = False
 
@@ -322,16 +326,16 @@ def main(param2val):
         do_probing(step_mlm)
 
     # put train-pp and train-f1 evaluated at last step into pandas Series
-    s1 = pd.Series([train_pp], index=[eval_steps[-1]])
+    s1 = pd.Series([train_pp], index=[steps_eval[-1]])
     s1.name = 'train_pp'
-    s2 = pd.Series([train_f1], index=[eval_steps[-1]])
+    s2 = pd.Series([train_f1], index=[steps_eval[-1]])
     s2.name = 'train_f1'
 
     # return performance as pandas Series
     series_list = [s1, s2]
     for name, col in name2col.items():
         print(f'Making pandas series with name={name} and length={len(col)}')
-        s = pd.Series(col, index=eval_steps)
+        s = pd.Series(col, index=steps_eval)
         s.name = name
         series_list.append(s)
 
