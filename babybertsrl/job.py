@@ -72,12 +72,13 @@ def main(param2val):
     childes_vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab.txt'
     google_vocab_path = project_path / 'data' / 'bert-base-cased.txt'  # to get word pieces
 
+    # prepare save_path - this must be done when job is executed locally (not on Ludwig worker)
+    save_path = Path(param2val['save_path'])
+    if not save_path.exists():
+        save_path.mkdir(parents=True)
+
     # word-piece tokenizer - defines input vocabulary
     vocab = load_vocab(childes_vocab_path, google_vocab_path, params.vocab_size)
-    # TODO testing google vocab with wordpieces
-
-    # TODO make sure wordpieces are in vocab (they are not in CHILDES, so add them back after computing intersection)
-
     assert vocab['[PAD]'] == 0  # AllenNLP expects this
     assert vocab['[UNK]'] == 1  # AllenNLP expects this
     assert vocab['[CLS]'] == 2
@@ -178,7 +179,11 @@ def main(param2val):
     train_start = time.time()
     loss_mlm = None
     no_mlm_batches = False
-    step = 0
+    step_mlm = 0
+    step_srl = 0
+    step_global = 0
+    is_evaluated_at_current_step = False
+    is_first_time_in_loop = True
 
     # generators
     train_generator_mlm = bucket_batcher_mlm(train_instances_mlm, num_epochs=params.num_mlm_epochs)
@@ -187,14 +192,32 @@ def main(param2val):
     if params.srl_interleaved:
         max_step = num_train_mlm_batches
     else:
-        max_step = num_train_mlm_batches * 2
-    print(f'Will stop training at step={max_step:,}')
+        max_step = num_train_mlm_batches + params.srl_probability * num_train_mlm_batches
+    print(f'Will stop training at global step={max_step:,}')
 
+    def do_probing(step):
+        # probing - test sentences for specific syntactic tasks
+        for name in configs.Eval.probing_names:
+            # prepare data
+            probing_data_path_mlm = project_path / 'data' / 'probing' / f'{name}.txt'
+            if not probing_data_path_mlm.exists():
+                print(f'WARNING: {probing_data_path_mlm} does not exist', flush=True)
+                continue
+            else:
+                print(f'Probing with task={name}', flush=True)
+            probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
+            probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
+            # batch and do inference
+            probing_generator_mlm = bucket_batcher_mlm(probing_instances_mlm, num_epochs=1)
+            out_path = save_path / f'probing_{name}_results_{step}.txt'
+            predict_masked_sentences(mt_bert, probing_generator_mlm, out_path, print_gold=False,
+                                     verbose=True if 'dummy' in name else False)
 
-    while step < max_step:
+    while step_global < max_step:
 
-        # TRAINING
-        if step != 0:  # otherwise evaluation at step 0 is influenced by training on one batch
+        # ####################################################################### TRAINING
+
+        if not is_first_time_in_loop:  # do not influence first evaluation by training on first batch
             mt_bert.train()
 
             # masked language modeling task
@@ -207,62 +230,71 @@ def main(param2val):
                     no_mlm_batches = True
             else:
                 loss_mlm = mt_bert.train_on_batch('mlm', batch_mlm, optimizer_mlm)
+                step_mlm += 1
 
             # semantic role labeling task
             if params.srl_interleaved:
                 if random.random() < params.srl_probability:
                     batch_srl = next(train_generator_srl)
                     mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
+                    step_srl += 1
             elif no_mlm_batches:
                 batch_srl = next(train_generator_srl)
                 mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
+                step_srl += 1
 
-        # EVALUATION
-        if step % configs.Eval.interval == 0:
+        is_first_time_in_loop = False
+        step_global = step_mlm + step_srl
+
+        # ####################################################################### EVALUATION
+
+        # eval MLM
+        if step_mlm % configs.Eval.interval == 0 and not no_mlm_batches:
+            is_evaluated_at_current_step = True
             mt_bert.eval()
-            eval_steps.append(step)
 
-            # evaluate perplexity
+            # evaluate devel perplexity
             devel_generator_mlm = bucket_batcher_mlm_large(devel_instances_mlm, num_epochs=1)
             devel_pp = evaluate_model_on_pp(mt_bert, devel_generator_mlm)
+
+            eval_steps.append(step_global)
             name2col['devel_pps'].append(devel_pp)
             print(f'devel-pp={devel_pp}', flush=True)
 
-            # test sentences
+            # MLM test sentences
             if configs.Eval.test_sentences:
                 test_generator_mlm = bucket_batcher_mlm_large(test_instances_mlm, num_epochs=1)
-                out_path = save_path / f'test_split_mlm_results_{step}.txt'
+                out_path = save_path / f'test_split_mlm_results_{step_mlm}.txt'
                 predict_masked_sentences(mt_bert, test_generator_mlm, out_path)
 
             # probing - test sentences for specific syntactic tasks
-            for name in configs.Eval.probing_names:
-                # prepare data
-                probing_data_path_mlm = project_path / 'data' / 'probing' / f'{name}.txt'
-                if not probing_data_path_mlm.exists():
-                    print(f'WARNING: {probing_data_path_mlm} does not exist')
-                    continue
-                probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
-                # probing + save results to text
-                probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
-                probing_generator_mlm = bucket_batcher_mlm(probing_instances_mlm, num_epochs=1)
-                out_path = save_path / f'probing_{name}_results_{step}.txt'
-                predict_masked_sentences(mt_bert, probing_generator_mlm, out_path, print_gold=False, verbose=True)
+            skip_probing = step_global == 0 and not configs.Eval.probe_at_step_zero
+            if not skip_probing:
+                print('Starting probing', flush=True)
+                do_probing(step_mlm)
+
+        # eval SRL
+        if step_srl % configs.Eval.interval == 0:
+            is_evaluated_at_current_step = True
+            mt_bert.eval()
 
             # evaluate devel f1
             devel_generator_srl = bucket_batcher_srl_large(devel_instances_srl, num_epochs=1)
             devel_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, devel_generator_srl)
 
+            eval_steps.append(step_global)
             name2col['devel_f1s'].append(devel_f1)
             print(f'devel-f1={devel_f1}', flush=True)
 
-            # console
+        # console
+        if is_evaluated_at_current_step or step_global % configs.Training.feedback_interval == 0:
             min_elapsed = (time.time() - train_start) // 60
             pp = torch.exp(loss_mlm) if loss_mlm is not None else np.nan
-            print(f'step {step:<6,}: pp={pp :2.4f} total minutes elapsed={min_elapsed:<3}',
-                  flush=True)
+            print(f'step MLM={step_mlm:<6,} | step SRL={step_srl:<6,} | pp={pp :2.4f} \n'
+                  f'total minutes elapsed={min_elapsed:<3}\n', flush=True)
+            is_evaluated_at_current_step = False
 
-        # only increment step once in each iteration of the loop, otherwise evaluation may never happen
-        step += 1
+    # ####################################################################### CLEANUP
 
     # evaluate train perplexity
     if configs.Eval.train_split:
@@ -280,27 +312,16 @@ def main(param2val):
         train_f1 = np.nan
     print(f'train-f1={train_f1}', flush=True)
 
-    # test sentences
+    # MLM test sentences
     if configs.Eval.test_sentences:
         test_generator_mlm = bucket_batcher_mlm(test_instances_mlm, num_epochs=1)
-        out_path = save_path / f'test_split_mlm_results_{step}.txt'
+        out_path = save_path / f'test_split_mlm_results_{step_mlm}.txt'
         predict_masked_sentences(mt_bert, test_generator_mlm, out_path)
 
-    # probing - test sentences for specific syntactic tasks
-    for name in configs.Eval.probing_names:
-        # prepare data
-        probing_data_path_mlm = project_path / 'data' / 'probing' / f'{name}.txt'
-        if not probing_data_path_mlm.exists():
-            print(f'WARNING: {probing_data_path_mlm} does not exist')
-            continue
-        probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
-        probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
-        # batch and do inference
-        probing_generator_mlm = bucket_batcher_mlm(probing_instances_mlm, num_epochs=1)
-        out_path = save_path / f'probing_{name}_results_{step}.txt'
-        predict_masked_sentences(mt_bert, probing_generator_mlm, out_path, print_gold=False, verbose=True)
+    if configs.Eval.probe_at_end:
+        do_probing(step_mlm)
 
-    # put train-pp and train-f1 into pandas Series
+    # put train-pp and train-f1 evaluated at last step into pandas Series
     s1 = pd.Series([train_pp], index=[eval_steps[-1]])
     s1.name = 'train_pp'
     s2 = pd.Series([train_f1], index=[eval_steps[-1]])

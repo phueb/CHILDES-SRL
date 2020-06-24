@@ -51,6 +51,8 @@ param2requests = {
 param2debug = {
     "num_mlm_epochs": 1,
     'num_masked': 1,
+    'num_layers': 2,
+    'vocab_size': 128
 }
 
 param2default = {

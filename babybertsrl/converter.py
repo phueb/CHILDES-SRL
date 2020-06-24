@@ -105,7 +105,7 @@ class ConverterMLM:
                                                   mlm_mask_wp)
                 res.append(instance)
 
-        print(f'With num_masked={self.params.num_masked}, made {len(res)} instances')
+        print(f'With num_masked={self.params.num_masked}, made {len(res):>9,} instances')
 
         return res
 
