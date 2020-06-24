@@ -3,18 +3,18 @@ import pandas as pd
 import re
 
 from babybertsrl.srl_utils import make_srl_string
-from babybertsrl import config
+from babybertsrl import configs
 
 NAME = 'human-based-2018'
 
 
 # load annotations
-srl_path = config.Dirs.data / 'training' / f'{NAME}_srl.txt'
+srl_path = configs.Dirs.data / 'training' / f'{NAME}_srl.txt'
 text = srl_path.read_text()
 lines = text.split('\n')
 
 # load previously checked annotations
-path = config.Dirs.data_tools / f'{NAME}_srl_data_acceptability.csv'
+path = configs.Dirs.data_tools / f'{NAME}_srl_data_acceptability.csv'
 df = pd.read_csv(path, index_col=False)
 
 print(f'Checked {len(df):,}/{len(lines):,} lines')

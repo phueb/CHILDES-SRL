@@ -4,7 +4,7 @@ from pathlib import Path
 import random
 from collections import OrderedDict
 
-from babybertsrl import config
+from babybertsrl import configs
 
 
 def load_childes_vocab(vocab_file, vocab_size):
@@ -30,23 +30,30 @@ def load_childes_vocab(vocab_file, vocab_size):
 def load_vocab(childes_vocab_file, google_vocab_file, vocab_size):
 
     childes_vocab = set([w for w, i in load_childes_vocab(childes_vocab_file, vocab_size).items()])
-    print(childes_vocab)
 
     vocab = OrderedDict()
     index = 0
     with open(google_vocab_file, "r", encoding="utf-8") as reader:
         while True:
-            token = reader.readline()
-            if not token:
+            line = reader.readline()
+            if not line:
                 break
-            if token not in childes_vocab:
-                # print(token)
+            token = line.strip()
+
+            # exclude word with non-ASCII characters
+            if [True for c in token if ord(c) > 127]:
                 continue
-            token = token.strip()
+            # exclude non-wordpieces not in CHILDES vocab
+            if token not in childes_vocab and not token.startswith('##'):
+                continue
+
             vocab[token] = index
             index += 1
 
-    print(vocab)
+    # symbols in CHILDES but not in Google vocab - must be added manually
+    for token in configs.Data.childes_symbols:
+        vocab[token] = index
+        index += 1
 
     return vocab
 
@@ -62,7 +69,7 @@ def split(data: List, seed: int = 2):
     for i in data:
 
         if random.choices([True, False],
-                          weights=[config.Data.train_prob, 1 - config.Data.train_prob])[0]:
+                          weights=[configs.Data.train_prob, 1 - configs.Data.train_prob])[0]:
             train.append(i)
         else:
             if random.choices([True, False], weights=[0.5, 0.5])[0]:
@@ -108,17 +115,17 @@ def load_utterances_from_file(file_path: Path,
             for utterance in utterances:
 
                 # check  length
-                if len(utterance) < config.Data.min_input_length:
+                if len(utterance) < configs.Data.min_input_length:
                     num_too_small += 1
                     continue
-                if len(utterance) > config.Data.max_input_length:
+                if len(utterance) > configs.Data.max_input_length:
                     num_too_large += 1
                     continue
 
                 res.append(utterance)
 
-    print(f'WARNING: Skipped {num_too_small} utterances which are shorter than {config.Data.min_input_length}.')
-    print(f'WARNING: Skipped {num_too_large} utterances which are larger than {config.Data.max_input_length}.')
+    print(f'WARNING: Skipped {num_too_small} utterances which are shorter than {configs.Data.min_input_length}.')
+    print(f'WARNING: Skipped {num_too_large} utterances which are larger than {configs.Data.max_input_length}.')
 
     lengths = [len(u) for u in res]
     print('Found {:,} utterances'.format(len(res)))
@@ -159,17 +166,17 @@ def load_propositions_from_file(file_path):
             labels = right_input
 
             # check  length
-            if len(words) <= config.Data.min_input_length:
+            if len(words) <= configs.Data.min_input_length:
                 num_too_small += 1
                 continue
-            if len(words) > config.Data.max_input_length:
+            if len(words) > configs.Data.max_input_length:
                 num_too_large += 1
                 continue
 
             res.append((words, predicate_index, labels))
 
-    print(f'WARNING: Skipped {num_too_small} propositions which are shorter than {config.Data.min_input_length}.')
-    print(f'WARNING: Skipped {num_too_large} propositions which are larger than {config.Data.max_input_length}.')
+    print(f'WARNING: Skipped {num_too_small} propositions which are shorter than {configs.Data.min_input_length}.')
+    print(f'WARNING: Skipped {num_too_large} propositions which are larger than {configs.Data.max_input_length}.')
 
     lengths = [len(p[0]) for p in res]
     print('Found {:,} propositions'.format(len(res)))

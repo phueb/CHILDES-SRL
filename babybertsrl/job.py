@@ -15,7 +15,7 @@ from pytorch_pretrained_bert.tokenization import WordpieceTokenizer
 from pytorch_pretrained_bert.modeling import BertModel, BertConfig
 from pytorch_pretrained_bert import BertAdam
 
-from babybertsrl import config
+from babybertsrl import configs
 from babybertsrl.io import load_utterances_from_file
 from babybertsrl.io import load_propositions_from_file
 from babybertsrl.io import load_vocab
@@ -75,6 +75,8 @@ def main(param2val):
     # word-piece tokenizer - defines input vocabulary
     vocab = load_vocab(childes_vocab_path, google_vocab_path, params.vocab_size)
     # TODO testing google vocab with wordpieces
+
+    # TODO make sure wordpieces are in vocab (they are not in CHILDES, so add them back after computing intersection)
 
     assert vocab['[PAD]'] == 0  # AllenNLP expects this
     assert vocab['[UNK]'] == 1  # AllenNLP expects this
@@ -216,7 +218,7 @@ def main(param2val):
                 mt_bert.train_on_batch('srl', batch_srl, optimizer_srl)
 
         # EVALUATION
-        if step % config.Eval.interval == 0:
+        if step % configs.Eval.interval == 0:
             mt_bert.eval()
             eval_steps.append(step)
 
@@ -227,27 +229,19 @@ def main(param2val):
             print(f'devel-pp={devel_pp}', flush=True)
 
             # test sentences
-            if config.Eval.test_sentences:
+            if configs.Eval.test_sentences:
                 test_generator_mlm = bucket_batcher_mlm_large(test_instances_mlm, num_epochs=1)
                 out_path = save_path / f'test_split_mlm_results_{step}.txt'
                 predict_masked_sentences(mt_bert, test_generator_mlm, out_path)
 
             # probing - test sentences for specific syntactic tasks
-            for name in config.Eval.probing_names:
+            for name in configs.Eval.probing_names:
                 # prepare data
                 probing_data_path_mlm = project_path / 'data' / 'probing' / f'{name}.txt'
                 if not probing_data_path_mlm.exists():
                     print(f'WARNING: {probing_data_path_mlm} does not exist')
                     continue
                 probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
-                # check that probing words are in vocab
-                for u in probing_utterances_mlm:
-                    # print(u)
-                    for w in u:
-                        if w == '[MASK]':
-                            continue  # not in output vocab
-                        # print(w)
-                        assert output_vocab_mlm.get_token_index(w, namespace='labels'), w
                 # probing + save results to text
                 probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
                 probing_generator_mlm = bucket_batcher_mlm(probing_instances_mlm, num_epochs=1)
@@ -271,7 +265,7 @@ def main(param2val):
         step += 1
 
     # evaluate train perplexity
-    if config.Eval.train_split:
+    if configs.Eval.train_split:
         generator_mlm = bucket_batcher_mlm_large(train_instances_mlm, num_epochs=1)
         train_pp = evaluate_model_on_pp(mt_bert, generator_mlm)
     else:
@@ -279,7 +273,7 @@ def main(param2val):
     print(f'train-pp={train_pp}', flush=True)
 
     # evaluate train f1
-    if config.Eval.train_split:
+    if configs.Eval.train_split:
         generator_srl = bucket_batcher_srl_large(train_instances_srl, num_epochs=1)
         train_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, generator_srl, print_tag_metrics=True)
     else:
@@ -287,13 +281,13 @@ def main(param2val):
     print(f'train-f1={train_f1}', flush=True)
 
     # test sentences
-    if config.Eval.test_sentences:
+    if configs.Eval.test_sentences:
         test_generator_mlm = bucket_batcher_mlm(test_instances_mlm, num_epochs=1)
         out_path = save_path / f'test_split_mlm_results_{step}.txt'
         predict_masked_sentences(mt_bert, test_generator_mlm, out_path)
 
     # probing - test sentences for specific syntactic tasks
-    for name in config.Eval.probing_names:
+    for name in configs.Eval.probing_names:
         # prepare data
         probing_data_path_mlm = project_path / 'data' / 'probing' / f'{name}.txt'
         if not probing_data_path_mlm.exists():

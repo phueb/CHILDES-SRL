@@ -10,18 +10,17 @@ from allennlp.data.fields import TextField, SequenceLabelField, MetadataField
 from babybertsrl.word_pieces import wordpiece, convert_tags_to_wordpiece_tags, convert_verb_indices_to_wordpiece_indices
 
 
-def mask_one_wordpiece(words: List[str],
-                       masked_id: int,
-                       ) -> Tuple[List[str], List[int], List[str]]:
+def mask_one_element(elements: List[str],
+                     masked_id: int,
+                     ) -> Tuple[List[str], List[int]]:
 
-    mlm_in = ['[MASK]' if i == masked_id else words[i] for i in range(len(words))]
-    mlm_mask = [1 if i == masked_id else 0 for i in range(len(words))]
-    mlm_tags = [w if w != '[MASK]' else '[UNK]' for w in words]  # [MASK] symbol is not in output vocab
+    masked = ['[MASK]' if i == masked_id else elements[i] for i in range(len(elements))]
+    mask = [1 if i == masked_id else 0 for i in range(len(elements))]
 
-    if all([x == 0 for x in mlm_mask]):
+    if all([x == 0 for x in mask]):
         raise ValueError('Mask indicator contains zeros only. ')
 
-    return mlm_in, mlm_mask, mlm_tags
+    return masked, mask
 
 
 class ConverterMLM:
@@ -81,8 +80,6 @@ class ConverterMLM:
 
         """
 
-        raise NotImplementedError
-
         res = []
         for mlm_in in utterances:
 
@@ -94,11 +91,11 @@ class ConverterMLM:
             mlm_tags_wp = mlm_in_wp.copy()
 
             # collect each multiple times, each time with a different masked word
-            num_wps = len(mlm_tags_wp)
+            num_wps = len(mlm_in_wp)
             num_masked = min(num_wps, self.params.num_masked)
             for masked_id in np.random.choice(num_wps, num_masked, replace=False):
                 # mask
-                mlm_in_wp, mlm_mask_wp, mlm_tags_wp = mask_one_wordpiece(mlm_tags_wp, masked_id)
+                mlm_in_wp, mlm_mask_wp = mask_one_element(mlm_in_wp, masked_id)
                 # to instance
                 instance = self._text_to_instance(mlm_in,
                                                   mlm_in_wp,
@@ -108,7 +105,7 @@ class ConverterMLM:
                                                   mlm_mask_wp)
                 res.append(instance)
 
-        print(f'With num_masked={self.params.num_masked}, made {len(res)} utterances')
+        print(f'With num_masked={self.params.num_masked}, made {len(res)} instances')
 
         return res
 
@@ -132,7 +129,10 @@ class ConverterMLM:
 
             # mask
             masked_id = mlm_in.index('[MASK]')
-            mlm_in_wp, mlm_mask_wp, mlm_tags_wp = mask_one_wordpiece(mlm_tags_wp, masked_id)
+            mlm_in_wp, mlm_mask_wp = mask_one_element(mlm_in_wp, masked_id)
+            #  [MASK] symbol is not in output vocab - convert
+            mlm_tags_wp = [w if w != '[MASK]' else '[UNK]' for w in mlm_tags_wp]
+
             # to instance
             instance = self._text_to_instance(mlm_in,
                                               mlm_in_wp,
@@ -142,7 +142,7 @@ class ConverterMLM:
                                               mlm_mask_wp)
             res.append(instance)
 
-        print(f'Without masking, made {len(res)} utterances')
+        print(f'Without masking, made {len(res)} instances')
 
         return res
 

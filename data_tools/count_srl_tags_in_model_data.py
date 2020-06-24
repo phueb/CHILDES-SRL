@@ -2,12 +2,12 @@ from functools import reduce
 from operator import iconcat
 from collections import Counter
 
-from babybertsrl import config
+from babybertsrl import configs
 
 MODEL_NAME = 'childes-20191206'
 
 # load model-based annotations
-srl_path = config.Dirs.data / 'training' / f'{MODEL_NAME}_no-dev_srl.txt'
+srl_path = configs.Dirs.data / 'training' / f'{MODEL_NAME}_no-dev_srl.txt'
 text = srl_path.read_text()
 lines = text.split('\n')[:-1]
 

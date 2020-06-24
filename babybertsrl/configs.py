@@ -11,6 +11,7 @@ class Data:
     min_input_length = 3
     max_input_length = 128
     train_prob = 0.8  # probability that utterance is train utterance
+    childes_symbols = ['[NAME]', '[PLACE]', '[MISC]']
 
 
 class Eval:
@@ -20,6 +21,7 @@ class Eval:
     print_perl_script_output = False  # happens at every batch so not very useful
 
     probing_names = [
+        # 'dummy',
         'agreement_across_adjectives',
         'agreement_across_PP',
         'agreement_across_RC'

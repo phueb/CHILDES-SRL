@@ -1,5 +1,5 @@
 
-from babybertsrl import config
+from babybertsrl import configs
 
 HUMAN_NAME_1 = 'human-based-2008'
 HUMAN_NAME_2 = 'human-based-2008'
@@ -7,17 +7,17 @@ MODEL_NAME = 'childes-20191206'
 
 
 # load human-based annotations
-srl_path1 = config.Dirs.data / 'training' / f'{HUMAN_NAME_1}_srl.txt'
+srl_path1 = configs.Dirs.data / 'training' / f'{HUMAN_NAME_1}_srl.txt'
 text1 = srl_path1.read_text()
 propositions_h1 = [line.split('|||')[0] for line in text1.split('\n')]
 
 # load human-based annotations
-srl_path2 = config.Dirs.data / 'training' / f'{HUMAN_NAME_2}_srl.txt'
+srl_path2 = configs.Dirs.data / 'training' / f'{HUMAN_NAME_2}_srl.txt'
 text2 = srl_path2.read_text()
 propositions_h2 = [line.split('|||')[0] for line in text2.split('\n')]
 
 # load model-based annotations
-srl_path3 = config.Dirs.data / 'training' / f'{MODEL_NAME}_srl.txt'
+srl_path3 = configs.Dirs.data / 'training' / f'{MODEL_NAME}_srl.txt'
 text3 = srl_path3.read_text()
 lines_m = text3.split('\n')[:-1]
 propositions_m = [line.split('|||')[0] for line in lines_m]
@@ -44,7 +44,7 @@ print(f'Excluded {num_excluded:>9,}/{len(lines_m):>9,}')
 
 # write non-shared to file
 print(f'Writing {len(lines)} lines to file...')
-srl_path = config.Dirs.data / 'training' / f'{MODEL_NAME}_no-dev_srl.txt'
+srl_path = configs.Dirs.data / 'training' / f'{MODEL_NAME}_no-dev_srl.txt'
 with srl_path.open('w') as f:
     for n, line in enumerate(lines):
         f.write(line)

@@ -12,7 +12,7 @@ import tempfile
 from collections import defaultdict
 from pathlib import Path
 
-from babybertsrl import config
+from babybertsrl import configs
 
 
 class SrlEvalScorer:
@@ -92,7 +92,7 @@ class SrlEvalScorer:
         completed_process = subprocess.run(perl_script_command, stdout=subprocess.PIPE,
                                            universal_newlines=True, check=True)
 
-        if config.Eval.print_perl_script_output:
+        if configs.Eval.print_perl_script_output:
             print(completed_process.stdout)
 
         for line in completed_process.stdout.split("\n"):

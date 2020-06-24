@@ -6,7 +6,7 @@ from collections import deque
 from typing import List, Any
 
 from babybertsrl.srl_utils import make_srl_string
-from babybertsrl import config
+from babybertsrl import configs
 
 NAME = 'human-based-2018'
 XML_PATH = Path(f'data/srl_{NAME}/xml')
@@ -191,7 +191,7 @@ print(f'num prepositions      ={num_prepositions:,}')
 
 
 print(f'Writing {len(lines)} lines to file...')
-srl_path = config.Dirs.data / 'training' / f'{NAME}_srl.txt'
+srl_path = configs.Dirs.data / 'training' / f'{NAME}_srl.txt'
 with srl_path.open('w') as f:
     for line in lines:
         f.write(line + '\n')

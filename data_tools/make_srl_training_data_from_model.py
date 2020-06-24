@@ -10,7 +10,7 @@ from allennlp.data.instance import Instance
 from allennlp.common.util import sanitize
 
 from babybertsrl.io import load_utterances_from_file
-from babybertsrl import config
+from babybertsrl import configs
 from babybertsrl.job import Params
 from babybertsrl.params import param2default
 from babybertsrl.srl_utils import make_srl_string
@@ -64,7 +64,7 @@ tf.config.experimental.set_memory_growth(gpu_devices[0], True)  # do not take al
 segmentation = DeepSegment('en')
 
 # utterances
-utterances_path = config.Dirs.data / 'training' / f'{CORPUS_NAME}_mlm.txt'
+utterances_path = configs.Dirs.data / 'training' / f'{CORPUS_NAME}_mlm.txt'
 params = Params.from_param2val(param2default)
 utterances = load_utterances_from_file(utterances_path)
 
@@ -130,7 +130,7 @@ print(f'Skipped {num_no_verb} utterances due to absence of B-V tag')
 print(f'Skipped {num_only_verb} utterances due to presence of only B-V tag')
 
 print(f'Writing {len(lines)} lines to file...')
-srl_path = config.Dirs.data / 'training' / f'{CORPUS_NAME}_srl.txt'
+srl_path = configs.Dirs.data / 'training' / f'{CORPUS_NAME}_srl.txt'
 with srl_path.open('w') as f:
     for n, line in enumerate(lines):
         f.write(line)
