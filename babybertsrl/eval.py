@@ -1,3 +1,4 @@
+import time
 import torch
 from typing import Iterator, Optional
 from pathlib import Path
@@ -19,21 +20,28 @@ def predict_masked_sentences(model: MTBert,
     gold_mlm_tags = []
 
     if num_batches:
-        print(f'Task has {num_batches} batches')
+        print(f'Task has {num_batches} batches', flush=True)
     counter = 0
 
     for batch in instances_generator:
         counter += 1
         if num_batches:
-            print(f'Probing batch {counter}/{num_batches}')
+            print(f'Probing batch {counter}/{num_batches}', flush=True)
 
         # get predictions
         with torch.no_grad():
+            start1 = time.time()
+            batch['compute_probabilities'] = True
             output_dict = model(task='mlm', **batch)  # input is dict[str, tensor]
+            print(f'Feedforward on batch took {time.time() - start1} secs', flush=True)
+
+            start2 = time.time()
+            predicted_mlm_tags += model.decode_mlm(output_dict
+                                                   )
+            print(f'Decoding on batch took {time.time() - start2} secs', flush=True)
 
         # show results only for whole-words
         mlm_in += output_dict['in']
-        predicted_mlm_tags += model.decode(output_dict, task='mlm')
         gold_mlm_tags += output_dict['gold_tags']
         assert len(mlm_in) == len(predicted_mlm_tags) == len(gold_mlm_tags)
 
@@ -86,7 +94,9 @@ def evaluate_model_on_f1(model: MTBert,
     for step, batch in enumerate(instances_generator):
 
         # get predictions
-        output_dict = model(task='srl', **batch)  # input is dict[str, tensor]
+        with torch.no_grad():
+            batch['compute_probabilities'] = True
+            output_dict = model(task='srl', **batch)  # input is dict[str, tensor]
 
         # metadata
         metadata = batch['metadata']
@@ -94,7 +104,7 @@ def evaluate_model_on_f1(model: MTBert,
         batch_sentences = [example_metadata['in'] for example_metadata in metadata]
 
         # Get the BIO tags from decode()
-        batch_bio_predicted_tags = model.decode(output_dict, task='srl')
+        batch_bio_predicted_tags = model.decode_srl(output_dict)
         batch_conll_predicted_tags = [convert_bio_tags_to_conll_format(tags) for
                                       tags in batch_bio_predicted_tags]
         batch_bio_gold_tags = [example_metadata['gold_tags'] for example_metadata in metadata]

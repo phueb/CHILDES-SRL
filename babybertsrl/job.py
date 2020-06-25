@@ -85,7 +85,8 @@ def main(param2val):
     assert vocab['[SEP]'] == 3
     assert vocab['[MASK]'] == 4
     wordpiece_tokenizer = WordpieceTokenizer(vocab)
-    print(f'Number of types in vocab={len(vocab):,}')
+    print(f'Number of types in word-piece tokenizer={len(vocab):,}')
+    # note: but not all Google wordpieces are necessarily used (and are therefore not in Allen NLP vocab)
 
     # load utterances for MLM task
     utterances = load_utterances_from_file(data_path_mlm)
@@ -126,24 +127,26 @@ def main(param2val):
     all_instances_srl = chain(train_instances_srl, devel_instances_srl, test_instances_srl)
 
     # make vocab from all instances
-    output_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)
-    output_vocab_srl = Vocabulary.from_instances(all_instances_srl)
-    # print(f'mlm vocab size={output_vocab_mlm.get_vocab_size()}')  # contain just 2 tokens
-    # print(f'srl vocab size={output_vocab_srl.get_vocab_size()}')  # contain just 2 tokens
-    assert output_vocab_mlm.get_vocab_size('tokens') == output_vocab_srl.get_vocab_size('tokens')
+    effective_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)
+    effective_vocab_srl = Vocabulary.from_instances(all_instances_srl)
+    # note: effective means "used". unused wordpieces may hang around in wordpiece tokenizer vocab and in BERT,
+    # as long as indices from wordpiece tokenizer are passed to Allen NLP vocab, which is done during conversion
+
+    # TODO optional: it would be more efficient to get rid of unused wordpieces in wordpiece_tokenizer.vocab
+    # but it's okay to have a larger wordpiece vocab than Allen NLP Vocab
 
     # BERT
     print('Preparing Multi-task BERT...')
-    input_vocab_size = len(converter_mlm.wordpiece_tokenizer.vocab)
-    bert_config = BertConfig(vocab_size_or_config_json_file=input_vocab_size,  # was 32K
+    tokenizer_vocab_size = len(converter_mlm.wordpiece_tokenizer.vocab)
+    bert_config = BertConfig(vocab_size_or_config_json_file=tokenizer_vocab_size,  # was 32K
                              hidden_size=params.hidden_size,  # was 768
                              num_hidden_layers=params.num_layers,  # was 12
                              num_attention_heads=params.num_attention_heads,  # was 12
                              intermediate_size=params.intermediate_size)  # was 3072
     bert_model = BertModel(config=bert_config)
     # Multi-tasking BERT
-    mt_bert = MTBert(vocab_mlm=output_vocab_mlm,
-                     vocab_srl=output_vocab_srl,
+    mt_bert = MTBert(output_vocab_mlm=effective_vocab_mlm,
+                     output_vocab_srl=effective_vocab_srl,
                      bert_model=bert_model,
                      embedding_dropout=params.embedding_dropout)
     mt_bert.cuda()
@@ -159,15 +162,15 @@ def main(param2val):
     # batching
     bucket_batcher_mlm = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher_srl = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher_mlm.index_with(output_vocab_mlm)
-    bucket_batcher_srl.index_with(output_vocab_srl)
+    bucket_batcher_mlm.index_with(effective_vocab_mlm)
+    bucket_batcher_srl.index_with(effective_vocab_srl)
 
     # big batcher to speed evaluation - 1024 is too big
     large_batch_size = 512
     bucket_batcher_mlm_large = BucketIterator(batch_size=large_batch_size, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher_srl_large = BucketIterator(batch_size=large_batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher_mlm_large.index_with(output_vocab_mlm)
-    bucket_batcher_srl_large.index_with(output_vocab_srl)
+    bucket_batcher_mlm_large.index_with(effective_vocab_mlm)
+    bucket_batcher_srl_large.index_with(effective_vocab_srl)
 
     # init performance collection
     name2xy = {
@@ -253,7 +256,7 @@ def main(param2val):
         # ####################################################################### EVALUATION
 
         # eval MLM
-        if step_mlm % configs.Eval.interval == 0 and step_mlm not in evaluated_steps_mlm:
+        if step_mlm % configs.Eval.interval == 0 and step_mlm not in evaluated_steps_mlm and step_global != 0:
             evaluated_steps_mlm.append(step_mlm)
             is_evaluated_at_current_step = True
             mt_bert.eval()
@@ -277,7 +280,7 @@ def main(param2val):
                 do_probing(step_mlm)
 
         # eval SRL
-        if step_srl % configs.Eval.interval == 0 and step_srl not in evaluated_steps_srl:
+        if step_srl % configs.Eval.interval == 0 and step_srl not in evaluated_steps_srl and step_global != 0:
             evaluated_steps_srl.append(step_srl)
             is_evaluated_at_current_step = True
             mt_bert.eval()
@@ -334,10 +337,12 @@ def main(param2val):
     # return performance as pandas Series
     series_list = [s1, s2]
     for name, xy in name2xy.items():
-        print(f'Making pandas series with name={name} and length={len(xy)}')
+        print(f'Making pandas series with name={name} and length={len(xy)}', flush=True)
         x, y = zip(*xy)
         s = pd.Series(y, index=x)
         s.name = name
         series_list.append(s)
+
+    print('Reached end of babybertsrl.job.main', flush=True)
 
     return series_list

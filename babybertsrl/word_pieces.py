@@ -4,11 +4,59 @@ obtained from Allen NLP toolkit in September 2019
 
 from typing import List, Tuple
 
+from babybertsrl import configs
 
-def wordpiece(tokens: List[str],
-              wordpiece_tokenizer,
-              lowercase_input: bool,
-              ) -> Tuple[List[str], List[int], List[int]]:
+
+def convert_wordpieces_to_words(wordpieces: List[str],
+                                ) -> List[str]:
+    """
+
+    :param wordpieces:
+    :return:
+
+    written by PH in June, 2020
+
+    """
+
+    def convert_sub_text_to_word(pieces: List[str],
+                                 remove_garbage: bool = False) -> str:  # works as expected June 25, 2020
+        if remove_garbage:
+            word = ''.join([p.lstrip('##') for p in pieces])
+        else:
+            word = ''.join([p for p in pieces])
+        return word
+
+    words = []
+    for n, wp in enumerate(wordpieces):
+        if wp == '[CLS]' and n == 0:
+            continue
+        if wp == '[SEP]' and n == len(wordpieces) - 1:  # sometimes model predicts [SEP] inside sentence
+            continue
+
+        if wp.startswith('##'):
+            continue
+
+        chunk = [wp]
+        for next_wp in wordpieces[n+1:]:
+            if next_wp.startswith('##'):
+                chunk.append(next_wp)
+            else:
+                break
+        words.append(convert_sub_text_to_word(chunk))
+
+    if configs.Wordpieces.verbose:
+        print('Converting pieces:')
+        print(wordpieces)
+        print('to words:')
+        print(words)
+
+    return words
+
+
+def convert_words_to_wordpieces(tokens: List[str],
+                                wordpiece_tokenizer,
+                                lowercase_input: bool,
+                                ) -> Tuple[List[str], List[int], List[int]]:
     """
     Convert a list of tokens to wordpiece tokens and offsets, as well as adding
     BERT CLS and SEP tokens to the begining and end of the sentence.
@@ -91,7 +139,7 @@ def convert_verb_indices_to_wordpiece_indices(verb_indices: List[int],
     return [0] + new_verb_indices + [0]
 
 
-def convert_tags_to_wordpiece_tags(tags: List[str],
+def convert_bio_tags_to_wordpieces(tags: List[str],
                                    offsets: List[int],
                                    ) -> List[str]:
     """

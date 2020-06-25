@@ -52,8 +52,8 @@ param2debug = {
     "num_mlm_epochs": 1,
     'num_masked': 1,
     'num_layers': 2,
-    'vocab_size': 128,
-    'srl_interleaved': False,
+    'vocab_size': 4000,
+    'srl_interleaved': True,
 }
 
 param2default = {

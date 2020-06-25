@@ -11,7 +11,8 @@ The goal of this research project is to test theories of how children learn to u
 
 ## History
 
-- 2008: The BabySRL project can be traced back to work by Cynthia Fisher, Dan Roth, Michael Connor and Yael Gertner, available [here](https://www.aclweb.org/anthology/W08-2111/).
+- 2008: The BabySRL project started as a collaboration between Cynthia Fisher, Dan Roth, Michael Connor and Yael Gertner, 
+whose published work is available [here](https://www.aclweb.org/anthology/W08-2111/).
 
 - 2016: The most recent work, prior to this, can be found [here](https://gitlab-beta.engr.illinois.edu/babysrl-group/babysrl)
 
@@ -43,13 +44,6 @@ Moreover, no next-sentence prediction objective is used during training, as was 
 
 Because the vocabulary holds word pieces for both input and output words, and the model works with word-pieces only,
 a decoding function is called which converts the word pieces back into whole words.
-
-Currently, word-pieces are not supported. 
-The word-piece vocab file must contain whole words only.
-Word-piece tokenization therefore is a no-op.
-Using word-pieces would require handling the case when a whole word in the input is masked,
-and the same word in the output is split into multiple word pieces. 
-The number of input and output elements would mismatch. 
 
 ## Custom Vocabulary
 

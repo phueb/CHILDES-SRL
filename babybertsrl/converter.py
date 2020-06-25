@@ -7,7 +7,10 @@ from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data import Instance, Token
 from allennlp.data.fields import TextField, SequenceLabelField, MetadataField
 
-from babybertsrl.word_pieces import wordpiece, convert_tags_to_wordpiece_tags, convert_verb_indices_to_wordpiece_indices
+from babybertsrl.word_pieces import\
+    convert_words_to_wordpieces,\
+    convert_bio_tags_to_wordpieces, \
+    convert_verb_indices_to_wordpiece_indices
 
 
 def mask_one_element(elements: List[str],
@@ -54,8 +57,12 @@ class ConverterMLM:
         metadata_dict['start_offsets'] = start_offsets
         metadata_dict['in'] = mlm_in
         metadata_dict['gold_tags'] = mlm_tags  # is just a copy of the input without the mask
+        metadata_dict['gold_tags_wp'] = mlm_tags_wp
 
-        # fields
+        # text-field assigns ID to each input and output token, obtained from word-piece tokenizer vocab
+        # note1: BERT's output size is always the size of the word-piece tokenizer vocab
+        # note2: BERT's output size need not correspond to number of word-pieces actually used to tokenize corpus,
+        # which means that the word-piece tokenizer vocab may be larger than the effective (seen) vocabulary
         tokens = [Token(t, text_id=self.wordpiece_tokenizer.vocab[t]) for t in mlm_in_wp]
         text_field = TextField(tokens, self.token_indexers)
 
@@ -74,19 +81,17 @@ class ConverterMLM:
         """
         convert on utterance into possibly multiple Allen NLP instances
 
-
-
-        # TODO 1. convert wo wp 2. mask word in whole-word sequence 3. use offsets to compute wp sequence with [MASK]
+        # TODO whole-word masking
 
         """
 
         res = []
         for mlm_in in utterances:
 
-            # to word-pieces (do this BEFORE masking)  TODO test
-            mlm_in_wp, offsets, start_offsets = wordpiece(mlm_in,
-                                                          self.wordpiece_tokenizer,
-                                                          lowercase_input=False)
+            # to word-pieces (do this BEFORE masking) - works as expected June 25, 2020
+            mlm_in_wp, end_offsets, start_offsets = convert_words_to_wordpieces(mlm_in,
+                                                                                self.wordpiece_tokenizer,
+                                                                                lowercase_input=False)
             mlm_tags = mlm_in.copy()
             mlm_tags_wp = mlm_in_wp.copy()
 
@@ -120,9 +125,9 @@ class ConverterMLM:
         res = []
         for mlm_in in utterances:
             # to word-pieces (do this BEFORE masking)  TODO test
-            mlm_in_wp, offsets, start_offsets = wordpiece(mlm_in,
-                                                          self.wordpiece_tokenizer,
-                                                          lowercase_input=False)
+            mlm_in_wp, offsets, start_offsets = convert_words_to_wordpieces(mlm_in,
+                                                                            self.wordpiece_tokenizer,
+                                                                            lowercase_input=False)
 
             mlm_tags = mlm_in  # irrelevant for probing
             mlm_tags_wp = mlm_in_wp  # irrelevant for probing
@@ -185,10 +190,10 @@ class ConverterSRL:
                           ) -> Instance:
 
         # to word-pieces
-        srl_in_wp, offsets, start_offsets = wordpiece(srl_in,
-                                                      self.wordpiece_tokenizer,
-                                                      lowercase_input=False)
-        srl_tags_wp = convert_tags_to_wordpiece_tags(srl_tags, offsets)
+        srl_in_wp, offsets, start_offsets = convert_words_to_wordpieces(srl_in,
+                                                                        self.wordpiece_tokenizer,
+                                                                        lowercase_input=False)
+        srl_tags_wp = convert_bio_tags_to_wordpieces(srl_tags, offsets)
         verb_indices_wp = convert_verb_indices_to_wordpiece_indices(srl_verb_indices, offsets)
 
         # compute verb
@@ -202,6 +207,7 @@ class ConverterSRL:
         metadata_dict['verb'] = verb
         metadata_dict['verb_index'] = verb_index  # must be an integer
         metadata_dict['gold_tags'] = srl_tags  # non word-piece tags
+        metadata_dict['gold_tags_wp'] = srl_tags_wp
 
         # fields
         tokens = [Token(t, text_id=self.wordpiece_tokenizer.vocab[t]) for t in srl_in_wp]
