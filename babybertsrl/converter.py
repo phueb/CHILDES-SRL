@@ -105,7 +105,7 @@ class ConverterMLM:
                                                   mlm_mask_wp)
                 res.append(instance)
 
-        print(f'With num_masked={self.params.num_masked}, made {len(res):>9,} instances')
+        print(f'With num_masked={self.params.num_masked}, made {len(res):>9,} MLM instances')
 
         return res
 
@@ -142,7 +142,7 @@ class ConverterMLM:
                                               mlm_mask_wp)
             res.append(instance)
 
-        print(f'Without masking, made {len(res)} instances')
+        print(f'Without masking, made {len(res):>9,} probing MLM instances')
 
         return res
 
@@ -233,4 +233,7 @@ class ConverterSRL:
                                               srl_verb_indices,
                                               srl_tags)
             res.append(instance)
+
+        print(f'Made {len(res):>9,} SRL instances')
+
         return res

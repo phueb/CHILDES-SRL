@@ -158,24 +158,24 @@ def main(param2val):
 
     # batching
     bucket_batcher_mlm = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher_mlm.index_with(output_vocab_mlm)
     bucket_batcher_srl = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
+    bucket_batcher_mlm.index_with(output_vocab_mlm)
     bucket_batcher_srl.index_with(output_vocab_srl)
 
     # big batcher to speed evaluation - 1024 is too big
-    bucket_batcher_mlm_large = BucketIterator(batch_size=512, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher_srl_large = BucketIterator(batch_size=512, sorting_keys=[('tokens', "num_tokens")])
+    large_batch_size = 512
+    bucket_batcher_mlm_large = BucketIterator(batch_size=large_batch_size, sorting_keys=[('tokens', "num_tokens")])
+    bucket_batcher_srl_large = BucketIterator(batch_size=large_batch_size, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher_mlm_large.index_with(output_vocab_mlm)
     bucket_batcher_srl_large.index_with(output_vocab_srl)
 
     # init performance collection
-    name2col = {
+    name2xy = {
         'devel_pps': [],
         'devel_f1s': [],
     }
 
     # init
-    steps_eval = []
     evaluated_steps_srl = []
     evaluated_steps_mlm = []
     train_start = time.time()
@@ -190,11 +190,12 @@ def main(param2val):
     # generators
     train_generator_mlm = bucket_batcher_mlm(train_instances_mlm, num_epochs=params.num_mlm_epochs)
     train_generator_srl = bucket_batcher_srl(train_instances_srl, num_epochs=None)  # infinite generator
+
+    # max step
+    print('Counting number of training batches...')
     num_train_mlm_batches = bucket_batcher_mlm.get_num_batches(train_instances_mlm)
-    if params.srl_interleaved:
-        max_step = num_train_mlm_batches
-    else:
-        max_step = num_train_mlm_batches + params.srl_probability * num_train_mlm_batches
+    num_train_srl_batches = bucket_batcher_srl.get_num_batches(train_instances_srl)
+    max_step = num_train_mlm_batches + num_train_srl_batches
     print(f'Will stop training at global step={max_step:,}')
 
     def do_probing(step):
@@ -205,14 +206,15 @@ def main(param2val):
             if not probing_data_path_mlm.exists():
                 print(f'WARNING: {probing_data_path_mlm} does not exist', flush=True)
                 continue
-            else:
-                print(f'Probing with task={name}', flush=True)
+            print(f'Starting probing with task={name}', flush=True)
             probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
             probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
             # batch and do inference
-            probing_generator_mlm = bucket_batcher_mlm(probing_instances_mlm, num_epochs=1)
+            probing_generator_mlm = bucket_batcher_mlm_large(probing_instances_mlm, num_epochs=1)
             out_path = save_path / f'probing_{name}_results_{step}.txt'
-            predict_masked_sentences(mt_bert, probing_generator_mlm, out_path, print_gold=False,
+            predict_masked_sentences(mt_bert, probing_generator_mlm, out_path,
+                                     num_batches=len(probing_instances_mlm) // large_batch_size,
+                                     print_gold=False,
                                      verbose=True if 'dummy' in name else False)
 
     while step_global < max_step:
@@ -260,8 +262,7 @@ def main(param2val):
             devel_generator_mlm = bucket_batcher_mlm_large(devel_instances_mlm, num_epochs=1)
             devel_pp = evaluate_model_on_pp(mt_bert, devel_generator_mlm)
 
-            steps_eval.append(step_global)
-            name2col['devel_pps'].append(devel_pp)
+            name2xy['devel_pps'].append((step_mlm, devel_pp))
             print(f'devel-pp={devel_pp}', flush=True)
 
             # MLM test sentences
@@ -273,7 +274,6 @@ def main(param2val):
             # probing - test sentences for specific syntactic tasks
             skip_probing = step_global == 0 and not configs.Eval.probe_at_step_zero
             if not skip_probing:
-                print('Starting probing', flush=True)
                 do_probing(step_mlm)
 
         # eval SRL
@@ -286,15 +286,15 @@ def main(param2val):
             devel_generator_srl = bucket_batcher_srl_large(devel_instances_srl, num_epochs=1)
             devel_f1 = evaluate_model_on_f1(mt_bert, srl_eval_path, devel_generator_srl)
 
-            steps_eval.append(step_global)
-            name2col['devel_f1s'].append(devel_f1)
+            name2xy['devel_f1s'].append((step_srl, devel_f1))
             print(f'devel-f1={devel_f1}', flush=True)
 
         # console
         if is_evaluated_at_current_step or step_global % configs.Training.feedback_interval == 0:
             min_elapsed = (time.time() - train_start) // 60
             pp = torch.exp(loss_mlm) if loss_mlm is not None else np.nan
-            print(f'step MLM={step_mlm:>9,} | step SRL={step_srl:>9,} | pp={pp :2.4f} \n'
+            print(f'step MLM={step_mlm:>9,} | step SRL={step_srl:>9,} | step global={step_global:>9,}\n'
+                  f'pp={pp :2.4f} \n'
                   f'total minutes elapsed={min_elapsed:<3}\n', flush=True)
             is_evaluated_at_current_step = False
 
@@ -316,6 +316,12 @@ def main(param2val):
         train_f1 = np.nan
     print(f'train-f1={train_f1}', flush=True)
 
+    # put train-pp and train-f1 evaluated at last step into pandas Series
+    s1 = pd.Series([train_pp], index=[step_global])
+    s1.name = 'train_pp'
+    s2 = pd.Series([train_f1], index=[step_global])
+    s2.name = 'train_f1'
+
     # MLM test sentences
     if configs.Eval.test_sentences:
         test_generator_mlm = bucket_batcher_mlm(test_instances_mlm, num_epochs=1)
@@ -325,17 +331,12 @@ def main(param2val):
     if configs.Eval.probe_at_end:
         do_probing(step_mlm)
 
-    # put train-pp and train-f1 evaluated at last step into pandas Series
-    s1 = pd.Series([train_pp], index=[steps_eval[-1]])
-    s1.name = 'train_pp'
-    s2 = pd.Series([train_f1], index=[steps_eval[-1]])
-    s2.name = 'train_f1'
-
     # return performance as pandas Series
     series_list = [s1, s2]
-    for name, col in name2col.items():
-        print(f'Making pandas series with name={name} and length={len(col)}')
-        s = pd.Series(col, index=steps_eval)
+    for name, xy in name2xy.items():
+        print(f'Making pandas series with name={name} and length={len(xy)}')
+        x, y = zip(*xy)
+        s = pd.Series(y, index=x)
         s.name = name
         series_list.append(s)
 

@@ -9,6 +9,7 @@ from babybertsrl.model_mt import MTBert
 def predict_masked_sentences(model: MTBert,
                              instances_generator: Iterator,
                              out_path: Path,
+                             num_batches: Optional[int] = None,
                              print_gold: bool = True,
                              verbose: bool = False):
     model.eval()
@@ -17,8 +18,14 @@ def predict_masked_sentences(model: MTBert,
     predicted_mlm_tags = []
     gold_mlm_tags = []
 
-    # get batch
+    if num_batches:
+        print(f'Task has {num_batches} batches')
+    counter = 0
+
     for batch in instances_generator:
+        counter += 1
+        if num_batches:
+            print(f'Probing batch {counter}/{num_batches}')
 
         # get predictions
         with torch.no_grad():
@@ -43,7 +50,6 @@ def predict_masked_sentences(model: MTBert,
                 if verbose:
                     print(line)
             f.write('\n')
-    print('Done')
 
 
 def evaluate_model_on_pp(model: MTBert,
