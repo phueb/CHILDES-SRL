@@ -41,6 +41,7 @@ class Params(object):
     srl_interleaved = attr.ib(validator=attr.validators.instance_of(bool))
     num_masked = attr.ib(validator=attr.validators.instance_of(int))
     vocab_size = attr.ib(validator=attr.validators.instance_of(int))
+    google_vocab_rule = attr.ib(validator=attr.validators.instance_of(str))
     corpus_name = attr.ib(validator=attr.validators.instance_of(str))
 
     @classmethod
@@ -78,14 +79,15 @@ def main(param2val):
         save_path.mkdir(parents=True)
 
     # word-piece tokenizer - defines input vocabulary
-    vocab = load_vocab(childes_vocab_path, google_vocab_path, params.vocab_size)
+    print(f'Loading vocab with google_vocab_rule={params.google_vocab_rule}...')
+    vocab = load_vocab(childes_vocab_path, google_vocab_path, params.vocab_size, params.google_vocab_rule)
     assert vocab['[PAD]'] == 0  # AllenNLP expects this
     assert vocab['[UNK]'] == 1  # AllenNLP expects this
     assert vocab['[CLS]'] == 2
     assert vocab['[SEP]'] == 3
     assert vocab['[MASK]'] == 4
     wordpiece_tokenizer = WordpieceTokenizer(vocab)
-    print(f'Number of types in word-piece tokenizer={len(vocab):,}')
+    print(f'Number of types in word-piece tokenizer={len(vocab):,}\n', flush=True)
     # note: but not all Google wordpieces are necessarily used (and are therefore not in Allen NLP vocab)
 
     # load utterances for MLM task

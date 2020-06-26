@@ -7,55 +7,63 @@ from collections import OrderedDict
 from babybertsrl import configs
 
 
-def load_childes_vocab(vocab_file, vocab_size):
+def load_words_from_vocab_file(vocab_file: Path,
+                               col: int =0):
 
-    vocab = OrderedDict()
-    vocab['[PAD]'] = 0
-    vocab['[UNK]'] = 1
-    vocab['[CLS]'] = 2
-    vocab['[SEP]'] = 3
-    vocab['[MASK]'] = 4
-    index = 5
-    with open(vocab_file, "r", encoding="utf-8") as reader:
-        while len(vocab) < vocab_size + 5:
-            line = reader.readline()
-            if not line:
-                break
-            token = line.split()[1]
-            vocab[token] = index
-            index += 1
-    return vocab
-
-
-def load_vocab(childes_vocab_file, google_vocab_file, vocab_size):
-
-    childes_vocab = set([w for w, i in load_childes_vocab(childes_vocab_file, vocab_size).items()])
-
-    vocab = OrderedDict()
-    index = 0
-    with open(google_vocab_file, "r", encoding="utf-8") as reader:
+    res = []
+    with vocab_file.open("r", encoding="utf-8") as reader:
         while True:
             line = reader.readline()
             if not line:
                 break
-            token = line.strip()
+            token = line.split()[col]
 
             # exclude word with non-ASCII characters
             if [True for c in token if ord(c) > 127]:
                 continue
-            # exclude non-wordpieces not in CHILDES vocab
-            if token not in childes_vocab and not token.startswith('##'):
-                continue
 
-            vocab[token] = index
-            index += 1
+            res.append(token)
+    return res
 
-    # symbols in CHILDES but not in Google vocab - must be added manually
-    for token in configs.Data.childes_symbols:
-        vocab[token] = index
+
+def load_vocab(childes_vocab_file: Path,
+               google_vocab_file: Path,
+               vocab_size: int,  # childes-vocab, not total vocab
+               google_vocab_rule: str) -> OrderedDict:
+
+    childes_vocab = load_words_from_vocab_file(childes_vocab_file, col=1)[:vocab_size]
+    google_vocab = load_words_from_vocab_file(google_vocab_file, col=0)
+
+    # exclude any google wordpieces not in CHILDES vocab, but leave non-start wordpieces (e.g. ##s)
+    google_vocab_cleaned = [w for w in google_vocab
+                            if w in set(childes_vocab) or w.startswith('##')]
+
+    # init
+    to_index = configs.Data.special_symbols + configs.Data.childes_symbols
+
+    # add from childes vocab
+    if google_vocab_rule == 'inclusive':
+        to_index += set(childes_vocab + google_vocab_cleaned)
+    elif google_vocab_rule == 'exclusive':
+        to_index += google_vocab_cleaned
+    elif google_vocab_rule == 'excluded':
+        to_index += childes_vocab
+    else:
+        raise AttributeError('Invalid arg to "google_vocab_rule".')
+
+    # index
+    res = OrderedDict()
+    index = 0
+    for token in to_index:
+        if token in res:
+            # happens for symbols
+            continue
+        res[token] = index
         index += 1
 
-    return vocab
+    assert len(set(res)) == len(res)
+
+    return res
 
 
 def split(data: List, seed: int = 2):
@@ -85,7 +93,7 @@ def split(data: List, seed: int = 2):
 
 
 def load_utterances_from_file(file_path: Path,
-                              ) -> List[List[str]]:
+                              verbose: bool = False) -> List[List[str]]:
     """
     load utterances for language modeling from text file
     """
@@ -127,17 +135,18 @@ def load_utterances_from_file(file_path: Path,
     print(f'WARNING: Skipped {num_too_small} utterances which are shorter than {configs.Data.min_input_length}.')
     print(f'WARNING: Skipped {num_too_large} utterances which are larger than {configs.Data.max_input_length}.')
 
-    lengths = [len(u) for u in res]
-    print('Found {:,} utterances'.format(len(res)))
-    print(f'Max    utterance length: {np.max(lengths):.2f}')
-    print(f'Mean   utterance length: {np.mean(lengths):.2f}')
-    print(f'Median utterance length: {np.median(lengths):.2f}')
-    print()
+    if verbose:
+        lengths = [len(u) for u in res]
+        print('Found {:,} utterances'.format(len(res)))
+        print(f'Max    utterance length: {np.max(lengths):.2f}')
+        print(f'Mean   utterance length: {np.mean(lengths):.2f}')
+        print(f'Median utterance length: {np.median(lengths):.2f}')
 
     return res
 
 
-def load_propositions_from_file(file_path):
+def load_propositions_from_file(file_path: Path,
+                                verbose: bool = False):
     """
     Read tokenized propositions from file.
     File format: {predicate_id} [word0, word1 ...] ||| [label0, label1 ...]
@@ -178,11 +187,11 @@ def load_propositions_from_file(file_path):
     print(f'WARNING: Skipped {num_too_small} propositions which are shorter than {configs.Data.min_input_length}.')
     print(f'WARNING: Skipped {num_too_large} propositions which are larger than {configs.Data.max_input_length}.')
 
-    lengths = [len(p[0]) for p in res]
-    print('Found {:,} propositions'.format(len(res)))
-    print(f'Max    proposition length: {np.max(lengths):.2f}')
-    print(f'Mean   proposition length: {np.mean(lengths):.2f}')
-    print(f'Median proposition length: {np.median(lengths):.2f}')
-    print()
+    if verbose:
+        lengths = [len(p[0]) for p in res]
+        print('Found {:,} propositions'.format(len(res)))
+        print(f'Max    proposition length: {np.max(lengths):.2f}')
+        print(f'Mean   proposition length: {np.mean(lengths):.2f}')
+        print(f'Median proposition length: {np.median(lengths):.2f}')
 
     return res

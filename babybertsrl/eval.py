@@ -47,17 +47,16 @@ def predict_masked_sentences(model: MTBert,
 
     # save to file
     print(f'Saving MLM prediction results to {out_path}')
-    num_skipped = 0
-    num_saved = 0
+    num_with_mismatch = 0
+    num_without_mismatch = 0
     with out_path.open('w') as f:
         for a, b, c in zip(mlm_in, predicted_mlm_tags, gold_mlm_tags):
 
             if not (len(a) == len(b) == len(c)):
-                num_skipped += 1
-                continue  # TODO skipping results in unfair comparisons across different models,
-                # TODO some of which may skip more or less
+                num_with_mismatch += 1
+                b = ['##' for _ in a]  # fixes length mismatch, ensuring that sentence is still scored by Babeval
             else:
-                num_saved += 1
+                num_without_mismatch += 1
 
             for ai, bi, ci in zip(a, b, c):  # TODO not guaranteed to be same length, zips over shortest list
                 if print_gold:
@@ -69,8 +68,8 @@ def predict_masked_sentences(model: MTBert,
                     print(line)
             f.write('\n')
 
-    print(f'Number of test sentences skipped due to in-out length mismatch={num_skipped:9>,}')
-    print(f'Number of test sentences saved to file                        ={num_saved:9>,}')
+    print(f'Number of test sentences with    in-out length mismatch={num_with_mismatch:9>,}')
+    print(f'Number of test sentences without in-out length mismatch={num_without_mismatch:9>,}')
 
 
 def evaluate_model_on_pp(model: MTBert,

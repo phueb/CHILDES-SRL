@@ -41,8 +41,8 @@ Notes:
 """
 
 param2requests = {
-    'srl_interleaved': [True, False],
-    'num_masked': [6],  # TODO test
+    # 'srl_interleaved': [True, False],
+    'google_vocab_rule': ['exclusive', 'inclusive']  # TODO test
 }
 
 # TODO implement option to guarantee that all 4k words in CHILDES are in wordpiece vocab
@@ -70,7 +70,8 @@ param2default = {
     'srl_interleaved': True,
     'srl_probability': 1.0,
     'num_mlm_epochs': 1,
-    'num_masked': 3,
+    'num_masked': 6,
     'corpus_name': 'childes-20191206',
     'vocab_size': 4000,
+    'google_vocab_rule': 'excluded',
 }
