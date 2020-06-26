@@ -106,7 +106,7 @@ def main(param2val):
     converter_mlm = ConverterMLM(params, wordpiece_tokenizer)
     converter_srl = ConverterSRL(params, wordpiece_tokenizer)
 
-    # get output_vocab
+    # get effective_vocab
     # note: Allen NLP vocab holds labels, wordpiece_tokenizer.vocab holds input tokens
     # what from_instances() does:
     # 1. it iterates over all instances, and all fields, and all token indexers
@@ -145,13 +145,13 @@ def main(param2val):
                              intermediate_size=params.intermediate_size)  # was 3072
     bert_model = BertModel(config=bert_config)
     # Multi-tasking BERT
-    mt_bert = MTBert(output_vocab_mlm=effective_vocab_mlm,
-                     output_vocab_srl=effective_vocab_srl,
+    mt_bert = MTBert(effective_vocab_mlm=effective_vocab_mlm,
+                     effective_vocab_srl=effective_vocab_srl,
                      bert_model=bert_model,
                      embedding_dropout=params.embedding_dropout)
     mt_bert.cuda()
     num_params = sum(p.numel() for p in mt_bert.parameters() if p.requires_grad)
-    print('Number of model parameters: {:,}'.format(num_params), flush=True)
+    print('Number of parameters: {:,}\n'.format(num_params), flush=True)
 
     # optimizers
     optimizer_mlm = BertAdam(params=mt_bert.parameters(), lr=params.lr)
@@ -198,8 +198,14 @@ def main(param2val):
     print('Counting number of training batches...')
     num_train_mlm_batches = bucket_batcher_mlm.get_num_batches(train_instances_mlm)
     num_train_srl_batches = bucket_batcher_srl.get_num_batches(train_instances_srl)
-    max_step = num_train_mlm_batches + num_train_srl_batches
+    print(f'num_train_mlm_batches={num_train_mlm_batches:>9,}')
+    print(f'num_train_srl_batches={num_train_srl_batches:>9,}')  # but is an infinite generator
+    # max step does not take into consideration number of unique SRL batches because it does not vary with num_masked.
+    # the SRL batcher is infinite, and yields a batch with probability = srl_probability when interleaved = True,
+    # or stop when max_step is reached when interleaved = False
+    max_step = num_train_mlm_batches + (params.srl_probability * num_train_mlm_batches)
     print(f'Will stop training at global step={max_step:,}')
+    print(flush=True)
 
     def do_probing(step):
         # probing - test sentences for specific syntactic tasks

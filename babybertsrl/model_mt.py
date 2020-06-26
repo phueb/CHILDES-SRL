@@ -23,8 +23,8 @@ class MTBert(torch.nn.Module):
     """
 
     def __init__(self,
-                 output_vocab_mlm: Vocabulary,
-                 output_vocab_srl: Vocabulary,
+                 effective_vocab_mlm: Vocabulary,
+                 effective_vocab_srl: Vocabulary,
                  bert_model: BertModel,
                  embedding_dropout: float = 0.0,
                  ) -> None:
@@ -32,11 +32,11 @@ class MTBert(torch.nn.Module):
         super().__init__()
         self.bert_model = bert_model
 
-        self.output_vocab_mlm = output_vocab_mlm
-        self.output_vocab_srl = output_vocab_srl
+        self.effective_vocab_mlm = effective_vocab_mlm
+        self.effective_vocab_srl = effective_vocab_srl
 
         # labels namespace is 2 elements shorter than tokens because it does not have @@PADDING@@ and @@UNKNOWN@@
-        self.num_out_srl = output_vocab_srl.get_vocab_size('labels')
+        self.num_out_srl = effective_vocab_srl.get_vocab_size('labels')
 
         # make one projection layer for each task
         # self.projection_layer_mlm = Linear(self.bert_model.config.hidden_size, self.num_out_mlm)
@@ -174,7 +174,7 @@ class MTBert(torch.nn.Module):
                                                                          output_dict['gold_tags_wp']):
             tag_wp_probabilities = predictions[:length]
             tag_wp_ids = np.argmax(tag_wp_probabilities, axis=1)
-            tags_wp = [self.output_vocab_mlm.get_token_from_index(tag_wp_id, namespace="labels")
+            tags_wp = [self.effective_vocab_mlm.get_token_from_index(tag_wp_id, namespace="labels")
                        for tag_wp_id in tag_wp_ids]
             # note: softmax is over wordpiece tokenizer vocab, but tokens are retrieved from Allen NLP vocab.
             # this works because Allen NLP vocab uses indices obtained from word-piece tokenizer
@@ -208,12 +208,12 @@ class MTBert(torch.nn.Module):
         class_probabilities_cpu = [class_probabilities[i].detach().cpu() for i in range(class_probabilities.size(0))]
         sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict['mask']).data.tolist()
 
-        # output_vocab
-        output_vocab = self.output_vocab_srl
+        # effective_vocab
+        effective_vocab = self.effective_vocab_srl
         num_out = self.num_out_srl
 
         # ph: transition matrices contain only ones (and no -inf, which would signal illegal transition)
-        all_labels = output_vocab.get_index_to_token_vocabulary("labels")
+        all_labels = effective_vocab.get_index_to_token_vocabulary("labels")
         num_labels = len(all_labels)
         assert num_out == num_labels
         transition_matrix = torch.zeros([num_labels, num_labels])
@@ -227,7 +227,7 @@ class MTBert(torch.nn.Module):
             # get max likelihood tags
             tag_wp_probabilities = predictions[:length]
             ml_tag_wp_ids, _ = viterbi_decode(tag_wp_probabilities, transition_matrix)  # ml = max likelihood
-            ml_tags_wp = [output_vocab.get_token_from_index(tag_id, namespace="labels") for tag_id in ml_tag_wp_ids]
+            ml_tags_wp = [effective_vocab.get_token_from_index(tag_id, namespace="labels") for tag_id in ml_tag_wp_ids]
             # convert back from wordpieces
             ml_tags = [ml_tags_wp[i] for i in offsets]  # specific to BIO SRL tags
             res.append(ml_tags)

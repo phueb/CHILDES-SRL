@@ -41,7 +41,8 @@ Notes:
 """
 
 param2requests = {
-    'srl_interleaved': [False, True],
+    'srl_interleaved': [True, False],
+    'num_masked': 6,  # TODO test
 }
 
 # With num_masked=1, made 0,575,465 instances -> 035,966 train MLM batches (when batch-size=16)

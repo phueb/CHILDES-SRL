@@ -49,7 +49,13 @@ def predict_masked_sentences(model: MTBert,
     print(f'Saving MLM prediction results to {out_path}')
     with out_path.open('w') as f:
         for a, b, c in zip(mlm_in, predicted_mlm_tags, gold_mlm_tags):
-            for ai, bi, ci in zip(a, b, c):
+
+            if not len(a) == len(b) == len(c):
+                print('WARNING:Input and output are not of same length due to wordpiece decoding. Skipping')
+                continue  # TODO skipping results in unfair comparisons across different models,
+                # TODO some of which may skip more or less
+
+            for ai, bi, ci in zip(a, b, c):  # TODO not guaranteed to be same length, zips over shortest list
                 if print_gold:
                     line = f'{ai:>20} {bi:>20} {ci:>20}\n'
                 else:
