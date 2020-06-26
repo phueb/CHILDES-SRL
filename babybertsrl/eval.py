@@ -47,13 +47,17 @@ def predict_masked_sentences(model: MTBert,
 
     # save to file
     print(f'Saving MLM prediction results to {out_path}')
+    num_skipped = 0
+    num_saved = 0
     with out_path.open('w') as f:
         for a, b, c in zip(mlm_in, predicted_mlm_tags, gold_mlm_tags):
 
-            if not len(a) == len(b) == len(c):
-                print('WARNING:Input and output are not of same length due to wordpiece decoding. Skipping')
+            if not (len(a) == len(b) == len(c)):
+                num_skipped += 1
                 continue  # TODO skipping results in unfair comparisons across different models,
                 # TODO some of which may skip more or less
+            else:
+                num_saved += 1
 
             for ai, bi, ci in zip(a, b, c):  # TODO not guaranteed to be same length, zips over shortest list
                 if print_gold:
@@ -64,6 +68,9 @@ def predict_masked_sentences(model: MTBert,
                 if verbose:
                     print(line)
             f.write('\n')
+
+    print(f'Number of test sentences skipped due to in-out length mismatch={num_skipped:9>,}')
+    print(f'Number of test sentences saved to file                        ={num_saved:9>,}')
 
 
 def evaluate_model_on_pp(model: MTBert,
