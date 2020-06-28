@@ -185,15 +185,11 @@ class MTBert(torch.nn.Module):
             # get max likelihood tags
             length = sequence_lengths[seq_id]
             tag_wp_probabilities = class_probabilities[seq_id].detach().cpu()[:length]
-
-            # TODO debug
-            print(class_probabilities.shape)
-            print(tag_wp_probabilities.shape)
-
             ml_tag_wp_ids, _ = viterbi_decode(tag_wp_probabilities, transition_matrix)  # ml = max likelihood
             ml_tags_wp = [self.id2tag_wp_srl[tag_id] for tag_id in ml_tag_wp_ids]
+
             # convert back from wordpieces
-            ml_tags = [ml_tags_wp[i] for i in  output_dict['start_offsets'][seq_id]]  # specific to BIO SRL tags
+            ml_tags = [ml_tags_wp[i] for i in output_dict['start_offsets'][seq_id]]  # specific to BIO SRL tags
             res.append(ml_tags)
 
         return res  # list of max likelihood tags

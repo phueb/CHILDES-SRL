@@ -93,10 +93,8 @@ class ConverterMLM:
                                                                                 self.wordpiece_tokenizer,
                                                                                 lowercase_input=False)
             # collect each multiple times, each time with a different masked word
-            num_wps = len(mlm_in_wp)
-            num_masked = min(num_wps, self.params.num_masked)
-            choices = np.arange(1, num_wps - 1)  # prevents masking of [SEP] or [CLS]
-            for masked_id in np.random.choice(choices, num_masked, replace=False):
+            choices = np.arange(1, len(mlm_in_wp) - 1)  # prevents masking of [SEP] or [CLS]
+            for masked_id in np.random.choice(choices, size=min(len(choices), self.params.num_masked), replace=False):
                 # mask
                 mlm_tags = mlm_in.copy()
                 mlm_tags_wp = [configs.Training.ignored_index if n != masked_id else self.wordpiece_tokenizer.vocab[w]
@@ -113,7 +111,7 @@ class ConverterMLM:
                                                   mlm_mask_wp)
                 res.append(instance)
 
-        print(f'With num_masked={self.params.num_masked}, made {len(res):>9,} MLM instances')
+        print(f'With num_sampled={self.params.num_masked}, made {len(res):>9,} MLM instances')
 
         return res
 
