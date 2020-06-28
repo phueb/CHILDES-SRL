@@ -11,6 +11,7 @@ from babybertsrl.word_pieces import\
     convert_words_to_wordpieces,\
     convert_bio_tags_to_wordpieces, \
     convert_verb_indices_to_wordpiece_indices
+from babybertsrl import configs
 
 
 def mask_one_element(elements: List[str],
@@ -47,7 +48,7 @@ class ConverterMLM:
                           mlm_in: List[str],
                           mlm_in_wp: List[str],
                           mlm_tags: List[str],
-                          mlm_tags_wp: List[str],
+                          mlm_tags_wp: List[int],  # use int so that auto-indexing by Allen NLP is skipped
                           start_offsets: List[int],
                           mlm_mask_wp: List[int],
                           ) -> Instance:
@@ -69,7 +70,7 @@ class ConverterMLM:
         assert len(mlm_in_wp) == len(mlm_tags_wp)
 
         fields = {'tokens': text_field,
-                  'indicator': SequenceLabelField(mlm_mask_wp, text_field),
+                  'indicator': SequenceLabelField(mlm_mask_wp, text_field),  # probably not needed - specific to SRL
                   'tags': SequenceLabelField(mlm_tags_wp, text_field),
                   'metadata': MetadataField(metadata_dict)}
 
@@ -87,20 +88,22 @@ class ConverterMLM:
 
         res = []
         for mlm_in in utterances:
-
             # to word-pieces (do this BEFORE masking) - works as expected June 25, 2020
             mlm_in_wp, end_offsets, start_offsets = convert_words_to_wordpieces(mlm_in,
                                                                                 self.wordpiece_tokenizer,
                                                                                 lowercase_input=False)
-            mlm_tags = mlm_in.copy()
-            mlm_tags_wp = mlm_in_wp.copy()
-
             # collect each multiple times, each time with a different masked word
             num_wps = len(mlm_in_wp)
             num_masked = min(num_wps, self.params.num_masked)
-            for masked_id in np.random.choice(num_wps, num_masked, replace=False):
+            choices = np.arange(1, num_wps - 1)  # prevents masking of [SEP] or [CLS]
+            for masked_id in np.random.choice(choices, num_masked, replace=False):
                 # mask
+                mlm_tags = mlm_in.copy()
+                mlm_tags_wp = [configs.Training.ignored_index if n != masked_id else self.wordpiece_tokenizer.vocab[w]
+                               for n, w in enumerate(mlm_in_wp)]  # TODO test -1
+                assert len([i for i in mlm_tags_wp if i == configs.Training.ignored_index]) != len(mlm_tags_wp)
                 mlm_in_wp, mlm_mask_wp = mask_one_element(mlm_in_wp, masked_id)
+
                 # to instance
                 instance = self._text_to_instance(mlm_in,
                                                   mlm_in_wp,
@@ -124,19 +127,18 @@ class ConverterMLM:
 
         res = []
         for mlm_in in utterances:
-            # to word-pieces (do this BEFORE masking)  TODO test
+            # to word-pieces (do this BEFORE masking)
             mlm_in_wp, offsets, start_offsets = convert_words_to_wordpieces(mlm_in,
                                                                             self.wordpiece_tokenizer,
                                                                             lowercase_input=False)
 
-            mlm_tags = mlm_in  # irrelevant for probing
-            mlm_tags_wp = mlm_in_wp  # irrelevant for probing
-
             # mask
-            masked_id = mlm_in.index('[MASK]')
+            mlm_tags = mlm_in.copy()  # irrelevant for probing
+            masked_id = mlm_in_wp.index('[MASK]')
+            mlm_tags_wp = [configs.Training.ignored_index if n != masked_id else self.wordpiece_tokenizer.vocab[w]
+                           for n, w in enumerate(mlm_in_wp)]  # TODO test -1  # # irrelevant for probing
+            assert len([i for i in mlm_tags_wp if i == configs.Training.ignored_index]) != len(mlm_tags_wp)
             mlm_in_wp, mlm_mask_wp = mask_one_element(mlm_in_wp, masked_id)
-            #  [MASK] symbol is not in output vocab - convert
-            mlm_tags_wp = [w if w != '[MASK]' else '[UNK]' for w in mlm_tags_wp]
 
             # to instance
             instance = self._text_to_instance(mlm_in,

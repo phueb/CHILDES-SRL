@@ -41,11 +41,9 @@ Notes:
 """
 
 param2requests = {
-    # 'srl_interleaved': [True, False],
-    'google_vocab_rule': ['exclusive', 'inclusive']  # TODO test
+    'srl_interleaved': [False],
+    'google_vocab_rule': ['exclusive', 'inclusive', 'excluded']  # TODO test
 }
-
-# TODO implement option to guarantee that all 4k words in CHILDES are in wordpiece vocab
 
 # With num_masked=1, made 0,575,465 instances -> 035,966 train MLM batches (when batch-size=16)
 # With num_masked=3, made XXXXXXXXX instances -> 107,964 train MLM batches (when batch-size=16)

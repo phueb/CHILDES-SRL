@@ -31,7 +31,6 @@ def predict_masked_sentences(model: MTBert,
         # get predictions
         with torch.no_grad():
             start1 = time.time()
-            batch['compute_probabilities'] = True
             output_dict = model(task='mlm', **batch)  # input is dict[str, tensor]
             print(f'Feedforward on batch took {time.time() - start1} secs', flush=True)
 
@@ -52,13 +51,14 @@ def predict_masked_sentences(model: MTBert,
     with out_path.open('w') as f:
         for a, b, c in zip(mlm_in, predicted_mlm_tags, gold_mlm_tags):
 
-            if not (len(a) == len(b) == len(c)):
+            # fixes possible mismatch due to wordpiece decoding, ensuring that sentence is still scored by Babeval
+            if len(a) != len(b):
                 num_with_mismatch += 1
-                b = ['##' for _ in a]  # fixes length mismatch, ensuring that sentence is still scored by Babeval
+                b = ['##' if w == '[MASK]' else w for w in a]
             else:
                 num_without_mismatch += 1
 
-            for ai, bi, ci in zip(a, b, c):  # TODO not guaranteed to be same length, zips over shortest list
+            for ai, bi, ci in zip(a, b, c):  # careful, zips over shortest list
                 if print_gold:
                     line = f'{ai:>20} {bi:>20} {ci:>20}\n'
                 else:
@@ -107,7 +107,6 @@ def evaluate_model_on_f1(model: MTBert,
 
         # get predictions
         with torch.no_grad():
-            batch['compute_probabilities'] = True
             output_dict = model(task='srl', **batch)  # input is dict[str, tensor]
 
         # metadata

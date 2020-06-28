@@ -108,7 +108,7 @@ def main(param2val):
     converter_mlm = ConverterMLM(params, wordpiece_tokenizer)
     converter_srl = ConverterSRL(params, wordpiece_tokenizer)
 
-    # get effective_vocab
+    # get vocab for BERT heads
     # note: Allen NLP vocab holds labels, wordpiece_tokenizer.vocab holds input tokens
     # what from_instances() does:
     # 1. it iterates over all instances, and all fields, and all token indexers
@@ -129,7 +129,7 @@ def main(param2val):
     all_instances_srl = chain(train_instances_srl, devel_instances_srl, test_instances_srl)
 
     # make vocab from all instances
-    effective_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)
+    # effective_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)  # TODO test without this line
     effective_vocab_srl = Vocabulary.from_instances(all_instances_srl)
     # note: effective means "used". unused wordpieces may hang around in wordpiece tokenizer vocab and in BERT,
     # as long as indices from wordpiece tokenizer are passed to Allen NLP vocab, which is done during conversion
@@ -147,8 +147,8 @@ def main(param2val):
                              intermediate_size=params.intermediate_size)  # was 3072
     bert_model = BertModel(config=bert_config)
     # Multi-tasking BERT
-    mt_bert = MTBert(effective_vocab_mlm=effective_vocab_mlm,
-                     effective_vocab_srl=effective_vocab_srl,
+    mt_bert = MTBert(id2tag_wp_mlm={i: t for t, i in wordpiece_tokenizer.vocab.items()},
+                     id2tag_wp_srl=effective_vocab_srl.get_index_to_token_vocabulary('labels'),
                      bert_model=bert_model,
                      embedding_dropout=params.embedding_dropout)
     mt_bert.cuda()
@@ -164,14 +164,14 @@ def main(param2val):
     # batching
     bucket_batcher_mlm = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher_srl = BucketIterator(batch_size=params.batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher_mlm.index_with(effective_vocab_mlm)
+    # bucket_batcher_mlm.index_with(effective_vocab_mlm)
     bucket_batcher_srl.index_with(effective_vocab_srl)
 
     # big batcher to speed evaluation - 1024 is too big
     large_batch_size = 512
     bucket_batcher_mlm_large = BucketIterator(batch_size=large_batch_size, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher_srl_large = BucketIterator(batch_size=large_batch_size, sorting_keys=[('tokens', "num_tokens")])
-    bucket_batcher_mlm_large.index_with(effective_vocab_mlm)
+    # bucket_batcher_mlm_large.index_with(effective_vocab_mlm)
     bucket_batcher_srl_large.index_with(effective_vocab_srl)
 
     # init performance collection
@@ -264,7 +264,7 @@ def main(param2val):
         # ####################################################################### EVALUATION
 
         # eval MLM
-        if step_mlm % configs.Eval.interval == 0 and step_mlm not in evaluated_steps_mlm and step_global != 0:
+        if step_mlm % configs.Eval.interval == 0 and step_mlm not in evaluated_steps_mlm:
             evaluated_steps_mlm.append(step_mlm)
             is_evaluated_at_current_step = True
             mt_bert.eval()
@@ -288,7 +288,7 @@ def main(param2val):
                 do_probing(step_mlm)
 
         # eval SRL
-        if step_srl % configs.Eval.interval == 0 and step_srl not in evaluated_steps_srl and step_global != 0:
+        if step_srl % configs.Eval.interval == 0 and step_srl not in evaluated_steps_srl:
             evaluated_steps_srl.append(step_srl)
             is_evaluated_at_current_step = True
             mt_bert.eval()

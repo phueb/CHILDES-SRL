@@ -17,6 +17,7 @@ class Data:
 
 class Training:
     feedback_interval = 100
+    ignored_index = -1 # any ids in argument "tags" to cross-entropy fn are ignored
 
 
 class Eval:
@@ -24,7 +25,7 @@ class Eval:
     test_sentences = False
     train_split = False
     print_perl_script_output = False  # happens at every batch so not very useful
-    probe_at_step_zero = False
+    probe_at_step_zero = True
     probe_at_end = False
 
     probing_names = [

@@ -5,7 +5,6 @@ from torch.nn import Linear, Dropout, functional as F
 from torch.nn import CrossEntropyLoss
 from pytorch_pretrained_bert.modeling import BertModel, BertOnlyMLMHead
 
-from allennlp.data import Vocabulary
 from allennlp.nn.util import get_text_field_mask
 from allennlp.nn.util import sequence_cross_entropy_with_logits
 from allennlp.nn.util import get_lengths_from_binary_sequence_mask
@@ -23,8 +22,8 @@ class MTBert(torch.nn.Module):
     """
 
     def __init__(self,
-                 effective_vocab_mlm: Vocabulary,
-                 effective_vocab_srl: Vocabulary,
+                 id2tag_wp_srl: Dict[int, str],
+                 id2tag_wp_mlm: Dict[int, str],
                  bert_model: BertModel,
                  embedding_dropout: float = 0.0,
                  ) -> None:
@@ -32,25 +31,25 @@ class MTBert(torch.nn.Module):
         super().__init__()
         self.bert_model = bert_model
 
-        self.effective_vocab_mlm = effective_vocab_mlm
-        self.effective_vocab_srl = effective_vocab_srl
-
-        # labels namespace is 2 elements shorter than tokens because it does not have @@PADDING@@ and @@UNKNOWN@@
-        self.num_out_srl = effective_vocab_srl.get_vocab_size('labels')
+        # vocab for heads
+        self.id2tag_wp_srl = id2tag_wp_srl
+        self.id2tag_wp_mlm = id2tag_wp_mlm
+        # Allen NLP vocab gives same word indices as word-piece tokenizer
+        # because indices are obtained from word-piece tokenizer during conversion to instances
 
         # make one projection layer for each task
-        # self.projection_layer_mlm = Linear(self.bert_model.config.hidden_size, self.num_out_mlm)
-        self.projection_layer_srl = Linear(self.bert_model.config.hidden_size, self.num_out_srl)
-        self.mlm_head = BertOnlyMLMHead(self.bert_model.config, self.bert_model.embeddings.word_embeddings.weight)
+        self.head_srl = Linear(self.bert_model.config.hidden_size, len(self.id2tag_wp_srl))
+        self.head_mlm = BertOnlyMLMHead(self.bert_model.config, self.bert_model.embeddings.word_embeddings.weight)
 
         self.embedding_dropout = Dropout(p=embedding_dropout)
+
+        self.xe = CrossEntropyLoss(ignore_index=configs.Training.ignored_index)  # ignore tags with index=ignore_index
 
     def forward(self,
                 task: str,
                 tokens: Dict[str, torch.Tensor],
                 indicator: torch.Tensor,  # indicates either masked word, or predicate
                 metadata: List[Dict[str, Any]],
-                compute_probabilities: bool = False,
                 tags: torch.LongTensor = None,
                 ) -> Dict[str, torch.Tensor]:
         """
@@ -71,16 +70,12 @@ class MTBert(torch.nn.Module):
         metadata : ``List[Dict[str, Any]]``, optional, (default = None)
             metadata contains the original words in the sentence, the masked word or predicate,
              and start offsets for converting wordpieces back to a sequence of words.
-        compute_probabilities: whether or not to compute probabilities using softmax
         Returns
         -------
         An output dictionary consisting of:
         logits : torch.FloatTensor
             A tensor of shape ``(batch_size, num_tokens, tag_vocab_size)`` representing
             unnormalised log probabilities of the tag classes.
-        class_probabilities : torch.FloatTensor
-            A tensor of shape ``(batch_size, num_tokens, tag_vocab_size)`` representing
-            a distribution of the tag classes per word.
         loss : torch.FloatTensor, optional
             A scalar loss to be optimised.
 
@@ -103,29 +98,14 @@ class MTBert(torch.nn.Module):
 
         # use correct head for task
         if task == 'mlm':
-            # logits = self.projection_layer_mlm(embedded_text_input)
-            logits = self.mlm_head(bert_embeddings)  # projects to vector of size bert_config.vocab_size
-
+            logits = self.head_mlm(bert_embeddings)  # projects to vector of size bert_config.vocab_size
             if tags is not None:
-                loss_fct = CrossEntropyLoss(ignore_index=-1)
-                loss = loss_fct(logits.view(-1, self.bert_model.config.vocab_size), tags.view(-1))
-
-            reshaped_logits = logits.view(-1, self.bert_model.config.vocab_size)  # collapse time steps and batches
-            class_probabilities = F.softmax(reshaped_logits, dim=-1).view([batch_size,
-                                                                           sequence_length,
-                                                                           self.bert_model.config.vocab_size])
+                loss = self.xe(logits.view(-1, self.bert_model.config.vocab_size), tags.view(-1))
 
         elif task == 'srl':
-            logits = self.projection_layer_srl(embedded_text_input)
-
+            logits = self.head_srl(embedded_text_input)
             if tags is not None:
                 loss = sequence_cross_entropy_with_logits(logits, tags, mask)
-
-            # TODO only compute softmax when probing (not when training)
-            reshaped_logits = logits.view(-1, self.num_out_srl)  # collapse time steps and batches
-            class_probabilities = F.softmax(reshaped_logits, dim=-1).view([batch_size,
-                                                                           sequence_length,
-                                                                           self.num_out_srl])
         else:
             raise AttributeError('Invalid arg to "task"')
 
@@ -133,8 +113,8 @@ class MTBert(torch.nn.Module):
                        "mask": mask,         # for decoding
                        'start_offsets': [],  # for decoding BIO SRL tags
                        'in': [],
-                       'gold_tags': [],     # for testing
-                       'gold_tags_wp': [],  # for testing
+                       'gold_tags': [],     # for debugging
+                       'gold_tags_wp': [],  # for debugging
                        }
 
         # add meta data to output
@@ -147,89 +127,73 @@ class MTBert(torch.nn.Module):
         if tags is not None:
             output_dict['loss'] = loss
 
-        if compute_probabilities:
-            output_dict["class_probabilities"] = class_probabilities  # defined over word-pieces
-
         return output_dict
 
     def decode_mlm(self,
                    output_dict: Dict[str, Any],
                    ) -> List[List[str]]:
         """
-        No viterbi decoding when task is MLM
+        :returns original sequence with [MASK] replaced with highest scoring word-piece.
+        No viterbi or handling word-piece sequences, because task is MLM, not SRL.
         """
 
-        # get probabilities
-        class_probabilities = output_dict['class_probabilities']
-        class_probabilities_cpu = [class_probabilities[i].detach().cpu().numpy()
-                                   for i in range(class_probabilities.size(0))]
-        sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict['mask']).data.tolist()
-
-        # decode = convert back from wordpieces
         res = []
-        for predictions, length, offsets, gold_tags, gold_tags_wp in zip(class_probabilities_cpu,
-                                                                         sequence_lengths,
-                                                                         output_dict['start_offsets'],
-                                                                         output_dict['gold_tags'],
-                                                                         output_dict['gold_tags_wp']):
-            tag_wp_probabilities = predictions[:length]
-            tag_wp_ids = np.argmax(tag_wp_probabilities, axis=1)
-            tags_wp = [self.effective_vocab_mlm.get_token_from_index(tag_wp_id, namespace="labels")
-                       for tag_wp_id in tag_wp_ids]
-            # note: softmax is over wordpiece tokenizer vocab, but tokens are retrieved from Allen NLP vocab.
-            # this works because Allen NLP vocab uses indices obtained from word-piece tokenizer
+        for seq_id, mlm_in in enumerate(output_dict['in']):
 
-            if configs.Wordpieces.verbose:
-                print('Converting wordpieces back to words:')
-                print('gold_tags')
-                print(gold_tags)
-                print('gold_tags_wp')
-                print(gold_tags_wp)
+            # get predicted wp
+            masked_id = mlm_in.index('[MASK]')
+            logits_in_sequence = output_dict['logits'][seq_id]
+            logits_for_masked_wp = logits_in_sequence[masked_id].detach().cpu().numpy()  # shape is now [vocab_size]
+            tag_wp_id = np.asscalar(np.argmax(logits_for_masked_wp))
+            tag_wp = self.id2tag_wp_mlm[tag_wp_id]
 
-            predicted_tags = convert_wordpieces_to_words(tags_wp)
-            if configs.Wordpieces.warn_on_mismatch:
-                if len(gold_tags) != len(predicted_tags):
-                    raise RuntimeError('Number of whole words in decoded output does not match number in input.')
-            res.append(predicted_tags)
+            # fill in input sequence
+            filled_in_sequence = mlm_in.copy()
+            filled_in_sequence[masked_id] = tag_wp
+            res.append(filled_in_sequence)
 
-        return res  # list of predicted whole words, one per sequence in batch
+        return res  # sequence with predicted word-piece, one per sequence in batch
 
     def decode_srl(self,
                    output_dict: Dict[str, Any],
                    ) -> List[List[str]]:
         """
+        for each sequence in batch:
+        1) get max likelihood tags
+        2) convert back from wordpieces
+
+
         Do NOT use decoding constraints - transition matrix has zeros only
         we are interested in learning dynamics, not best performance.
         Note: decoding is performed on word-pieces, and word-pieces are then converted to whole words
         """
 
         # get probabilities
-        class_probabilities = output_dict['class_probabilities']
-        class_probabilities_cpu = [class_probabilities[i].detach().cpu() for i in range(class_probabilities.size(0))]
+        logits = output_dict['logits']
+        reshaped_logits = logits.view(-1, len(self.id2tag_wp_srl))  # collapse time steps and batches
+        class_probabilities = F.softmax(reshaped_logits, dim=-1).view([logits.shape[0],
+                                                                       logits.shape[1],
+                                                                       len(self.id2tag_wp_srl)])
         sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict['mask']).data.tolist()
 
-        # effective_vocab
-        effective_vocab = self.effective_vocab_srl
-        num_out = self.num_out_srl
-
         # ph: transition matrices contain only ones (and no -inf, which would signal illegal transition)
-        all_labels = effective_vocab.get_index_to_token_vocabulary("labels")
-        num_labels = len(all_labels)
-        assert num_out == num_labels
-        transition_matrix = torch.zeros([num_labels, num_labels])
+        transition_matrix = torch.zeros([len(self.id2tag_wp_srl), len(self.id2tag_wp_srl)])
 
-        # decode = get max likelihood tags + convert back from wordpieces
+        # loop over each sequence in batch
         res = []
-        for predictions, length, offsets, gold_tags in zip(class_probabilities_cpu,
-                                                           sequence_lengths,
-                                                           output_dict['start_offsets'],
-                                                           output_dict['gold_tags']):
+        for seq_id in range(logits.shape[0]):
             # get max likelihood tags
-            tag_wp_probabilities = predictions[:length]
+            length = sequence_lengths[seq_id]
+            tag_wp_probabilities = class_probabilities[seq_id].detach().cpu()[:length]
+
+            # TODO debug
+            print(class_probabilities.shape)
+            print(tag_wp_probabilities.shape)
+
             ml_tag_wp_ids, _ = viterbi_decode(tag_wp_probabilities, transition_matrix)  # ml = max likelihood
-            ml_tags_wp = [effective_vocab.get_token_from_index(tag_id, namespace="labels") for tag_id in ml_tag_wp_ids]
+            ml_tags_wp = [self.id2tag_wp_srl[tag_id] for tag_id in ml_tag_wp_ids]
             # convert back from wordpieces
-            ml_tags = [ml_tags_wp[i] for i in offsets]  # specific to BIO SRL tags
+            ml_tags = [ml_tags_wp[i] for i in  output_dict['start_offsets'][seq_id]]  # specific to BIO SRL tags
             res.append(ml_tags)
 
         return res  # list of max likelihood tags
