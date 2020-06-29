@@ -23,7 +23,7 @@ from babybertsrl.io import split
 from babybertsrl.converter import ConverterMLM, ConverterSRL
 from babybertsrl.eval import evaluate_model_on_pp
 from babybertsrl.eval import predict_masked_sentences
-from babybertsrl.model_mt import MTBert
+from babybertsrl.model import MTBert
 from babybertsrl.eval import evaluate_model_on_f1
 
 

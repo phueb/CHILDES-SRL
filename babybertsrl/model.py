@@ -11,7 +11,6 @@ from allennlp.nn.util import get_lengths_from_binary_sequence_mask
 from allennlp.nn.util import viterbi_decode
 from allennlp.training.util import rescale_gradients
 
-from babybertsrl.word_pieces import convert_wordpieces_to_words
 from babybertsrl import configs
 
 
@@ -63,7 +62,7 @@ class MTBert(torch.nn.Module):
         indicator: torch.LongTensor, required.
             An integer ``SequenceFeatureField`` representation of the position of the masked token or predicate
             in the sentence. This should have shape (batch_size, num_tokens) and importantly, can be
-            all zeros, in the case that the sentence has no mask.
+            all zeros, in the case that the sentence has no mask.  # TODO so is this required even for MLM?
         tags : torch.LongTensor, optional (default = None)
             A torch tensor representing the sequence of integer gold class labels
             of shape ``(batch_size, num_tokens)``
@@ -90,10 +89,10 @@ class MTBert(torch.nn.Module):
             tags = tags.cuda()
 
         # get BERT contextualized embeddings
-        mask = get_text_field_mask(tokens)
+        attention_mask = get_text_field_mask(tokens)
         bert_embeddings, _ = self.bert_model(input_ids=tokens['tokens'],
                                              token_type_ids=indicator,
-                                             attention_mask=mask,
+                                             attention_mask=attention_mask,
                                              output_all_encoded_layers=False)
         embedded_text_input = self.embedding_dropout(bert_embeddings)
         batch_size, sequence_length, _ = embedded_text_input.size()
@@ -107,32 +106,25 @@ class MTBert(torch.nn.Module):
         elif task == 'srl':
             logits = self.head_srl(embedded_text_input)
             if tags is not None:
-                loss = sequence_cross_entropy_with_logits(logits, tags, mask)
+                loss = sequence_cross_entropy_with_logits(logits, tags, attention_mask)
         else:
             raise AttributeError('Invalid arg to "task"')
 
-        output_dict = {"logits": logits,
-                       "mask": mask,         # for decoding
-                       'start_offsets': [],  # for decoding BIO SRL tags
-                       'in': [],
-                       'gold_tags': [],     # for debugging
-                       'gold_tags_wp': [],  # for debugging
-                       }
+        output_dict = {
+            'tokens': tokens['tokens'],          # for decoding MLM tags
+            'loss': loss,
+            "logits": logits,
+            "attention_mask": attention_mask,    # for decoding BIO SRL tags
+            'start_offsets': [],                 # for decoding BIO SRL tags
+            'in': [],                            # for decoding MLM tags
+            'gold_tags': [],                     # for computing f1 score
+        }
 
-        # add meta data to output
+        # add additional info for decoding
         for d in metadata:
+            output_dict['start_offsets'].append(d['start_offsets'])
             output_dict['in'].append(d['in'])
             output_dict['gold_tags'].append(d['gold_tags'])
-            output_dict['gold_tags_wp'].append(d['gold_tags_wp'])
-            output_dict['start_offsets'].append(d['start_offsets'])
-
-            if configs.Training.debug:
-                print(d['in'])
-                print(d['gold_tags_wp'])
-                print()
-
-        if loss is not None:
-            output_dict['loss'] = loss
 
         return output_dict
 
@@ -144,17 +136,16 @@ class MTBert(torch.nn.Module):
         No viterbi or handling word-piece sequences, because task is MLM, not SRL.
         """
 
-        # TODO why are [PAD] predicted so often? does sequence_mask need to be used somewhere here? like for SRL?
-
         logits = output_dict['logits'].detach().cpu().numpy()
+        tokens = output_dict['tokens'].detach().cpu().numpy()  # integer array with shape [batch size, seq length]
 
         res = []
-        num_sequences = len(output_dict['logits'])
-        assert num_sequences == len(output_dict['in'])
+        num_sequences = len(logits)
+        assert num_sequences == len(output_dict['tokens'])
         for seq_id in range(num_sequences):
 
             # get predicted wp
-            wp_id = np.where(output_dict['gold_tags_wp'][seq_id] != configs.Training.ignored_index)
+            wp_id = np.where(tokens[seq_id] == configs.Data.mask_vocab_id)
             assert len(wp_id) == 1
             logits_for_masked_wp = logits[seq_id][wp_id]  # shape is now [vocab_size]
             tag_wp_id = np.asscalar(np.argmax(logits_for_masked_wp))
@@ -188,7 +179,7 @@ class MTBert(torch.nn.Module):
         class_probabilities = F.softmax(reshaped_logits, dim=-1).view([logits.shape[0],
                                                                        logits.shape[1],
                                                                        len(self.id2tag_wp_srl)])
-        sequence_lengths = get_lengths_from_binary_sequence_mask(output_dict['mask']).data.tolist()
+        attention_mask = get_lengths_from_binary_sequence_mask(output_dict['attention_mask']).data.tolist()
 
         # ph: transition matrices contain only ones (and no -inf, which would signal illegal transition)
         transition_matrix = torch.zeros([len(self.id2tag_wp_srl), len(self.id2tag_wp_srl)])
@@ -197,7 +188,7 @@ class MTBert(torch.nn.Module):
         res = []
         for seq_id in range(logits.shape[0]):
             # get max likelihood tags
-            length = sequence_lengths[seq_id]
+            length = attention_mask[seq_id]
             tag_wp_probabilities = class_probabilities[seq_id].detach().cpu()[:length]
             ml_tag_wp_ids, _ = viterbi_decode(tag_wp_probabilities, transition_matrix)  # ml = max likelihood
             ml_tags_wp = [self.id2tag_wp_srl[tag_id] for tag_id in ml_tag_wp_ids]

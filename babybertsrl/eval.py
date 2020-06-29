@@ -1,10 +1,9 @@
-import time
 import torch
 from typing import Iterator, Optional
 from pathlib import Path
 
 from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
-from babybertsrl.model_mt import MTBert
+from babybertsrl.model import MTBert
 
 
 def predict_masked_sentences(model: MTBert,

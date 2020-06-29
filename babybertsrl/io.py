@@ -62,6 +62,7 @@ def load_vocab(childes_vocab_file: Path,
         index += 1
 
     assert len(set(res)) == len(res)
+    assert res['[MASK]'] == configs.Data.mask_vocab_id
 
     return res
 

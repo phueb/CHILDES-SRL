@@ -14,6 +14,8 @@ class Data:
     special_symbols = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']  # order matters
     childes_symbols = ['[NAME]', '[PLACE]', '[MISC]']
 
+    mask_vocab_id = 4
+
 
 class Training:
     feedback_interval = 100

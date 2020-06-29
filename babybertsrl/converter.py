@@ -35,7 +35,7 @@ class ConverterMLM:
                           mlm_in: List[str],
                           mlm_in_wp: List[str],
                           mlm_tags: List[str],
-                          mlm_tags_wp: List[int],  # use int so that auto-indexing by Allen NLP is skipped
+                          mlm_tags_wp: Union[List[int], None],  # use int so that auto-indexing by Allen NLP is skipped
                           start_offsets: List[int],
                           indicator_wp: List[int],
                           ) -> Instance:
@@ -45,7 +45,6 @@ class ConverterMLM:
         metadata_dict['start_offsets'] = start_offsets
         metadata_dict['in'] = mlm_in
         metadata_dict['gold_tags'] = mlm_tags  # is just a copy of the input without the mask
-        metadata_dict['gold_tags_wp'] = mlm_tags_wp
 
         # text-field assigns ID to each input and output token, obtained from word-piece tokenizer vocab
         # note1: BERT's output size is always the size of the word-piece tokenizer vocab
@@ -54,12 +53,11 @@ class ConverterMLM:
         tokens = [Token(t, text_id=self.wordpiece_tokenizer.vocab[t]) for t in mlm_in_wp]
         text_field = TextField(tokens, self.token_indexers)
 
-        assert len(mlm_in_wp) == len(mlm_tags_wp)
-
         fields = {'tokens': text_field,
                   'indicator': SequenceLabelField(indicator_wp, text_field),  # probably not needed - specific to SRL
-                  'tags': SequenceLabelField(mlm_tags_wp, text_field),
                   'metadata': MetadataField(metadata_dict)}
+        if mlm_tags_wp is not None:
+            fields['tags'] = SequenceLabelField(mlm_tags_wp, text_field)
 
         return Instance(fields)
 
@@ -86,9 +84,10 @@ class ConverterMLM:
                 mlm_tags = mlm_in.copy()
                 mlm_tags_wp = [configs.Training.ignored_index if n != masked_id else self.wordpiece_tokenizer.vocab[w]
                                for n, w in enumerate(mlm_in_wp)]
-                assert len([i for i in mlm_tags_wp if i == configs.Training.ignored_index]) != len(mlm_tags_wp)
                 mlm_in_wp[masked_id] = '[MASK]'
                 indicator_wp = [0] * (len(mlm_in_wp))
+                # TODO huggingface doc says indicator is about distinguishing between sentences,
+                #  but allen nlp says this should also be used for "mask"
 
                 # to instance
                 instance = self._text_to_instance(mlm_in,
@@ -107,7 +106,10 @@ class ConverterMLM:
                                utterances:  List[List[str]],
                                ) -> List[Instance]:
         """
-        convert on utterance into exactly one Allen NLP instances - WITHOUT MASKING (assuming masking is already done)
+        convert each utterance into exactly one Allen NLP instance.
+        differences compared to training instances:
+         1)  masking is assumed to be already done
+         2) no gold tags are collected, because they are assumed not to exist
 
         """
 
@@ -118,13 +120,8 @@ class ConverterMLM:
                                                                             self.wordpiece_tokenizer,
                                                                             lowercase_input=False)
 
-            # mask
             mlm_tags = mlm_in.copy()  # irrelevant for probing
-            masked_id = mlm_in_wp.index('[MASK]')
-            mlm_tags_wp = [configs.Training.ignored_index if n != masked_id else self.wordpiece_tokenizer.vocab[w]
-                           for n, w in enumerate(mlm_in_wp)]  # irrelevant for probing
-            assert len([i for i in mlm_tags_wp if i == configs.Training.ignored_index]) != len(mlm_tags_wp)
-            mlm_in_wp[masked_id] = '[MASK]'
+            mlm_tags_wp = None  # irrelevant for probing
             indicator_wp = [0] * (len(mlm_in_wp))
 
             # to instance
