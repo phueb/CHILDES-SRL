@@ -41,8 +41,9 @@ Notes:
 """
 
 param2requests = {
+    'intermediate_size': [1024],   # TODO test
     'srl_interleaved': [False],
-    'google_vocab_rule': ['exclusive', 'inclusive', 'excluded']  # TODO test
+    'google_vocab_rule': ['exclusive', 'inclusive', 'excluded']
 }
 
 # With num_masked=1, made 0,575,465 instances -> 035,966 train MLM batches (when batch-size=16)
@@ -54,7 +55,8 @@ param2debug = {
     'num_masked': 1,
     'num_layers': 2,
     'vocab_size': 4000,
-    'srl_interleaved': True,
+    'intermediate_size': 1024,   # TODO test
+    'srl_interleaved': False,
 }
 
 param2default = {

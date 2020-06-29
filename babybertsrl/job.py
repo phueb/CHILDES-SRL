@@ -224,7 +224,6 @@ def main(param2val):
             probing_generator_mlm = bucket_batcher_mlm_large(probing_instances_mlm, num_epochs=1)
             out_path = save_path / f'probing_{name}_results_{step}.txt'
             predict_masked_sentences(mt_bert, probing_generator_mlm, out_path,
-                                     num_batches=len(probing_instances_mlm) // large_batch_size,
                                      print_gold=False,
                                      verbose=True if 'dummy' in name else False)
 

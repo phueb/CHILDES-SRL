@@ -18,6 +18,7 @@ class Data:
 class Training:
     feedback_interval = 100
     ignored_index = -1 # any ids in argument "tags" to cross-entropy fn are ignored
+    debug = False
 
 
 class Eval:
@@ -31,9 +32,9 @@ class Eval:
     probing_names = [
         'dummy',
         'agreement_across_adjectives',
-        # 'agreement_across_PP',
-        # 'agreement_across_RC',
-        # 'agreement_in_question'
+        'agreement_across_PP',
+        'agreement_across_RC',
+        'agreement_in_question'
     ]
 
 

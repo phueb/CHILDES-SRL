@@ -10,7 +10,6 @@ from babybertsrl.model_mt import MTBert
 def predict_masked_sentences(model: MTBert,
                              instances_generator: Iterator,
                              out_path: Path,
-                             num_batches: Optional[int] = None,
                              print_gold: bool = True,
                              verbose: bool = False):
     model.eval()
@@ -19,25 +18,12 @@ def predict_masked_sentences(model: MTBert,
     predicted_mlm_tags = []
     gold_mlm_tags = []
 
-    if num_batches:
-        print(f'Task has {num_batches} batches', flush=True)
-    counter = 0
-
     for batch in instances_generator:
-        counter += 1
-        if num_batches:
-            print(f'Probing batch {counter}/{num_batches}', flush=True)
 
         # get predictions
         with torch.no_grad():
-            start1 = time.time()
             output_dict = model(task='mlm', **batch)  # input is dict[str, tensor]
-            print(f'Feedforward on batch took {time.time() - start1} secs', flush=True)
-
-            start2 = time.time()
-            predicted_mlm_tags += model.decode_mlm(output_dict
-                                                   )
-            print(f'Decoding on batch took {time.time() - start2} secs', flush=True)
+            predicted_mlm_tags += model.decode_mlm(output_dict)
 
         # show results only for whole-words
         mlm_in += output_dict['in']
@@ -46,30 +32,20 @@ def predict_masked_sentences(model: MTBert,
 
     # save to file
     print(f'Saving MLM prediction results to {out_path}')
-    num_with_mismatch = 0
-    num_without_mismatch = 0
     with out_path.open('w') as f:
         for a, b, c in zip(mlm_in, predicted_mlm_tags, gold_mlm_tags):
-
-            # fixes possible mismatch due to wordpiece decoding, ensuring that sentence is still scored by Babeval
-            if len(a) != len(b):
-                num_with_mismatch += 1
-                b = ['##' if w == '[MASK]' else w for w in a]
-            else:
-                num_without_mismatch += 1
-
+            assert len(a) == len(b)
             for ai, bi, ci in zip(a, b, c):  # careful, zips over shortest list
                 if print_gold:
-                    line = f'{ai:>20} {bi:>20} {ci:>20}\n'
+                    line = f'{ai:>20} {bi:>20} {ci:>20}'
                 else:
-                    line = f'{ai:>20} {bi:>20}\n'
-                f.write(line)
+                    line = f'{ai:>20} {bi:>20}'
+                f.write(line + '\n')
                 if verbose:
                     print(line)
             f.write('\n')
-
-    print(f'Number of test sentences with    in-out length mismatch={num_with_mismatch:9>,}')
-    print(f'Number of test sentences without in-out length mismatch={num_without_mismatch:9>,}')
+            if verbose:
+                print('\n')
 
 
 def evaluate_model_on_pp(model: MTBert,

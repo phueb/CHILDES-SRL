@@ -14,19 +14,6 @@ from babybertsrl.word_pieces import\
 from babybertsrl import configs
 
 
-def mask_one_element(elements: List[str],
-                     masked_id: int,
-                     ) -> Tuple[List[str], List[int]]:
-
-    masked = ['[MASK]' if i == masked_id else elements[i] for i in range(len(elements))]
-    mask = [1 if i == masked_id else 0 for i in range(len(elements))]
-
-    if all([x == 0 for x in mask]):
-        raise ValueError('Mask indicator contains zeros only. ')
-
-    return masked, mask
-
-
 class ConverterMLM:
 
     def __init__(self,
@@ -50,7 +37,7 @@ class ConverterMLM:
                           mlm_tags: List[str],
                           mlm_tags_wp: List[int],  # use int so that auto-indexing by Allen NLP is skipped
                           start_offsets: List[int],
-                          mlm_mask_wp: List[int],
+                          indicator_wp: List[int],
                           ) -> Instance:
 
         # meta data only has whole words
@@ -70,7 +57,7 @@ class ConverterMLM:
         assert len(mlm_in_wp) == len(mlm_tags_wp)
 
         fields = {'tokens': text_field,
-                  'indicator': SequenceLabelField(mlm_mask_wp, text_field),  # probably not needed - specific to SRL
+                  'indicator': SequenceLabelField(indicator_wp, text_field),  # probably not needed - specific to SRL
                   'tags': SequenceLabelField(mlm_tags_wp, text_field),
                   'metadata': MetadataField(metadata_dict)}
 
@@ -98,9 +85,10 @@ class ConverterMLM:
                 # mask
                 mlm_tags = mlm_in.copy()
                 mlm_tags_wp = [configs.Training.ignored_index if n != masked_id else self.wordpiece_tokenizer.vocab[w]
-                               for n, w in enumerate(mlm_in_wp)]  # TODO test -1
+                               for n, w in enumerate(mlm_in_wp)]
                 assert len([i for i in mlm_tags_wp if i == configs.Training.ignored_index]) != len(mlm_tags_wp)
-                mlm_in_wp, mlm_mask_wp = mask_one_element(mlm_in_wp, masked_id)
+                mlm_in_wp[masked_id] = '[MASK]'
+                indicator_wp = [0] * (len(mlm_in_wp))
 
                 # to instance
                 instance = self._text_to_instance(mlm_in,
@@ -108,10 +96,10 @@ class ConverterMLM:
                                                   mlm_tags,
                                                   mlm_tags_wp,
                                                   start_offsets,
-                                                  mlm_mask_wp)
+                                                  indicator_wp)
                 res.append(instance)
 
-        print(f'With num_sampled={self.params.num_masked}, made {len(res):>9,} MLM instances')
+        print(f'With num_masked={self.params.num_masked}, made {len(res):>9,} MLM instances')
 
         return res
 
@@ -134,9 +122,10 @@ class ConverterMLM:
             mlm_tags = mlm_in.copy()  # irrelevant for probing
             masked_id = mlm_in_wp.index('[MASK]')
             mlm_tags_wp = [configs.Training.ignored_index if n != masked_id else self.wordpiece_tokenizer.vocab[w]
-                           for n, w in enumerate(mlm_in_wp)]  # TODO test -1  # # irrelevant for probing
+                           for n, w in enumerate(mlm_in_wp)]  # irrelevant for probing
             assert len([i for i in mlm_tags_wp if i == configs.Training.ignored_index]) != len(mlm_tags_wp)
-            mlm_in_wp, mlm_mask_wp = mask_one_element(mlm_in_wp, masked_id)
+            mlm_in_wp[masked_id] = '[MASK]'
+            indicator_wp = [0] * (len(mlm_in_wp))
 
             # to instance
             instance = self._text_to_instance(mlm_in,
@@ -144,7 +133,7 @@ class ConverterMLM:
                                               mlm_tags,
                                               mlm_tags_wp,
                                               start_offsets,
-                                              mlm_mask_wp)
+                                              indicator_wp)
             res.append(instance)
 
         print(f'Without masking, made {len(res):>9,} probing MLM instances')

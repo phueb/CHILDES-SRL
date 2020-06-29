@@ -81,6 +81,8 @@ class MTBert(torch.nn.Module):
 
         """
 
+        loss = None
+
         # move to GPU
         tokens['tokens'] = tokens['tokens'].cuda()
         indicator = indicator.cuda()
@@ -124,7 +126,12 @@ class MTBert(torch.nn.Module):
             output_dict['gold_tags_wp'].append(d['gold_tags_wp'])
             output_dict['start_offsets'].append(d['start_offsets'])
 
-        if tags is not None:
+            if configs.Training.debug:
+                print(d['in'])
+                print(d['gold_tags_wp'])
+                print()
+
+        if loss is not None:
             output_dict['loss'] = loss
 
         return output_dict
@@ -137,19 +144,26 @@ class MTBert(torch.nn.Module):
         No viterbi or handling word-piece sequences, because task is MLM, not SRL.
         """
 
+        # TODO why are [PAD] predicted so often? does sequence_mask need to be used somewhere here? like for SRL?
+
+        logits = output_dict['logits'].detach().cpu().numpy()
+
         res = []
-        for seq_id, mlm_in in enumerate(output_dict['in']):
+        num_sequences = len(output_dict['logits'])
+        assert num_sequences == len(output_dict['in'])
+        for seq_id in range(num_sequences):
 
             # get predicted wp
-            masked_id = mlm_in.index('[MASK]')
-            logits_in_sequence = output_dict['logits'][seq_id]
-            logits_for_masked_wp = logits_in_sequence[masked_id].detach().cpu().numpy()  # shape is now [vocab_size]
+            wp_id = np.where(output_dict['gold_tags_wp'][seq_id] != configs.Training.ignored_index)
+            assert len(wp_id) == 1
+            logits_for_masked_wp = logits[seq_id][wp_id]  # shape is now [vocab_size]
             tag_wp_id = np.asscalar(np.argmax(logits_for_masked_wp))
             tag_wp = self.id2tag_wp_mlm[tag_wp_id]
 
             # fill in input sequence
+            mlm_in = output_dict['in'][seq_id]
             filled_in_sequence = mlm_in.copy()
-            filled_in_sequence[masked_id] = tag_wp
+            filled_in_sequence[mlm_in.index('[MASK]')] = tag_wp
             res.append(filled_in_sequence)
 
         return res  # sequence with predicted word-piece, one per sequence in batch
