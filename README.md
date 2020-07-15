@@ -61,6 +61,10 @@ There are two columns, one containing frequencies, the other words.
 The columns must be sorted in order of decreasing frequency (most frequent word at the top).
 Place the file in `data`, and specify its name in `params.py`.
 
+## Evaluating syntactic knowledge
+
+Generate test sentences (with number agreement) and evaluate the model's predictions using [Babeval](https://github.com/phueb/Babeval).
+
 
 ## Compatibility
 
