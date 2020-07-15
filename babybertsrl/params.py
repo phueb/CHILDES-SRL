@@ -41,9 +41,8 @@ Notes:
 """
 
 param2requests = {
-    'intermediate_size': [1024],   # TODO test
-    'srl_interleaved': [False],
-    'google_vocab_rule': ['exclusive', 'inclusive', 'excluded']
+    'srl_interleaved': [False, True],
+    'google_vocab_rule': ['inclusive']
 }
 
 # With num_masked=1, made 0,575,465 instances -> 035,966 train MLM batches (when batch-size=16)
@@ -54,9 +53,8 @@ param2debug = {
     "num_mlm_epochs": 1,
     'num_masked': 1,
     'num_layers': 2,
-    'vocab_size': 4000,
-    'intermediate_size': 1024,   # TODO test
     'srl_interleaved': False,
+    'google_vocab_rule': 'exclusive',
 }
 
 param2default = {
@@ -66,12 +64,12 @@ param2default = {
     'hidden_size': 256,
     'num_layers': 8,
     'num_attention_heads': 8,
-    'intermediate_size': 64,
+    'intermediate_size': 1024,
     'srl_interleaved': True,
     'srl_probability': 1.0,
     'num_mlm_epochs': 1,
     'num_masked': 6,
     'corpus_name': 'childes-20191206',
     'vocab_size': 4000,
-    'google_vocab_rule': 'excluded',
+    'google_vocab_rule': 'inclusive',
 }
