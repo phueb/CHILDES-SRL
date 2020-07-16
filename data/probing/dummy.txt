@@ -1,2 +1,3 @@
 what are [MASK] doing ?
-what is [MASK] doing ?
+what is a masquerade [NAME] ?
+i like to be at [PLACE] .

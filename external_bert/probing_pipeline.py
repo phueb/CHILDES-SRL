@@ -15,8 +15,10 @@ special_symbols = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']  # order matter
 childes_symbols = ['[NAME]', '[PLACE]', '[MISC]']  # do not word-piece or lower-case these
 all_symbols = special_symbols + childes_symbols
 
-
-google_vocab_file = "https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-vocab.txt"
+probing_path = '../data/probing'
+google_vocab_file = "../data/bert-base-uncased-vocab.txt"
+childes_vocab_file = '../data/childes-20191206_vocab.txt'
+# https://github.com/phueb/BabyBertSRL/blob/master/data/childes-20191206_vocab.txt
 
 
 def load_utterances_from_file(file_path: Path,
@@ -132,25 +134,7 @@ def to_bert_format(utterances:  List[List[str]],
 
     """
 
-    google_vocab = load_words_from_vocab_file(Path(google_vocab_file), col=0)
-
-    # make vocab index for tokenizer
-    to_index = special_symbols + childes_symbols + google_vocab
-    vocab = OrderedDict()
-    index = 0
-    for token in to_index:
-        if token in vocab:
-            # happens for symbols
-            continue
-        vocab[token] = index
-        index += 1
-    assert vocab['[PAD]'] == 0
-    assert vocab['[UNK]'] == 1
-    assert vocab['[CLS]'] == 2
-    assert vocab['[SEP]'] == 3
-    assert vocab['[MASK]'] == 4
-
-    wordpiece_tokenizer = WordpieceTokenizer(vocab)
+    wordpiece_tokenizer = make_wordpiece_tokenizer()
 
     res = []
     for utterance in utterances:
@@ -165,19 +149,49 @@ def to_bert_format(utterances:  List[List[str]],
     return res
 
 
+def make_wordpiece_tokenizer():
+    """
+    uses google vocab as starting point,
+    but also adds any word from 4k most frequent words in CHILDES that is not in google vocab
+    """
+    childes_vocab = load_words_from_vocab_file(Path(childes_vocab_file), col=1)[:4000]
+    google_vocab = load_words_from_vocab_file(Path(google_vocab_file), col=0)
+    # make vocab index for tokenizer
+    to_index = special_symbols + childes_symbols + list(set(childes_vocab + google_vocab))
+    vocab = OrderedDict()
+    index = 0
+    for token in to_index:
+        if token in vocab:
+            # happens for symbols
+            continue
+        vocab[token] = index
+        index += 1
+    assert vocab['[PAD]'] == 0
+    assert vocab['[UNK]'] == 1
+    assert vocab['[CLS]'] == 2
+    assert vocab['[SEP]'] == 3
+    assert vocab['[MASK]'] == 4
+
+    return WordpieceTokenizer(vocab)
+
+
 def do_probing(step):
     """
     predict masked word given test sentences belong ing to various probing tasks
     """
     for name in probing_names:
         # load probing sequences
-        probing_data_path = Path('probing') / f'{name}.txt'
+        probing_data_path = Path(probing_path) / f'{name}.txt'
         if not probing_data_path.exists():
             print(f'WARNING: {probing_data_path} does not exist', flush=True)
             continue
         print(f'Starting probing with task={name}', flush=True)
         probing_utterances = load_utterances_from_file(probing_data_path)
         input_sequences = to_bert_format(probing_utterances)
+
+        # sanity check
+        for s in input_sequences:
+            print(s)
 
         # get predictions from BERT - in words, not integers, for saving to file
         # TODO: make sure to predict a word only at [MASK], all other words should remain identical to input
@@ -194,3 +208,7 @@ def do_probing(step):
                     line = f'{ai:>20} {bi:>20}'
                     f.write(line + '\n')
                 f.write('\n')
+
+
+if __name__ == '__main__':
+    do_probing(step=0)
