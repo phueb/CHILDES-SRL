@@ -36,8 +36,8 @@ class Eval:
         'agreement_across_adjectives',
         'agreement_across_PP',
         'agreement_across_RC',
-        'agreement_in_1_verb_question'
-        'agreement_in_2_verb_question'
+        'agreement_in_1_verb_question',
+        'agreement_in_2_verb_question',
     ]
 
 
