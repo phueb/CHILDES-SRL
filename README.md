@@ -19,7 +19,11 @@ whose published work is available [here](https://www.aclweb.org/anthology/W08-21
 - 2019: The current work is an extension of the previous, leveraging the powerful deep-learning model BERT. Investigation into the inner workings of the model began in in September 2019 while under the supervision of [Cynthia Fisher](https://psychology.illinois.edu/directory/profile/clfishe)
 at the Department of Psychology at [UIUC](https://psychology.illinois.edu/). 
 
-- 2020: Experimentation with with joint training BERT on SRL and MLM began. The joint training procedure is similar to what is proposed in [https://arxiv.org/pdf/1901.11504.pdf](https://arxiv.org/pdf/1901.11504.pdf)
+- 2020 (Spring): Experimentation with with joint training BERT on SRL and MLM began. The joint training procedure is similar to what is proposed in [https://arxiv.org/pdf/1901.11504.pdf](https://arxiv.org/pdf/1901.11504.pdf)
+
+- 2020 (Summer): Having found little benefit for joint SRL and MLM training, a new line of research into how the model's success on syntactic knowledge tasks compares to BERT-Base,
+ which is larger and trained on much more data. Probing data can be found [here](https://github.com/phueb/Babeval). 
+
 
 ## BERT
  
@@ -47,19 +51,12 @@ a decoding function is called which converts the word pieces back into whole wor
 
 ## Custom Vocabulary
 
-If using a custom vocab file, use the following formatting:
-```text
- 2342 .
- 1249 you
-  234 I
-  .
-  .
-  .
-```
+The default is to use all words in the original Google vocabulary, including wordpieces,
+and the 4K most frequent words in the provided CHILDES corpus. 
+After excluding all Google vocab words not in the CHILDES corpus, this results in ~ 8K words and wordpieces.
 
-There are two columns, one containing frequencies, the other words. 
-The columns must be sorted in order of decreasing frequency (most frequent word at the top).
-Place the file in `data`, and specify its name in `params.py`.
+There are options to use only words from CHILDES, or only words from the Google vocab.
+See `babybertsrl.params.py`
 
 ## Evaluating syntactic knowledge
 
