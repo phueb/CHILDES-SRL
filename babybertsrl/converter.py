@@ -121,7 +121,8 @@ class ConverterMLM:
                                                                             lowercase_input=False)
 
             mlm_tags = mlm_in.copy()  # irrelevant for probing
-            mlm_tags_wp = None  # irrelevant for probing
+            mlm_tags_wp = [self.wordpiece_tokenizer.vocab[w]
+                           for n, w in enumerate(mlm_in_wp)]  # relevant only for forced_choice probing tasks
             indicator_wp = [0] * (len(mlm_in_wp))
 
             # to instance

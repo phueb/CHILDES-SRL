@@ -43,6 +43,8 @@ class MTBert(torch.nn.Module):
         self.embedding_dropout = Dropout(p=embedding_dropout)
 
         self.xe = CrossEntropyLoss(ignore_index=configs.Training.ignored_index)  # ignore tags with index=ignore_index
+        self.forced_choice_xe = CrossEntropyLoss(ignore_index=configs.Training.ignored_index-1,   # nothing is ignored
+                                                 reduction='none')  # keep per-utterance xe scores
 
     def forward(self,
                 task: str,
@@ -97,16 +99,27 @@ class MTBert(torch.nn.Module):
         embedded_text_input = self.embedding_dropout(bert_embeddings)
         batch_size, sequence_length, _ = embedded_text_input.size()
 
-        # use correct head for task
+        # for MLM training
         if task == 'mlm':
             logits = self.head_mlm(bert_embeddings)  # projects to vector of size bert_config.vocab_size
             if tags is not None:
                 loss = self.xe(logits.view(-1, self.bert_model.config.vocab_size), tags.view(-1))
 
+        # for forced_choice probing tasks
+        elif task == 'forced_choice':  # during probing
+            logits = self.head_mlm(bert_embeddings)  # projects to vector of size bert_config.vocab_size
+            if tags is not None:  # tags must not be of NoneType, because loss must be computed
+                # loss function requires that probability distributions are stored in 2nd dim, thus we need to permute
+                # logits need to be [batch size, vocab size, seq length]
+                # tags need to be [batch size, vocab size]
+                loss = self.forced_choice_xe(logits.permute(0, 2, 1), tags)
+
+        # for SRL training
         elif task == 'srl':
             logits = self.head_srl(embedded_text_input)
             if tags is not None:
                 loss = sequence_cross_entropy_with_logits(logits, tags, attention_mask)
+
         else:
             raise AttributeError('Invalid arg to "task"')
 

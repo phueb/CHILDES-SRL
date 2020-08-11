@@ -6,47 +6,6 @@ from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
 from babybertsrl.model import MTBert
 
 
-def predict_masked_sentences(model: MTBert,
-                             instances_generator: Iterator,
-                             out_path: Path,
-                             print_gold: bool = True,
-                             verbose: bool = False):
-    model.eval()
-
-    mlm_in = []
-    predicted_mlm_tags = []
-    gold_mlm_tags = []
-
-    for batch in instances_generator:
-
-        # get predictions
-        with torch.no_grad():
-            output_dict = model(task='mlm', **batch)  # input is dict[str, tensor]
-            predicted_mlm_tags += model.decode_mlm(output_dict)
-
-        # show results only for whole-words
-        mlm_in += output_dict['in']
-        gold_mlm_tags += output_dict['gold_tags']
-        assert len(mlm_in) == len(predicted_mlm_tags) == len(gold_mlm_tags)
-
-    # save to file
-    print(f'Saving MLM prediction results to {out_path}')
-    with out_path.open('w') as f:
-        for a, b, c in zip(mlm_in, predicted_mlm_tags, gold_mlm_tags):
-            assert len(a) == len(b)
-            for ai, bi, ci in zip(a, b, c):  # careful, zips over shortest list
-                if print_gold:
-                    line = f'{ai:>20} {bi:>20} {ci:>20}'
-                else:
-                    line = f'{ai:>20} {bi:>20}'
-                f.write(line + '\n')
-                if verbose:
-                    print(line)
-            f.write('\n')
-            if verbose:
-                print('\n')
-
-
 def evaluate_model_on_pp(model: MTBert,
                          instances_generator: Iterator,
                          ) -> float:

@@ -22,7 +22,8 @@ from babybertsrl.io import load_vocab
 from babybertsrl.io import split
 from babybertsrl.converter import ConverterMLM, ConverterSRL
 from babybertsrl.eval import evaluate_model_on_pp
-from babybertsrl.eval import predict_masked_sentences
+from babybertsrl.probing import predict_masked_sentences
+from babybertsrl.probing import score_forced_choices
 from babybertsrl.model import MTBert
 from babybertsrl.eval import evaluate_model_on_f1
 
@@ -91,7 +92,7 @@ def main(param2val):
     # note: but not all Google wordpieces are necessarily used (and are therefore not in Allen NLP vocab)
 
     # load utterances for MLM task
-    utterances = load_utterances_from_file(data_path_mlm)
+    utterances = load_utterances_from_file(data_path_mlm, allow_discard=True)
     train_utterances, devel_utterances, test_utterances = split(utterances)
 
     # load propositions for SLR task
@@ -210,22 +211,35 @@ def main(param2val):
     print(flush=True)
 
     def do_probing(step):
-        # probing - test sentences for specific syntactic tasks
-        for name in configs.Eval.probing_names:
-            # prepare data
-            probing_data_path_mlm = project_path / 'data' / 'probing' / f'{name}.txt'
-            if not probing_data_path_mlm.exists():
-                print(f'WARNING: {probing_data_path_mlm} does not exist', flush=True)
-                continue
-            print(f'Starting probing with task={name}', flush=True)
-            probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
-            probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
-            # batch and do inference
-            probing_generator_mlm = bucket_batcher_mlm_large(probing_instances_mlm, num_epochs=1)
-            out_path = save_path / f'probing_{name}_results_{step}.txt'
-            predict_masked_sentences(mt_bert, probing_generator_mlm, out_path,
-                                     print_gold=False,
-                                     verbose=True if 'dummy' in name else False)
+        for probing_task_name in configs.Eval.probing_names:
+            for task_type in ['forced_choice', 'open_ended']:
+                # prepare data - data is expected to be located on shared drive
+                probing_data_path_mlm = project_path / 'data' / 'probing' / task_type / f'{probing_task_name}.txt'
+                if not probing_data_path_mlm.exists():
+                    print(f'WARNING: {probing_data_path_mlm} does not exist', flush=True)
+                    continue
+                print(f'Starting probing with task={probing_task_name}', flush=True)
+                probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
+                probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
+                probing_generator_mlm = bucket_batcher_mlm_large(probing_instances_mlm, num_epochs=1)
+                # prepare output path
+                probing_results_path = save_path / task_type / f'probing_{probing_task_name}_results_{step}.txt'
+                if not probing_results_path.parent.exists():
+                    probing_results_path.parent.mkdir(exist_ok=True)
+                # inference + save results to file for scoring offline
+                if task_type == 'forced_choice':
+                    score_forced_choices(mt_bert,
+                                         probing_generator_mlm,
+                                         probing_results_path,
+                                         verbose=True if 'dummy' in probing_task_name else False)
+                elif task_type == 'open_ended':
+                    predict_masked_sentences(mt_bert,
+                                             probing_generator_mlm,
+                                             probing_results_path,
+                                             print_gold=False,
+                                             verbose=True if 'dummy' in probing_task_name else False)
+                else:
+                    raise AttributeError('Invalid arg to "task_type".')
 
     while step_global < max_step:
 

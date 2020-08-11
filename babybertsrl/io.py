@@ -94,7 +94,8 @@ def split(data: List, seed: int = 2):
 
 
 def load_utterances_from_file(file_path: Path,
-                              verbose: bool = False) -> List[List[str]]:
+                              verbose: bool = False,
+                              allow_discard: bool = False) -> List[List[str]]:
     """
     load utterances for language modeling from text file
     """
@@ -123,11 +124,14 @@ def load_utterances_from_file(file_path: Path,
             # collect utterances
             for utterance in utterances:
 
+                if not utterance:  # during probing, parsing logic above may produce empty utterances
+                    continue
+
                 # check  length
-                if len(utterance) < configs.Data.min_input_length:
+                if len(utterance) < configs.Data.min_input_length and allow_discard:
                     num_too_small += 1
                     continue
-                if len(utterance) > configs.Data.max_input_length:
+                if len(utterance) > configs.Data.max_input_length and allow_discard:
                     num_too_large += 1
                     continue
 
