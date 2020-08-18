@@ -1,6 +1,4 @@
 
-## Probing Pipeline for external BERT
+## Probing BERT pre-trained using Tensorflow
 
 This code read and prepares probing sentences for use with an external BERT model.
-The code is similar to what is used in this repository,
- except that all logic related to Allen NLP-style instances and batching has been removed
