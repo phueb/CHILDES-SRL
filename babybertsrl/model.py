@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from torch.nn import Linear, Dropout, functional as F
 from torch.nn import CrossEntropyLoss
-from pytorch_pretrained_bert.modeling import BertModel, BertOnlyMLMHead
+from transformers.modeling_bert import BertModel, BertOnlyMLMHead
 
 from allennlp.nn.util import get_text_field_mask
 from allennlp.nn.util import sequence_cross_entropy_with_logits
@@ -21,8 +21,8 @@ class MTBert(torch.nn.Module):
     """
 
     def __init__(self,
-                 id2tag_wp_srl: Dict[int, str],
                  id2tag_wp_mlm: Dict[int, str],
+                 id2tag_wp_srl: Dict[int, str],
                  bert_model: BertModel,
                  embedding_dropout: float = 0.0,
                  ) -> None:
@@ -38,7 +38,7 @@ class MTBert(torch.nn.Module):
 
         # make one projection layer for each task
         self.head_srl = Linear(self.bert_model.config.hidden_size, len(self.id2tag_wp_srl))
-        self.head_mlm = BertOnlyMLMHead(self.bert_model.config, self.bert_model.embeddings.word_embeddings.weight)
+        self.head_mlm = BertOnlyMLMHead(self.bert_model.config)
 
         self.embedding_dropout = Dropout(p=embedding_dropout)
 
@@ -92,15 +92,17 @@ class MTBert(torch.nn.Module):
 
         # get BERT contextualized embeddings
         attention_mask = get_text_field_mask(tokens)
-        bert_embeddings, _ = self.bert_model(input_ids=tokens['tokens'],
-                                             token_type_ids=indicator,
-                                             attention_mask=attention_mask,
-                                             output_all_encoded_layers=False)
+        outputs = self.bert_model(input_ids=tokens['tokens'],
+                                  token_type_ids=indicator,
+                                  attention_mask=attention_mask
+                                  )
+        bert_embeddings = outputs[0]
         embedded_text_input = self.embedding_dropout(bert_embeddings)
         batch_size, sequence_length, _ = embedded_text_input.size()
 
         # for MLM training
         if task == 'mlm':
+            print(bert_embeddings.shape)
             logits = self.head_mlm(bert_embeddings)  # projects to vector of size bert_config.vocab_size
             if tags is not None:
                 loss = self.xe(logits.view(-1, self.bert_model.config.vocab_size), tags.view(-1))

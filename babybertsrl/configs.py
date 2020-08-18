@@ -5,11 +5,12 @@ class Dirs:
     root = Path(__file__).parent.parent
     data = root / 'data'
     data_tools = root / 'data_tools'
+    external_bert = root / 'external_bert'
 
 
 class Data:
-    min_input_length = 3
-    max_input_length = 128
+    min_seq_length = 3
+    max_seq_length = 128
     train_prob = 0.8  # probability that utterance is assigned to train split
     special_symbols = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']  # order matters
     childes_symbols = ['[NAME]', '[PLACE]', '[MISC]']

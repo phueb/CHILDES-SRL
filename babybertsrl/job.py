@@ -11,9 +11,9 @@ from allennlp.data.vocabulary import Vocabulary
 from allennlp.data.iterators import BucketIterator
 from allennlp.training.util import move_optimizer_to_cuda
 
-from pytorch_pretrained_bert.tokenization import WordpieceTokenizer
-from pytorch_pretrained_bert.modeling import BertModel, BertConfig
-from pytorch_pretrained_bert import BertAdam
+from transformers import WordpieceTokenizer
+from transformers import BertModel, BertConfig
+from transformers import AdamW
 
 from babybertsrl import configs
 from babybertsrl.io import load_utterances_from_file
@@ -21,9 +21,8 @@ from babybertsrl.io import load_propositions_from_file
 from babybertsrl.io import load_vocab
 from babybertsrl.io import split
 from babybertsrl.converter import ConverterMLM, ConverterSRL
-from babybertsrl.eval import evaluate_model_on_pp
+from babybertsrl.eval import evaluate_model_on_pp, get_probing_predictions
 from babybertsrl.probing import predict_masked_sentences
-from babybertsrl.probing import score_forced_choices
 from babybertsrl.model import MTBert
 from babybertsrl.eval import evaluate_model_on_f1
 
@@ -72,7 +71,8 @@ def main(param2val):
     data_path_devel_srl = project_path / 'data' / 'training' / f'human-based-2018_srl.txt'
     data_path_test_srl = project_path / 'data' / 'training' / f'human-based-2008_srl.txt'
     childes_vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab.txt'
-    google_vocab_path = project_path / 'data' / 'bert-base-cased.txt'  # to get word pieces
+    google_vocab_path = project_path / 'data' / 'bert-base-uncased.txt'  # to get word pieces
+    probing_path = project_path / 'data' / 'probing'
 
     # prepare save_path - this must be done when job is executed locally (not on Ludwig worker)
     save_path = Path(param2val['save_path'])
@@ -87,7 +87,7 @@ def main(param2val):
     assert vocab['[CLS]'] == 2
     assert vocab['[SEP]'] == 3
     assert vocab['[MASK]'] == 4
-    wordpiece_tokenizer = WordpieceTokenizer(vocab)
+    wordpiece_tokenizer = WordpieceTokenizer(vocab, unk_token='[UNK]')
     print(f'Number of types in word-piece tokenizer={len(vocab):,}\n', flush=True)
     # note: but not all Google wordpieces are necessarily used (and are therefore not in Allen NLP vocab)
 
@@ -106,8 +106,8 @@ def main(param2val):
         test_propositions = load_propositions_from_file(data_path_test_srl)
 
     # converters handle conversion from text to instances
-    converter_mlm = ConverterMLM(params, wordpiece_tokenizer)
-    converter_srl = ConverterSRL(params, wordpiece_tokenizer)
+    converter_mlm = ConverterMLM(params.num_masked, wordpiece_tokenizer)
+    converter_srl = ConverterSRL(params.num_masked, wordpiece_tokenizer)
 
     # get vocab for BERT heads
     # note: Allen NLP vocab holds labels, wordpiece_tokenizer.vocab holds input tokens
@@ -140,12 +140,13 @@ def main(param2val):
 
     # BERT
     print('Preparing Multi-task BERT...')
-    tokenizer_vocab_size = len(converter_mlm.wordpiece_tokenizer.vocab)
+    tokenizer_vocab_size = len(wordpiece_tokenizer.vocab)
     bert_config = BertConfig(vocab_size_or_config_json_file=tokenizer_vocab_size,  # was 32K
                              hidden_size=params.hidden_size,  # was 768
                              num_hidden_layers=params.num_layers,  # was 12
                              num_attention_heads=params.num_attention_heads,  # was 12
-                             intermediate_size=params.intermediate_size)  # was 3072
+                             intermediate_size=params.intermediate_size,    # was 3072
+                             )
     bert_model = BertModel(config=bert_config)
     # Multi-tasking BERT
     mt_bert = MTBert(id2tag_wp_mlm={i: t for t, i in wordpiece_tokenizer.vocab.items()},
@@ -157,8 +158,8 @@ def main(param2val):
     print('Number of parameters: {:,}\n'.format(num_params), flush=True)
 
     # optimizers
-    optimizer_mlm = BertAdam(params=mt_bert.parameters(), lr=params.lr)
-    optimizer_srl = BertAdam(params=mt_bert.parameters(), lr=params.lr)
+    optimizer_mlm = AdamW(mt_bert.parameters(), lr=params.lr, correct_bias=False)
+    optimizer_srl = AdamW(mt_bert.parameters(), lr=params.lr, correct_bias=False)
     move_optimizer_to_cuda(optimizer_mlm)
     move_optimizer_to_cuda(optimizer_srl)
 
@@ -169,7 +170,7 @@ def main(param2val):
     bucket_batcher_srl.index_with(effective_vocab_srl)
 
     # big batcher to speed evaluation - 1024 is too big
-    large_batch_size = 512
+    large_batch_size = 256
     bucket_batcher_mlm_large = BucketIterator(batch_size=large_batch_size, sorting_keys=[('tokens', "num_tokens")])
     bucket_batcher_srl_large = BucketIterator(batch_size=large_batch_size, sorting_keys=[('tokens', "num_tokens")])
     # bucket_batcher_mlm_large.index_with(effective_vocab_mlm)
@@ -209,37 +210,6 @@ def main(param2val):
     max_step = num_train_mlm_batches + (params.srl_probability * num_train_mlm_batches)
     print(f'Will stop training at global step={max_step:,}')
     print(flush=True)
-
-    def do_probing(step):
-        for probing_task_name in configs.Eval.probing_names:
-            for task_type in ['forced_choice', 'open_ended']:
-                # prepare data - data is expected to be located on shared drive
-                probing_data_path_mlm = project_path / 'data' / 'probing' / task_type / f'{probing_task_name}.txt'
-                if not probing_data_path_mlm.exists():
-                    print(f'WARNING: {probing_data_path_mlm} does not exist', flush=True)
-                    continue
-                print(f'Starting probing with task={probing_task_name}', flush=True)
-                probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
-                probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
-                probing_generator_mlm = bucket_batcher_mlm_large(probing_instances_mlm, num_epochs=1)
-                # prepare output path
-                probing_results_path = save_path / task_type / f'probing_{probing_task_name}_results_{step}.txt'
-                if not probing_results_path.parent.exists():
-                    probing_results_path.parent.mkdir(exist_ok=True)
-                # inference + save results to file for scoring offline
-                if task_type == 'forced_choice':
-                    score_forced_choices(mt_bert,
-                                         probing_generator_mlm,
-                                         probing_results_path,
-                                         verbose=True if 'dummy' in probing_task_name else False)
-                elif task_type == 'open_ended':
-                    predict_masked_sentences(mt_bert,
-                                             probing_generator_mlm,
-                                             probing_results_path,
-                                             print_gold=False,
-                                             verbose=True if 'dummy' in probing_task_name else False)
-                else:
-                    raise AttributeError('Invalid arg to "task_type".')
 
     while step_global < max_step:
 
@@ -298,7 +268,7 @@ def main(param2val):
             # probing - test sentences for specific syntactic tasks
             skip_probing = step_global == 0 and not configs.Eval.probe_at_step_zero
             if not skip_probing:
-                do_probing(step_mlm)
+                get_probing_predictions(probing_path, converter_mlm, bucket_batcher_mlm_large, save_path, mt_bert, step_mlm)
 
         # eval SRL
         if step_srl % configs.Eval.interval == 0 and step_srl not in evaluated_steps_srl:
@@ -353,7 +323,7 @@ def main(param2val):
         predict_masked_sentences(mt_bert, test_generator_mlm, out_path)
 
     if configs.Eval.probe_at_end:
-        do_probing(step_mlm)
+        get_probing_predictions(probing_path, converter_mlm, bucket_batcher_mlm_large, save_path, mt_bert, step_mlm)
 
     # return performance as pandas Series
     series_list = [s1, s2]

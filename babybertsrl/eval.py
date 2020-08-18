@@ -2,6 +2,12 @@ import torch
 from typing import Iterator, Optional
 from pathlib import Path
 
+from allennlp.data.iterators import BucketIterator
+
+from babybertsrl import configs
+from babybertsrl.io import load_utterances_from_file
+from babybertsrl.probing import score_forced_choices, predict_masked_sentences
+from babybertsrl.converter import ConverterMLM
 from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
 from babybertsrl.model import MTBert
 
@@ -75,3 +81,44 @@ def evaluate_model_on_f1(model: MTBert,
         scorer.save_tag2metrics(out_path, tag2metrics)
 
     return tag2metrics['overall']['f1']
+
+
+def get_probing_predictions(probing_path: Path,
+                            converter_mlm: ConverterMLM,
+                            bucket_batcher_mlm_large: BucketIterator,
+                            save_path: Path,
+                            mt_bert: MTBert,
+                            step: Optional[int] = None):
+
+    if step is None:
+        step = 'last-step'
+
+    for probing_task_name in configs.Eval.probing_names:
+        for task_type in ['forced_choice', 'open_ended']:
+            # prepare data - data is expected to be located on shared drive
+            probing_data_path_mlm = probing_path / task_type / f'{probing_task_name}.txt'
+            if not probing_data_path_mlm.exists():
+                print(f'WARNING: {probing_data_path_mlm} does not exist', flush=True)
+                continue
+            print(f'Starting probing with task={probing_task_name}', flush=True)
+            probing_utterances_mlm = load_utterances_from_file(probing_data_path_mlm)
+            probing_instances_mlm = converter_mlm.make_probing_instances(probing_utterances_mlm)
+            probing_generator_mlm = bucket_batcher_mlm_large(probing_instances_mlm, num_epochs=1)
+            # prepare output path
+            probing_results_path = save_path / task_type / f'probing_{probing_task_name}_results_{step}.txt'
+            if not probing_results_path.parent.exists():
+                probing_results_path.parent.mkdir(exist_ok=True)
+            # inference + save results to file for scoring offline
+            if task_type == 'forced_choice':
+                score_forced_choices(mt_bert,
+                                     probing_generator_mlm,
+                                     probing_results_path,
+                                     verbose=True if 'dummy' in probing_task_name else False)
+            elif task_type == 'open_ended':
+                predict_masked_sentences(mt_bert,
+                                         probing_generator_mlm,
+                                         probing_results_path,
+                                         print_gold=False,
+                                         verbose=True if 'dummy' in probing_task_name else False)
+            else:
+                raise AttributeError('Invalid arg to "task_type".')

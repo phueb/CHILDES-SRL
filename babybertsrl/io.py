@@ -128,17 +128,17 @@ def load_utterances_from_file(file_path: Path,
                     continue
 
                 # check  length
-                if len(utterance) < configs.Data.min_input_length and allow_discard:
+                if len(utterance) < configs.Data.min_seq_length and allow_discard:
                     num_too_small += 1
                     continue
-                if len(utterance) > configs.Data.max_input_length and allow_discard:
+                if len(utterance) > configs.Data.max_seq_length and allow_discard:
                     num_too_large += 1
                     continue
 
                 res.append(utterance)
 
-    print(f'WARNING: Skipped {num_too_small} utterances which are shorter than {configs.Data.min_input_length}.')
-    print(f'WARNING: Skipped {num_too_large} utterances which are larger than {configs.Data.max_input_length}.')
+    print(f'WARNING: Skipped {num_too_small} utterances which are shorter than {configs.Data.min_seq_length}.')
+    print(f'WARNING: Skipped {num_too_large} utterances which are larger than {configs.Data.max_seq_length}.')
 
     if verbose:
         lengths = [len(u) for u in res]
@@ -180,17 +180,17 @@ def load_propositions_from_file(file_path: Path,
             labels = right_input
 
             # check  length
-            if len(words) <= configs.Data.min_input_length:
+            if len(words) <= configs.Data.min_seq_length:
                 num_too_small += 1
                 continue
-            if len(words) > configs.Data.max_input_length:
+            if len(words) > configs.Data.max_seq_length:
                 num_too_large += 1
                 continue
 
             res.append((words, predicate_index, labels))
 
-    print(f'WARNING: Skipped {num_too_small} propositions which are shorter than {configs.Data.min_input_length}.')
-    print(f'WARNING: Skipped {num_too_large} propositions which are larger than {configs.Data.max_input_length}.')
+    print(f'WARNING: Skipped {num_too_small} propositions which are shorter than {configs.Data.min_seq_length}.')
+    print(f'WARNING: Skipped {num_too_large} propositions which are larger than {configs.Data.max_seq_length}.')
 
     if verbose:
         lengths = [len(p[0]) for p in res]

@@ -1,7 +1,7 @@
 from typing import Iterator, List, Tuple, Union
 import numpy as np
 
-from pytorch_pretrained_bert.tokenization import WordpieceTokenizer
+from transformers import WordpieceTokenizer
 
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data import Instance, Token
@@ -17,7 +17,7 @@ from babybertsrl import configs
 class ConverterMLM:
 
     def __init__(self,
-                 params,
+                 num_masked: int,
                  wordpiece_tokenizer: WordpieceTokenizer,
                  ):
         """
@@ -27,7 +27,7 @@ class ConverterMLM:
 
         """
 
-        self.params = params
+        self.num_masked = num_masked
         self.wordpiece_tokenizer = wordpiece_tokenizer
         self.token_indexers = {'tokens': SingleIdTokenIndexer()}  # specifies how a token is indexed
 
@@ -76,10 +76,10 @@ class ConverterMLM:
             # to word-pieces (do this BEFORE masking) - works as expected June 25, 2020
             mlm_in_wp, end_offsets, start_offsets = convert_words_to_wordpieces(mlm_in,
                                                                                 self.wordpiece_tokenizer,
-                                                                                lowercase_input=False)
+                                                                                lowercase_input=True)
             # collect each multiple times, each time with a different masked word
             choices = np.arange(1, len(mlm_in_wp) - 1)  # prevents masking of [SEP] or [CLS]
-            for masked_id in np.random.choice(choices, size=min(len(choices), self.params.num_masked), replace=False):
+            for masked_id in np.random.choice(choices, size=min(len(choices), self.num_masked), replace=False):
                 # mask
                 mlm_tags = mlm_in.copy()
                 mlm_tags_wp = [configs.Training.ignored_index if n != masked_id else self.wordpiece_tokenizer.vocab[w]
@@ -98,7 +98,7 @@ class ConverterMLM:
                                                   indicator_wp)
                 res.append(instance)
 
-        print(f'With num_masked={self.params.num_masked}, made {len(res):>9,} MLM instances')
+        print(f'With num_masked={self.num_masked}, made {len(res):>9,} MLM instances')
 
         return res
 
@@ -118,7 +118,7 @@ class ConverterMLM:
             # to word-pieces (do this BEFORE masking)
             mlm_in_wp, offsets, start_offsets = convert_words_to_wordpieces(mlm_in,
                                                                             self.wordpiece_tokenizer,
-                                                                            lowercase_input=False)
+                                                                            lowercase_input=True)
 
             mlm_tags = mlm_in.copy()  # irrelevant for probing
             mlm_tags_wp = [self.wordpiece_tokenizer.vocab[w]
@@ -142,7 +142,7 @@ class ConverterMLM:
 class ConverterSRL:
 
     def __init__(self,
-                 params,
+                 num_masked: int,
                  wordpiece_tokenizer: WordpieceTokenizer,
                  ):
         """
@@ -151,7 +151,7 @@ class ConverterSRL:
         designed to use with conll-05 style formatted SRL data.
         """
 
-        self.params = params
+        self.num_masked = num_masked
         self.wordpiece_tokenizer = wordpiece_tokenizer
         self.token_indexers = {'tokens': SingleIdTokenIndexer()}
 
@@ -179,7 +179,7 @@ class ConverterSRL:
         # to word-pieces
         srl_in_wp, offsets, start_offsets = convert_words_to_wordpieces(srl_in,
                                                                         self.wordpiece_tokenizer,
-                                                                        lowercase_input=False)
+                                                                        lowercase_input=True)
         srl_tags_wp = convert_bio_tags_to_wordpieces(srl_tags, offsets)
         verb_indices_wp = convert_verb_indices_to_wordpiece_indices(srl_verb_indices, offsets)
 
