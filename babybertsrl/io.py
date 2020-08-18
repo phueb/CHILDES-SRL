@@ -7,8 +7,12 @@ from collections import OrderedDict
 from babybertsrl import configs
 
 
+# when lower-casing, do not lower-case upper-cased symbols
+upper_cased = configs.Data.special_symbols + configs.Data.childes_symbols  # order matters
+
+
 def load_words_from_vocab_file(vocab_file: Path,
-                               col: int =0):
+                               col: int = 0):
 
     res = []
     with vocab_file.open("r", encoding="utf-8") as reader:
@@ -63,6 +67,7 @@ def load_vocab(childes_vocab_file: Path,
 
     assert len(set(res)) == len(res)
     assert res['[MASK]'] == configs.Data.mask_vocab_id
+    assert index == len(res), (index, len(res))
 
     return res
 
@@ -135,6 +140,11 @@ def load_utterances_from_file(file_path: Path,
                     num_too_large += 1
                     continue
 
+                # lower-case
+                if configs.Data.uncased:
+                    utterance = [w if w in upper_cased else w.lower()
+                                 for w in utterance]
+
                 res.append(utterance)
 
     print(f'WARNING: Skipped {num_too_small} utterances which are shorter than {configs.Data.min_seq_length}.')
@@ -186,6 +196,11 @@ def load_propositions_from_file(file_path: Path,
             if len(words) > configs.Data.max_seq_length:
                 num_too_large += 1
                 continue
+
+            # lower-case
+            if configs.Data.uncased:
+                words = [w if w in upper_cased else w.lower()
+                         for w in words]
 
             res.append((words, predicate_index, labels))
 

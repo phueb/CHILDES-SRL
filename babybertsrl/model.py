@@ -102,7 +102,6 @@ class MTBert(torch.nn.Module):
 
         # for MLM training
         if task == 'mlm':
-            print(bert_embeddings.shape)
             logits = self.head_mlm(bert_embeddings)  # projects to vector of size bert_config.vocab_size
             if tags is not None:
                 loss = self.xe(logits.view(-1, self.bert_model.config.vocab_size), tags.view(-1))

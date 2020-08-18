@@ -6,9 +6,12 @@ class Dirs:
     data = root / 'data'
     data_tools = root / 'data_tools'
     external_bert = root / 'external_bert'
+    local_probing_path = Path.home() / 'Babeval_phueb' /'sentences'
+    # probing data can be found at https://github.com/phueb/Babeval/tree/master/sentences
 
 
 class Data:
+    uncased = True  # make sure the correct Google vocab is loaded, e.g. bert-base-uncased-vocab.txt
     min_seq_length = 3
     max_seq_length = 128
     train_prob = 0.8  # probability that utterance is assigned to train split

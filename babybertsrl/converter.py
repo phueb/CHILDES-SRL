@@ -74,9 +74,7 @@ class ConverterMLM:
         res = []
         for mlm_in in utterances:
             # to word-pieces (do this BEFORE masking) - works as expected June 25, 2020
-            mlm_in_wp, end_offsets, start_offsets = convert_words_to_wordpieces(mlm_in,
-                                                                                self.wordpiece_tokenizer,
-                                                                                lowercase_input=True)
+            mlm_in_wp, end_offsets, start_offsets = convert_words_to_wordpieces(mlm_in, self.wordpiece_tokenizer)
             # collect each multiple times, each time with a different masked word
             choices = np.arange(1, len(mlm_in_wp) - 1)  # prevents masking of [SEP] or [CLS]
             for masked_id in np.random.choice(choices, size=min(len(choices), self.num_masked), replace=False):
@@ -116,9 +114,7 @@ class ConverterMLM:
         res = []
         for mlm_in in utterances:
             # to word-pieces (do this BEFORE masking)
-            mlm_in_wp, offsets, start_offsets = convert_words_to_wordpieces(mlm_in,
-                                                                            self.wordpiece_tokenizer,
-                                                                            lowercase_input=True)
+            mlm_in_wp, offsets, start_offsets = convert_words_to_wordpieces(mlm_in, self.wordpiece_tokenizer)
 
             mlm_tags = mlm_in.copy()  # irrelevant for probing
             mlm_tags_wp = [self.wordpiece_tokenizer.vocab[w]
@@ -177,9 +173,7 @@ class ConverterSRL:
                           ) -> Instance:
 
         # to word-pieces
-        srl_in_wp, offsets, start_offsets = convert_words_to_wordpieces(srl_in,
-                                                                        self.wordpiece_tokenizer,
-                                                                        lowercase_input=True)
+        srl_in_wp, offsets, start_offsets = convert_words_to_wordpieces(srl_in, self.wordpiece_tokenizer)
         srl_tags_wp = convert_bio_tags_to_wordpieces(srl_tags, offsets)
         verb_indices_wp = convert_verb_indices_to_wordpiece_indices(srl_verb_indices, offsets)
 

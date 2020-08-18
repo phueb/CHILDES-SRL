@@ -55,7 +55,6 @@ def convert_wordpieces_to_words(wordpieces: List[str],
 
 def convert_words_to_wordpieces(tokens: List[str],
                                 wordpiece_tokenizer,
-                                lowercase_input: bool,
                                 ) -> Tuple[List[str], List[int], List[int]]:
     """
     Convert a list of tokens to wordpiece tokens and offsets, as well as adding
@@ -95,8 +94,6 @@ def convert_words_to_wordpieces(tokens: List[str],
     start_offsets = []
     cumulative = 0
     for token in tokens:
-        if lowercase_input:
-            token = token.lower()
         word_pieces = wordpiece_tokenizer.tokenize(token)
         start_offsets.append(cumulative + 1)
         cumulative += len(word_pieces)

@@ -71,8 +71,11 @@ def main(param2val):
     data_path_devel_srl = project_path / 'data' / 'training' / f'human-based-2018_srl.txt'
     data_path_test_srl = project_path / 'data' / 'training' / f'human-based-2008_srl.txt'
     childes_vocab_path = project_path / 'data' / f'{params.corpus_name}_vocab.txt'
-    google_vocab_path = project_path / 'data' / 'bert-base-uncased.txt'  # to get word pieces
+    google_vocab_path = project_path / 'data' / 'bert-base-uncased-vocab.txt'  # to get word pieces
     probing_path = project_path / 'data' / 'probing'
+
+    if not probing_path.is_dir():  # when not using Ludwig
+        probing_path = configs.Dirs.local_probing_path
 
     # prepare save_path - this must be done when job is executed locally (not on Ludwig worker)
     save_path = Path(param2val['save_path'])
@@ -87,7 +90,7 @@ def main(param2val):
     assert vocab['[CLS]'] == 2
     assert vocab['[SEP]'] == 3
     assert vocab['[MASK]'] == 4
-    wordpiece_tokenizer = WordpieceTokenizer(vocab, unk_token='[UNK]')
+    wordpiece_tokenizer = WordpieceTokenizer(vocab, unk_token='[UNK]')  # does not perform lower-casing
     print(f'Number of types in word-piece tokenizer={len(vocab):,}\n', flush=True)
     # note: but not all Google wordpieces are necessarily used (and are therefore not in Allen NLP vocab)
 
@@ -129,19 +132,12 @@ def main(param2val):
     all_instances_mlm = chain(train_instances_mlm, devel_instances_mlm, test_instances_mlm)
     all_instances_srl = chain(train_instances_srl, devel_instances_srl, test_instances_srl)
 
-    # make vocab from all instances
-    # effective_vocab_mlm = Vocabulary.from_instances(all_instances_mlm)  # TODO test without this line
+    # make SRL vocab (for SRL labels) from all instances
     effective_vocab_srl = Vocabulary.from_instances(all_instances_srl)
-    # note: effective means "used". unused wordpieces may hang around in wordpiece tokenizer vocab and in BERT,
-    # as long as indices from wordpiece tokenizer are passed to Allen NLP vocab, which is done during conversion
-
-    # TODO optional: it would be more efficient to get rid of unused wordpieces in wordpiece_tokenizer.vocab
-    # but it's okay to have a larger wordpiece vocab than Allen NLP Vocab
 
     # BERT
     print('Preparing Multi-task BERT...')
-    tokenizer_vocab_size = len(wordpiece_tokenizer.vocab)
-    bert_config = BertConfig(vocab_size_or_config_json_file=tokenizer_vocab_size,  # was 32K
+    bert_config = BertConfig(vocab_size=len(wordpiece_tokenizer.vocab),  # was 32K
                              hidden_size=params.hidden_size,  # was 768
                              num_hidden_layers=params.num_layers,  # was 12
                              num_attention_heads=params.num_attention_heads,  # was 12
@@ -149,6 +145,7 @@ def main(param2val):
                              )
     bert_model = BertModel(config=bert_config)
     # Multi-tasking BERT
+
     mt_bert = MTBert(id2tag_wp_mlm={i: t for t, i in wordpiece_tokenizer.vocab.items()},
                      id2tag_wp_srl=effective_vocab_srl.get_index_to_token_vocabulary('labels'),
                      bert_model=bert_model,
