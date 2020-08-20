@@ -6,7 +6,7 @@ from allennlp.data.iterators import BucketIterator
 
 from babybertsrl import configs
 from babybertsrl.io import load_utterances_from_file
-from babybertsrl.probing import score_forced_choices, predict_masked_sentences
+from babybertsrl.probing import predict_forced_choice, predict_open_ended
 from babybertsrl.converter import ConverterMLM
 from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
 from babybertsrl.model import MTBert
@@ -110,15 +110,15 @@ def get_probing_predictions(probing_path: Path,
                 probing_results_path.parent.mkdir(exist_ok=True)
             # inference + save results to file for scoring offline
             if task_type == 'forced_choice':
-                score_forced_choices(mt_bert,
-                                     probing_generator_mlm,
-                                     probing_results_path,
-                                     verbose=True if 'dummy' in probing_task_name else False)
+                predict_forced_choice(mt_bert,
+                                      probing_generator_mlm,
+                                      probing_results_path,
+                                      verbose=True if 'dummy' in probing_task_name else False)
             elif task_type == 'open_ended':
-                predict_masked_sentences(mt_bert,
-                                         probing_generator_mlm,
-                                         probing_results_path,
-                                         print_gold=False,
-                                         verbose=True if 'dummy' in probing_task_name else False)
+                predict_open_ended(mt_bert,
+                                   probing_generator_mlm,
+                                   probing_results_path,
+                                   print_gold=False,
+                                   verbose=True if 'dummy' in probing_task_name else False)
             else:
                 raise AttributeError('Invalid arg to "task_type".')

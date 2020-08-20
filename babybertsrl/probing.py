@@ -7,10 +7,10 @@ import torch
 from babybertsrl.model import MTBert
 
 
-def score_forced_choices(model: MTBert,
-                         instances_generator: Iterator,
-                         out_path: Path,
-                         verbose: bool = False):
+def predict_forced_choice(model: MTBert,
+                          instances_generator: Iterator,
+                          out_path: Path,
+                          verbose: bool = False):
     model.eval()
 
     mlm_in = []
@@ -40,11 +40,11 @@ def score_forced_choices(model: MTBert,
                 print(line)
 
 
-def predict_masked_sentences(model: MTBert,
-                             instances_generator: Iterator,
-                             out_path: Path,
-                             print_gold: bool = True,
-                             verbose: bool = False):
+def predict_open_ended(model: MTBert,
+                       instances_generator: Iterator,
+                       out_path: Path,
+                       print_gold: bool = True,
+                       verbose: bool = False):
     model.eval()
 
     mlm_in = []

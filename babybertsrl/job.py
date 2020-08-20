@@ -22,7 +22,7 @@ from babybertsrl.io import load_vocab
 from babybertsrl.io import split
 from babybertsrl.converter import ConverterMLM, ConverterSRL
 from babybertsrl.eval import evaluate_model_on_pp, get_probing_predictions
-from babybertsrl.probing import predict_masked_sentences
+from babybertsrl.probing import predict_open_ended
 from babybertsrl.model import MTBert
 from babybertsrl.eval import evaluate_model_on_f1
 
@@ -260,7 +260,7 @@ def main(param2val):
             if configs.Eval.test_sentences:
                 test_generator_mlm = bucket_batcher_mlm_large(test_instances_mlm, num_epochs=1)
                 out_path = save_path / f'test_split_mlm_results_{step_mlm}.txt'
-                predict_masked_sentences(mt_bert, test_generator_mlm, out_path)
+                predict_open_ended(mt_bert, test_generator_mlm, out_path)
 
             # probing - test sentences for specific syntactic tasks
             skip_probing = step_global == 0 and not configs.Eval.probe_at_step_zero
@@ -317,7 +317,7 @@ def main(param2val):
     if configs.Eval.test_sentences:
         test_generator_mlm = bucket_batcher_mlm(test_instances_mlm, num_epochs=1)
         out_path = save_path / f'test_split_mlm_results_{step_mlm}.txt'
-        predict_masked_sentences(mt_bert, test_generator_mlm, out_path)
+        predict_open_ended(mt_bert, test_generator_mlm, out_path)
 
     if configs.Eval.probe_at_end:
         get_probing_predictions(probing_path, converter_mlm, bucket_batcher_mlm_large, save_path, mt_bert, step_mlm)

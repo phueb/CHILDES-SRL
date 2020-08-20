@@ -5,7 +5,6 @@ class Dirs:
     root = Path(__file__).parent.parent
     data = root / 'data'
     data_tools = root / 'data_tools'
-    external_bert = root / 'external_bert'
     local_probing_path = Path.home() / 'Babeval_phueb' /'sentences'
     # probing data can be found at https://github.com/phueb/Babeval/tree/master/sentences
 
@@ -18,7 +17,7 @@ class Data:
     special_symbols = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']  # order matters
     childes_symbols = ['[NAME]', '[PLACE]', '[MISC]']
 
-    mask_vocab_id = 4
+    mask_vocab_id = special_symbols.index('[MASK]')
 
 
 class Training:
@@ -38,8 +37,8 @@ class Eval:
     probing_names = [
         'dummy',
         'agreement_between_neighbors',
-        'agreement_across_adjectives',
-        'agreement_across_adjectives_2',
+        'agreement_across_1_adjective',
+        'agreement_across_2_adjectives',
         'agreement_across_PP',
         'agreement_across_RC',
         'agreement_in_1_verb_question',
