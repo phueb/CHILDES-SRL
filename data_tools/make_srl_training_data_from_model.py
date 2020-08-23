@@ -9,11 +9,11 @@ from allennlp.predictors.predictor import Predictor
 from allennlp.data.instance import Instance
 from allennlp.common.util import sanitize
 
-from babybertsrl.io import load_utterances_from_file
-from babybertsrl import configs
-from babybertsrl.job import Params
-from babybertsrl.params import param2default
-from babybertsrl.srl_utils import make_srl_string
+from childes_srl.io import load_mlm_data
+from childes_srl import configs
+from training.job import Params
+from childes_srl.params import param2default
+from childes_srl.utils import make_srl_string
 
 CORPUS_NAME = 'childes-20191206'
 INTERACTIVE = False
@@ -64,9 +64,9 @@ tf.config.experimental.set_memory_growth(gpu_devices[0], True)  # do not take al
 segmentation = DeepSegment('en')
 
 # utterances
-utterances_path = configs.Dirs.data / 'training' / f'{CORPUS_NAME}_mlm.txt'
-params = Params.from_param2val(param2default)
-utterances = load_utterances_from_file(utterances_path)
+path_to_mlm_data = configs.Dirs.data / 'raw' / 'childes' / f'{CORPUS_NAME}_mlm.txt'
+params = Params.from_dict(param2default)
+utterances = load_mlm_data(path_to_mlm_data)
 
 it = gen_instances()
 
@@ -130,7 +130,7 @@ print(f'Skipped {num_no_verb} utterances due to absence of B-V tag')
 print(f'Skipped {num_only_verb} utterances due to presence of only B-V tag')
 
 print(f'Writing {len(lines)} lines to file...')
-srl_path = configs.Dirs.data / 'training' / f'{CORPUS_NAME}_srl.txt'
+srl_path = configs.Dirs.data / 'pre_processed' / f'{CORPUS_NAME}_srl.txt'
 with srl_path.open('w') as f:
     for n, line in enumerate(lines):
         f.write(line)

@@ -43,8 +43,8 @@ from pathlib import Path
 from allennlp.predictors.predictor import Predictor
 from allennlp.data.instance import Instance
 
-from babybertsrl import configs
-from babybertsrl.scorer import SrlEvalScorer, convert_bio_tags_to_conll_format
+from childes_srl import configs
+from bert_recipes.eval import SrlEvalScorer, convert_bio_tags_to_conll_format
 
 CORPUS_NAME = 'human-based-2008'
 INTERACTIVE = False
@@ -109,7 +109,7 @@ srl_eval_path = configs.Dirs.root / 'perl' / 'srl-eval.pl'
 scorer = SrlEvalScorer(srl_eval_path, ignore_classes=['V'])
 
 
-gold_path = configs.Dirs.data / 'training' / f'{CORPUS_NAME}_srl.txt'
+gold_path = configs.Dirs.data / 'pre_processed' / f'{CORPUS_NAME}_srl.txt'
 for n, (instance, md) in enumerate(gen_instances(gold_path)):
 
     # get SRL predictions (decoding included)

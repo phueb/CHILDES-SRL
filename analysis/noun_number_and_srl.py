@@ -1,16 +1,20 @@
+"""
+What proportion of nouns are singular and plural?
+Results are organized by semantic role.
+"""
 from pathlib import Path
 
-from babybertsrl.io import load_propositions_from_file, load_utterances_from_file
+from childes_srl.io import load_srl_data, load_mlm_data
 
+root = Path(__file__).parent.parent
+
+nouns_singular = set((root / 'data' / 'word_lists' / 'nouns_singular.txt').open().read().split())
+nouns_plural = set((root / 'data' / 'word_lists' / 'nouns_plural.txt').open().read().split())
 
 # ========================================================== SRL
 
-root = Path(__file__).parent.parent
-data_path_train_srl = root / 'data' / 'training' / f'childes-20191206_no-dev_srl.txt'
-propositions = load_propositions_from_file(data_path_train_srl)
-
-nouns_singular = set((root / 'analysis' / 'nouns_singular_annotator2.txt').open().read().split())
-nouns_plural = set((root / 'analysis' / 'nouns_plural_annotator2.txt').open().read().split())
+data_path_train_srl = root / 'data' / 'pre_processed' / f'childes-20191206_no-dev_srl.txt'
+propositions = load_srl_data(data_path_train_srl)
 
 tag2number = {}
 for words, pred_id, tags in propositions:
@@ -26,8 +30,8 @@ for tag, number in tag2number.items():
 
 # ========================================================== MLM
 
-data_path_mlm = root / 'data' / 'training' / f'childes-20191206_mlm.txt'
-utterances = load_utterances_from_file(data_path_mlm)
+data_path_mlm = root / 'data' / 'raw' / 'childes' / f'childes-20191206.txt'
+utterances = load_mlm_data(data_path_mlm)
 
 num_s = 0
 num_p = 0

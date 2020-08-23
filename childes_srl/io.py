@@ -1,111 +1,23 @@
 import numpy as np
-from typing import List
+from typing import List, Set, Tuple, Optional
 from pathlib import Path
-import random
-from collections import OrderedDict
 
-from babybertsrl import configs
+from childes_srl import configs
 
 
-# when lower-casing, do not lower-case upper-cased symbols
-upper_cased = configs.Data.special_symbols + configs.Data.childes_symbols  # order matters
-
-
-def load_words_from_vocab_file(vocab_file: Path,
-                               col: int = 0):
-
-    res = []
-    with vocab_file.open("r", encoding="utf-8") as reader:
-        while True:
-            line = reader.readline()
-            if not line:
-                break
-            token = line.split()[col]
-
-            # exclude word with non-ASCII characters
-            if [True for c in token if ord(c) > 127]:
-                continue
-
-            res.append(token)
-    return res
-
-
-def load_vocab(childes_vocab_file: Path,
-               google_vocab_file: Path,
-               vocab_size: int,  # childes-vocab, not total vocab
-               google_vocab_rule: str) -> OrderedDict:
-
-    childes_vocab = load_words_from_vocab_file(childes_vocab_file, col=1)[:vocab_size]
-    google_vocab = load_words_from_vocab_file(google_vocab_file, col=0)
-
-    # exclude any google wordpieces not in CHILDES vocab, but leave non-start wordpieces (e.g. ##s)
-    google_vocab_cleaned = [w for w in google_vocab
-                            if w in set(childes_vocab) or w.startswith('##')]
-
-    # init
-    to_index = configs.Data.special_symbols + configs.Data.childes_symbols
-
-    # add from childes vocab
-    if google_vocab_rule == 'inclusive':
-        to_index += set(childes_vocab + google_vocab_cleaned)
-    elif google_vocab_rule == 'exclusive':
-        to_index += google_vocab_cleaned
-    elif google_vocab_rule == 'excluded':
-        to_index += childes_vocab
-    else:
-        raise AttributeError('Invalid arg to "google_vocab_rule".')
-
-    # index
-    res = OrderedDict()
-    index = 0
-    for token in to_index:
-        if token in res:
-            # happens for symbols
-            continue
-        res[token] = index
-        index += 1
-
-    assert len(set(res)) == len(res)
-    assert res['[PAD]'] == 0
-    assert res['[MASK]'] == configs.Data.mask_vocab_id
-    assert index == len(res), (index, len(res))
-
-    return res
-
-
-def split(data: List, seed: int = 2):
-
-    random.seed(seed)
-
-    train = []
-    devel = []
-    test = []
-
-    for i in data:
-
-        if random.choices([True, False],
-                          weights=[configs.Data.train_prob, 1 - configs.Data.train_prob])[0]:
-            train.append(i)
-        else:
-            if random.choices([True, False], weights=[0.5, 0.5])[0]:
-                devel.append(i)
-            else:
-                test.append(i)
-
-    print(f'num train={len(train):,}')
-    print(f'num devel={len(devel):,}')
-    print(f'num test ={len(test):,}')
-
-    return train, devel, test
-
-
-def load_utterances_from_file(file_path: Path,
-                              verbose: bool = False,
-                              allow_discard: bool = False) -> List[List[str]]:
+def load_mlm_data(file_path: Path,
+                  verbose: bool = False,
+                  uncased: bool = False,
+                  special_tokens: Optional[Set[str]] = None,
+                  allow_discard: bool = False) -> List[List[str]]:
     """
-    load utterances for language modeling from text file
+    load CHILDES utterances for adding SR-labels
     """
 
+    if special_tokens is None:
+        special_tokens = configs.Data.childes_symbols
+
+    assert file_path.exists()
     print(f'Loading {file_path}')
 
     res = []
@@ -142,8 +54,8 @@ def load_utterances_from_file(file_path: Path,
                     continue
 
                 # lower-case
-                if configs.Data.uncased:
-                    utterance = [w if w in upper_cased else w.lower()
+                if uncased:
+                    utterance = [w if w in special_tokens else w.lower()
                                  for w in utterance]
 
                 res.append(utterance)
@@ -163,8 +75,11 @@ def load_utterances_from_file(file_path: Path,
     return res
 
 
-def load_propositions_from_file(file_path: Path,
-                                verbose: bool = False):
+def load_srl_data(file_path: Path,
+                  verbose: bool = False,
+                  uncased: bool = False,
+                  special_tokens: Optional[Set[str]] = None,
+                  ) -> List[Tuple]:
     """
     Read tokenized propositions from file.
     File format: {predicate_id} [word0, word1 ...] ||| [label0, label1 ...]
@@ -172,6 +87,10 @@ def load_propositions_from_file(file_path: Path,
         A list with elements of structure [[words], predicate position, [labels]]
     """
 
+    if special_tokens is None:
+        special_tokens = configs.Data.childes_symbols
+
+    assert file_path.exists()
     print(f'Loading {file_path}')
 
     num_too_small = 0
@@ -201,8 +120,8 @@ def load_propositions_from_file(file_path: Path,
                 continue
 
             # lower-case
-            if configs.Data.uncased:
-                words = [w if w in upper_cased else w.lower()
+            if uncased:
+                words = [w if w in special_tokens else w.lower()
                          for w in words]
 
             res.append((words, predicate_index, labels))

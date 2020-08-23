@@ -2,14 +2,14 @@ import random
 import pandas as pd
 import re
 
-from babybertsrl.srl_utils import make_srl_string
-from babybertsrl import configs
+from childes_srl.utils import make_srl_string
+from childes_srl import configs
 
 NAME = 'human-based-2018'
 
 
 # load annotations
-srl_path = configs.Dirs.data / 'training' / f'{NAME}_srl.txt'
+srl_path = configs.Dirs.data / 'pre_processed' / f'{NAME}_srl.txt'
 text = srl_path.read_text()
 lines = text.split('\n')
 

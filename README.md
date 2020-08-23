@@ -1,13 +1,17 @@
-# BabyBERTSRL
+# CHILDES-SRL
 
-## Background
+A corpus of semantic role labels auto-generated for 5M words of American-English child-directed speech.
 
-This repository contains research code that trains Allen AI's implementation of a BERT-based SRL labeler. 
-A demo can be found [here](https://demo.allennlp.org/semantic-role-labeling). 
-The paper describing the original implementation (Shi et al., 2019) can be found [here](https://arxiv.org/abs/1904.05255).
+## Purpose
+
+The purpose of this repository is to:
+  - host the CHILDES-SRL corpus, and code to generate it, and
+  - suggest recipes for training BERT on CHILDES-SRL for classifying token spans into semantic role arguments.
+
+Inspiration and code for a BERT-based semantic role labeler comes from the [AllenNLP toolkit](https://demo.allennlp.org).
+A SRL demo can be found [here](https://demo.allennlp.org/semantic-role-labeling). 
 
 The code is for research purpose only. 
-The goal of this research project is to test theories of how children learn to understand multi-word utterances. 
 
 ## History
 
@@ -21,47 +25,61 @@ at the Department of Psychology at [UIUC](https://psychology.illinois.edu/).
 
 - 2020 (Spring): Experimentation with with joint training BERT on SRL and MLM began. The joint training procedure is similar to what is proposed in [https://arxiv.org/pdf/1901.11504.pdf](https://arxiv.org/pdf/1901.11504.pdf)
 
-- 2020 (Summer): Having found little benefit for joint SRL and MLM training, a new line of research into how the model's success on syntactic knowledge tasks compares to BERT-Base,
- which is larger and trained on much more data. Probing data can be found [here](https://github.com/phueb/Babeval). 
+- 2020 (Summer): Having found little benefit for joint SRL and MLM training BERT on CHILDES,
+ a new line of research comparing BERT trained on CHILDES to BERT trained on billions of words of text was begun. 
+ Development moved [here](https://github.com/phueb/BabyBERT/). 
+ The purpose of this repository pivoted from providing code to train BERT jointly on SRL and MLM, to 
+  - host the CHILDES-SRL corpus, and code to generate it, and
+  - suggest recipes for training BERT to classify token spans into semantic role arguments.
+  
+  
+## Generating the CHILDES-SRL corpus
+
+To annotate 5M words of child-directed speech using a semantic role tagger, trained by AllenNLP,
+execute `data_tools/make_srl_training_data_from_model.py`
+
+To generate a corpus of human-labeled semantic role labels for a small section of CHILDES, 
+execute `data_tools/make_srl_training_data_from_human.py`
 
 
-## BERT
- 
-Due to the limited size of child-directed speech data, 
-a much smaller BERT than the standard BERT models is trained here.
+## Quality of auto-generated tags
 
-For example, compare the architecture specified in `params.py` to the
-architecture of the state-of-the-art BERT-based SRL tagger [here](https://github.com/allenai/allennlp/blob/master/training_config/bert_base_srl.jsonnet)
+How well does AllenNLP SRL tagger perform on CHILDES 2008 SRL data?
+Below is a list of f1 scores, comparing its performance with that of trained human annotators.
 
-Moreover, no next-sentence prediction objective is used during training, as was done in the original implementation. This reduces training time, code complexity and [learning two separate semantic spaces](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1117&context=scil).
-
-## Working with the AllenNLP toolkit
-
-* Utterances are loaded from text file
-* A word in each utterance is masked
-* Each utterance is converted to word-pieces using a custom vocab file
-* Each utterance is converted to an instance
-* A vocabulary for input and output words is created from train and test instances
-* A Bert model is instantiated using the size of the vocabulary for input words
-* A LM model is instantiated with the Bert model providing word embeddings
-* The LM model adds a projection layer on top of Bert mapping from hidden size -> size of vocabulary for output words
-
-Because the vocabulary holds word pieces for both input and output words, and the model works with word-pieces only,
-a decoding function is called which converts the word pieces back into whole words.
-
-## Custom Vocabulary
-
-The default is to use all words in the original Google vocabulary, including wordpieces,
-and the 4K most frequent words in the provided CHILDES corpus. 
-After excluding all Google vocab words not in the CHILDES corpus, this results in ~ 8K words and wordpieces.
-
-There are options to use only words from CHILDES, or only words from the Google vocab.
-See `babybertsrl.params.py`
-
-## Evaluating syntactic knowledge
-
-Generate test sentences (with number agreement) and evaluate the model's predictions using [Babeval](https://github.com/phueb/Babeval).
-
+          ARG-A1 f1= 0.00
+          ARG-A4 f1= 0.00
+         ARG-LOC f1= 0.00
+            ARG0 f1= 0.95
+            ARG1 f1= 0.93
+            ARG2 f1= 0.79
+            ARG3 f1= 0.44
+            ARG4 f1= 0.80
+        ARGM-ADV f1= 0.70
+        ARGM-CAU f1= 0.84
+        ARGM-COM f1= 0.00
+        ARGM-DIR f1= 0.48
+        ARGM-DIS f1= 0.68
+        ARGM-EXT f1= 0.38
+        ARGM-GOL f1= 0.00
+        ARGM-LOC f1= 0.68
+        ARGM-MNR f1= 0.68
+        ARGM-MOD f1= 0.78
+        ARGM-NEG f1= 0.99
+        ARGM-PNC f1= 0.03
+        ARGM-PPR f1= 0.00
+        ARGM-PRD f1= 0.15
+        ARGM-PRP f1= 0.39
+        ARGM-RCL f1= 0.00
+        ARGM-REC f1= 0.00
+        ARGM-TMP f1= 0.84
+          ARGRG1 f1= 0.00
+          R-ARG0 f1= 0.00
+          R-ARG1 f1= 0.00
+      R-ARGM-CAU f1= 0.00
+      R-ARGM-LOC f1= 0.00
+      R-ARGM-TMP f1= 0.00
+         overall f1= 0.88
 
 ## Compatibility
 

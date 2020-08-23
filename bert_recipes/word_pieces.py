@@ -4,7 +4,7 @@ obtained from Allen NLP toolkit in September 2019
 
 from typing import List, Tuple
 
-from babybertsrl import configs
+from childes_srl import configs
 
 
 def convert_wordpieces_to_words(wordpieces: List[str],
@@ -73,7 +73,7 @@ def convert_words_to_wordpieces(tokens: List[str],
 
     For example:
 
-    `annotate` will be bert tokenized as ['anno", "##tate'].
+    `annotate` will be tokenized as ['anno", "##tate'].
     If this is tagged as [B-V, I-V] as it should be, we need to select the
     _first_ wordpiece label to be the label for the token, because otherwise
     we may end up with invalid tag sequences (we cannot start a new tag with an I).
