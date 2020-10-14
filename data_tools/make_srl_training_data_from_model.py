@@ -11,7 +11,7 @@ from allennlp.common.util import sanitize
 
 from childes_srl.io import load_mlm_data
 from childes_srl import configs
-from training.job import Params
+from childes_srl.job import Params
 from childes_srl.params import param2default
 from childes_srl.utils import make_srl_string
 
