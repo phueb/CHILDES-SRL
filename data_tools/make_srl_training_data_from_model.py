@@ -11,8 +11,6 @@ from allennlp.common.util import sanitize
 
 from childes_srl.io import load_mlm_data
 from childes_srl import configs
-from childes_srl.job import Params
-from childes_srl.params import param2default
 from childes_srl.utils import make_srl_string
 
 CORPUS_NAME = 'childes-20191206'
@@ -65,7 +63,6 @@ segmentation = DeepSegment('en')
 
 # utterances
 path_to_mlm_data = configs.Dirs.data / 'raw' / 'childes' / f'{CORPUS_NAME}_mlm.txt'
-params = Params.from_dict(param2default)
 utterances = load_mlm_data(path_to_mlm_data)
 
 it = gen_instances()
