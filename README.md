@@ -34,13 +34,13 @@ whose published work is available [here](https://www.aclweb.org/anthology/W08-21
 
 - 2016: The most recent work, prior to this, can be found [here](https://gitlab-beta.engr.illinois.edu/babysrl-group/babysrl)
 
-- 2019: The current work is an extension of the previous, leveraging the powerful deep-learning model BERT. Investigation into the inner workings of the model began in in September 2019 while under the supervision of [Cynthia Fisher](https://psychology.illinois.edu/directory/profile/clfishe)
-at the Department of Psychology at [UIUC](https://psychology.illinois.edu/). 
-
-- 2020 (Spring): Experimentation with with joint training BERT on SRL and MLM began. The joint training procedure is similar to what is proposed in [https://arxiv.org/pdf/1901.11504.pdf](https://arxiv.org/pdf/1901.11504.pdf)
+- 2019: Under the supervision of [Cynthia Fisher](https://psychology.illinois.edu/directory/profile/clfishe)
+at the Department of Psychology at [UIUC](https://psychology.illinois.edu/), explorations into the ability of BERT to perform SRL tagging began. 
+In particular, we experimented with joint training on SRL and MLM. 
+The joint training procedure is similar to what is proposed in [https://arxiv.org/pdf/1901.11504.pdf](https://arxiv.org/pdf/1901.11504.pdf).
 
 - 2020 (Summer): Having found little benefit for joint SRL and MLM training BERT on CHILDES,
- a new line of research comparing BERT trained on CHILDES to BERT trained on billions of words of text was begun. 
+ a new line of research into the grammatical capability of RoBERTa began. 
  Development moved [here](https://github.com/phueb/BabyBERT/). 
   
   
