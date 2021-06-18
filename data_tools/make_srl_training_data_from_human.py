@@ -1,4 +1,9 @@
-from pathlib import Path
+"""
+This file reads raw XML data, and outputs data in text file that is both human-readable and ready for model training.
+
+Output files are saved in CHILDES-SRL/data/pre-processed.
+
+"""
 import xml.etree.ElementTree as ET
 import re
 from nltk import Tree
@@ -8,11 +13,13 @@ from typing import List, Any
 from childes_srl.utils import make_srl_string
 from childes_srl import configs
 
-NAME = 'human-based-2018'
-XML_PATH = Path(f'data/srl_{NAME}/xml')
-VERBOSE = False
+NAME = 'human-based-2008'
+XML_PATH = configs.Dirs.data / 'xml' / NAME
 EXCLUDE_CHILD = True
 OUTSIDE_LABEL = 'O'
+
+VERBOSE = False
+VERBOSE_WARN = False
 
 
 def has_props(e):
@@ -47,6 +54,9 @@ def get_start_index(a: List[Any],
         raise ValueError('a does not contain b')
 
 
+if not XML_PATH.exists():
+    raise OSError(f'Did not find {XML_PATH}')
+
 num_no_predicate = 0
 num_no_arguments = 0
 num_bad_head_loc = 0
@@ -61,10 +71,13 @@ for file_path in sorted(XML_PATH.rglob('*.xml')):
 
     for utterance in root:
         if not has_props(utterance):
-            print('WARNING: Did not find propositions. Skipping')
+            if VERBOSE_WARN:
+                print('WARNING: Did not find propositions. Skipping')
             continue
         if is_child(utterance) and EXCLUDE_CHILD:
-            print('WARNING: Skipping child utterance')
+            if VERBOSE_WARN:
+                print('WARNING: Skipping child utterance')
+            continue
 
         # get parse tree
         parse_string = utterance.find('{http://www.talkbank.org/ns/talkbank}parse').text
@@ -86,7 +99,8 @@ for file_path in sorted(XML_PATH.rglob('*.xml')):
         for proposition in utterance.iter('{http://www.talkbank.org/ns/talkbank}proposition'):
 
             if proposition.attrib['lemma'].endswith('-p'):  # TODO what to do here?
-                print('WARNING: Skipping prepositional proposition')
+                if VERBOSE_WARN:
+                    print('WARNING: Skipping prepositional proposition')
                 num_prepositions += 1
                 continue
 
@@ -115,7 +129,8 @@ for file_path in sorted(XML_PATH.rglob('*.xml')):
                 try:
                     words[head_loc]
                 except IndexError:
-                    print('WARNING: Bad head location')
+                    if VERBOSE_WARN:
+                        print('WARNING: Bad head location')
                     num_bad_head_loc += 1
                     is_bad = True
                     break
@@ -130,17 +145,10 @@ for file_path in sorted(XML_PATH.rglob('*.xml')):
                     start_loc = get_start_index(words, argument_tree.leaves())
 
                     if not labels[start_loc: start_loc + argument_length] == [OUTSIDE_LABEL] * argument_length:
-                        print('WARNING: Bad argument location. Skipping')
+                        if VERBOSE_WARN:
+                            print('WARNING: Bad argument location. Skipping')
                         num_bad_arg_loc += 1
                         is_bad = True
-
-                        # print(labels)
-                        # labels[start_loc: start_loc + argument_length] = argument_labels
-                        # print(labels)
-                        #
-                        # if input():
-                        #     continue
-
                         break
                     labels[start_loc: start_loc + argument_length] = argument_labels
 
@@ -154,12 +162,14 @@ for file_path in sorted(XML_PATH.rglob('*.xml')):
 
             # checks
             if labels.count('B-V') != 1:
-                print('WARNING: Did not find predicate')
+                if VERBOSE_WARN:
+                    print('WARNING: Did not find predicate')
                 num_no_predicate += 1
                 continue
 
             if sum([1 if l.startswith('B-ARG') else 0 for l in labels]) == 0:
-                print('WARNING: Did not find arguments')
+                if VERBOSE_WARN:
+                    print('WARNING: Did not find arguments')
                 num_no_arguments += 1
                 continue
 
@@ -179,19 +189,21 @@ for file_path in sorted(XML_PATH.rglob('*.xml')):
             num_good_props_in_file += 1
             lines.append(line)
 
-    print('Collected {} good propositions in {}'.format(num_good_props_in_file, file_path.name))
+    print('Collected {:>6} good propositions in {:>24}'.format(num_good_props_in_file, file_path.name))
     num_total_good += num_good_props_in_file
 
-print(f'num good              ={num_total_good:,}')
-print(f'num no arguments      ={num_no_arguments:,}')
-print(f'num no predicate      ={num_no_predicate:,}')
-print(f'num bad head location ={num_bad_head_loc:,}')
-print(f'num bad arg location  ={num_bad_arg_loc:,}')
-print(f'num prepositions      ={num_prepositions:,}')
+print(f'num good              ={num_total_good:>9,}')
+print(f'num no arguments      ={num_no_arguments:>9,}')
+print(f'num no predicate      ={num_no_predicate:>9,}')
+print(f'num bad head location ={num_bad_head_loc:>9,}')
+print(f'num bad arg location  ={num_bad_arg_loc:>9,}')
+print(f'num prepositions      ={num_prepositions:>9,}')
 
 
-print(f'Writing {len(lines)} lines to file...')
 srl_path = configs.Dirs.data / 'pre_processed' / f'{NAME}_srl.txt'
 with srl_path.open('w') as f:
     for line in lines:
         f.write(line + '\n')
+
+print()
+print('Saved pre-processed data to {}'.format(srl_path))
