@@ -1,5 +1,5 @@
 nltk~=3.4.5
-tensorflow-gpu==2.0.1
+tensorflow-gpu==2.12.0
 deepsegment~=2.3.0
 pyprind~=2.11.2
 attrs~=19.1.0
